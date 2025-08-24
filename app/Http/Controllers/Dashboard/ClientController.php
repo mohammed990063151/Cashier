@@ -10,15 +10,15 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        $clients = Client::when($request->search, function($q) use ($request){
+        // $clients = Client::when($request->search, function($q) use ($request){
 
-            return $q->where('name', 'like', '%' . $request->search . '%')
-                ->orWhere('phone', 'like', '%' . $request->search . '%')
-                ->orWhere('address', 'like', '%' . $request->search . '%');
+        //     return $q->where('name', 'like', '%' . $request->search . '%')
+        //         ->orWhere('phone', 'like', '%' . $request->search . '%')
+        //         ->orWhere('address', 'like', '%' . $request->search . '%');
 
-        })->latest()->paginate(5);
-
-        return view('dashboard.clients.index', compact('clients'));
+        // })->latest()->paginate(5);  , compact('clients')
+// return 0;
+        return view('dashboard.clients.index');
 
     }//end of index
 
@@ -42,7 +42,7 @@ class ClientController extends Controller
 
         Client::create($request_data);
 
-        session()->flash('success', __('site.added_successfully'));
+        session()->flash('success', __('تم اضافة العميل بنجاح'));
         return redirect()->route('dashboard.clients.index');
 
     }//end of store
@@ -66,7 +66,7 @@ class ClientController extends Controller
         $request_data['phone'] = array_filter($request->phone);
 
         $client->update($request_data);
-        session()->flash('success', __('site.updated_successfully'));
+        session()->flash('success', __('تم تعديل العميل بنجاح'));
         return redirect()->route('dashboard.clients.index');
 
     }//end of update
@@ -74,7 +74,7 @@ class ClientController extends Controller
     public function destroy(Client $client)
     {
         $client->delete();
-        session()->flash('success', __('site.deleted_successfully'));
+        session()->flash('success', __('تم حذف العميل بنجاح'));
         return redirect()->route('dashboard.clients.index');
 
     }//end of destroy

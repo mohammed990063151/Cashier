@@ -7,30 +7,43 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-
+use App\Services\ReportsService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 
 class WelcomeController extends Controller
 {
-    public function index()
+     public function index(Request $request)
     {
-        $categories_count = Category::count();
+       $filter = $request->query('filter', 'today'); // today, yesterday, last7days, this_month, last_month
+        $reportsService = new ReportsService($filter);
+
+        $salesOverview      = $reportsService->salesOverview();
+        $profitsOverview    = $reportsService->profitsOverview();
+        $clientsOverview    = $reportsService->clientsOverview();
+        $suppliersOverview  = $reportsService->suppliersOverview();
+        $purchasesOverview  = $reportsService->purchasesOverview();
+        $expensesOverview   = $reportsService->expensesOverview();
+        $cashOverview       = $reportsService->cashOverview();
+
+
+          $categories_count = Category::count();
         $products_count = Product::count();
         $clients_count = Client::count();
-        $users_count = User::whereRoleIs('admin')->count();
+        $users_count = User::count();
 
         $sales_data = Order::select(
             DB::raw('YEAR(created_at) as year'),
             DB::raw('MONTH(created_at) as month'),
             DB::raw('SUM(total_price) as sum')
-        )->groupBy('month')->get();
+        )->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))->get();
+        return view('dashboard.reports.overview', compact(
+            'salesOverview', 'profitsOverview', 'clientsOverview', 'suppliersOverview',
+            'purchasesOverview', 'expensesOverview', 'cashOverview','categories_count', 'products_count', 'clients_count', 'users_count', 'sales_data'
+        ));
+    }//eof index
 
-        return view('dashboard.welcome', compact('categories_count', 'products_count', 'clients_count', 'users_count', 'sales_data'));
 
-    }//end of index
-
-    
 
 }//end of controller

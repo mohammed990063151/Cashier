@@ -4,12 +4,12 @@
 
     <div class="content-wrapper">
         <section class="content-header">
-            <h1>@lang('site.clients')</h1>
+            <h1>العملاء</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.clients.index') }}"> @lang('site.clients')</a></li>
-                <li class="active">@lang('site.add')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.clients.index') }}"> العملاء</a></li>
+                <li class="active">إضافة</li>
             </ol>
         </section>
 
@@ -18,7 +18,7 @@
             <div class="box box-primary">
 
                 <div class="box-header">
-                    <h3 class="box-title">@lang('site.add')</h3>
+                    <h3 class="box-title">إضافة عميل جديد</h3>
                 </div><!-- end of box header -->
                 <div class="box-body">
 
@@ -28,26 +28,26 @@
 
                         {{ csrf_field() }}
                         {{ method_field('post') }}
-                        
+
                         <div class="form-group">
-                            <label>@lang('site.name')</label>
+                            <label>الاسم</label>
                             <input type="text" name="name" class="form-control" value="{{ old('name') }}">
                         </div>
 
                        @for ($i = 0; $i < 2; $i++)
                             <div class="form-group">
-                                <label>@lang('site.phone')</label>
-                                <input type="text" name="phone[]" class="form-control">
+                                <label>رقم الهاتف</label>
+                                <input type="text" name="phone[]" class="form-control" value="{{ old('phone.' . $i) }}">
                             </div>
                        @endfor
 
                         <div class="form-group">
-                            <label>@lang('site.address')</label>
+                            <label>العنوان</label>
                             <textarea name="address" class="form-control">{{ old('address') }}</textarea>
                         </div>
-                        
+
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> @lang('site.add')</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة</button>
                         </div>
 
                     </form><!-- end of form -->

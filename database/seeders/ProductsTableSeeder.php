@@ -1,5 +1,5 @@
 <?php
-
+namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 class ProductsTableSeeder extends Seeder
@@ -11,20 +11,20 @@ class ProductsTableSeeder extends Seeder
      */
     public function run()
     {
-        $products = ['pro one', 'pro two'];
+        // $products = ['pro one', 'pro two'];
 
-        foreach ($products as $product) {
+        // foreach ($products as $product) {
 
-            \App\Models\Product::create([
-                'category_id' => 1,
-                'ar' => ['name' => $product, 'description' => $product . ' desc'],
-                'en' => ['name' => $product, 'description' => $product . ' desc'],
-                'purchase_price' => 100,
-                'sale_price' => 150,
-                'stock' => 100,
-            ]);
+        //     \App\Models\Product::create([
+        //         'category_id' => 1,
+        //         'ar' => ['name' => $product, 'description' => $product . ' desc'],
+        //         'en' => ['name' => $product, 'description' => $product . ' desc'],
+        //         'purchase_price' => 100,
+        //         'sale_price' => 150,
+        //         'stock' => 100,
+        //     ]);
 
-        }//end of foreach
+        // }//end of foreach
 
     }//end of run
 

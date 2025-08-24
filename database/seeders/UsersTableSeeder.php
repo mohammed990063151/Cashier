@@ -1,25 +1,41 @@
 <?php
+
 namespace Database\Seeders;
+
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Role;
 
 class UsersTableSeeder extends Seeder
 {
     /**
      * Run the database seeds.
-     *
-     * @return void
      */
-    public function run()
+    public function run(): void
     {
-        $user = \App\Models\User::create([
-            'first_name' => 'super',
-            'last_name' => 'admin',
-            'email' => 'super_admin@app.com',
-            'password' => bcrypt('123456'),
-        ]);
+        // إنشاء المستخدم
+        $user = User::firstOrCreate(
+            ['email' => 'super_admin@gmail.com'],
+            [
+                'first_name' => 'Super',
+                'last_name' => 'Admin',
+                'password' => bcrypt('123456'),
+            ]
+        );
 
-        $user->attachRole('super_admin');
+        // جلب الدور
+        $role = Role::firstOrCreate(
+            ['name' => 'super_admin'],
+            [
+                'display_name' => 'Super Admin',
+                'description' => 'Super Admin Role',
+            ]
+        );
 
-    }//end of run
+        // ربط المستخدم بالدور
+       $user->roles()->syncWithoutDetaching([
+    $role->id => ['user_type' => User::class]
+]);
 
-}//end of seeder
+    }
+}

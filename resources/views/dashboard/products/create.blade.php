@@ -4,12 +4,12 @@
 
     <div class="content-wrapper">
         <section class="content-header">
-            <h1>@lang('site.products')</h1>
+            <h1>المنتجات</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.products.index') }}"> @lang('site.products')</a></li>
-                <li class="active">@lang('site.add')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.products.index') }}"> المنتجات</a></li>
+                <li class="active">إضافة</li>
             </ol>
         </section>
 
@@ -18,8 +18,9 @@
             <div class="box box-primary">
 
                 <div class="box-header">
-                    <h3 class="box-title">@lang('site.add')</h3>
-                </div><!-- end of box header -->
+                    <h3 class="box-title">إضافة</h3>
+                </div><!-- نهاية ترويسة الصندوق -->
+
                 <div class="box-body">
 
                     @include('partials._errors')
@@ -30,65 +31,68 @@
                         {{ method_field('post') }}
 
                         <div class="form-group">
-                            <label>@lang('site.categories')</label>
+                            <label>الأقسام</label>
                             <select name="category_id" class="form-control">
-                                <option value="">@lang('site.all_categories')</option>
+                                <option value="">كل الأقسام</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
+                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
-                        
 
-                        @foreach (config('translatable.locales') as $locale)
+                        {{-- @foreach (config('translatable.locales') as $locale) --}}
                             <div class="form-group">
-                                <label>@lang('site.' . $locale . '.name')</label>
-                                <input type="text" name="{{ $locale }}[name]" class="form-control" value="{{ old($locale . '.name') }}">
+                                <label>الاسم </label>
+                                <input type="text" name="name" class="form-control" value="{{ old('name') }}">
                             </div>
 
-                            <div class="form-group">
-                                <label>@lang('site.' . $locale . '.description')</label>
-                                <textarea name="{{ $locale }}[description]" class="form-control ckeditor">{{ old($locale . '.description') }}</textarea>
-                            </div>
 
-                        @endforeach
+                        {{-- @endforeach --}}
+
+
 
                         <div class="form-group">
-                            <label>@lang('site.image')</label>
-                            <input type="file" name="image" class="form-control image">
-                        </div>
-
-                        <div class="form-group">
-                            <img src="{{ asset('uploads/product_images/default.png') }}" style="width: 100px" class="img-thumbnail image-preview" alt="">
-                        </div>
-
-                        <div class="form-group">
-                            <label>@lang('site.purchase_price')</label>
+                            <label>سعر الشراء</label>
                             <input type="number" name="purchase_price" step="0.01" class="form-control" value="{{ old('purchase_price') }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.sale_price')</label>
+                            <label>سعر البيع</label>
                             <input type="number" name="sale_price" step="0.01" class="form-control" value="{{ old('sale_price') }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.stock')</label>
+                            <label>الكمية في المخزون</label>
                             <input type="number" name="stock" class="form-control" value="{{ old('stock') }}">
+                        </div>
+                         <div class="form-group">
+                            <label>الصورة</label>
+                            <input type="file" name="image" class="form-control image">
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> @lang('site.add')</button>
+                            <img src="{{ asset('uploads/product_images/default.png') }}" style="width: 100px" class="img-thumbnail image-preview" alt="صورة">
+                        </div>
+                        <div class="form-group">
+                                <label>الوصف </label>
+                                <textarea name="description" class="form-control ckeditor">{{ old('description') }}</textarea>
+                            </div>
+
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة</button>
                         </div>
 
-                    </form><!-- end of form -->
 
-                </div><!-- end of box body -->
+                    </form><!-- نهاية النموذج -->
 
-            </div><!-- end of box -->
+                </div><!-- نهاية جسم الصندوق -->
 
-        </section><!-- end of content -->
+            </div><!-- نهاية الصندوق -->
 
-    </div><!-- end of content wrapper -->
+        </section><!-- نهاية المحتوى -->
+
+    </div><!-- نهاية ملف المحتوى -->
 
 @endsection

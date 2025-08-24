@@ -6,10 +6,10 @@
 
         <section class="content-header">
 
-            <h1>@lang('site.dashboard')</h1>
+            <h1>الرئيسية</h1>
 
             <ol class="breadcrumb">
-                <li class="active"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</li>
+                <li class="active"><i class="fa fa-dashboard"></i> الرئيسية</li>
             </ol>
         </section>
 
@@ -23,12 +23,12 @@
                         <div class="inner">
                             <h3>{{ $categories_count }}</h3>
 
-                            <p>@lang('site.categories')</p>
+                            <p>التصنيفات</p>
                         </div>
                         <div class="icon">
                             <i class="ion ion-bag"></i>
                         </div>
-                        <a href="{{ route('dashboard.categories.index') }}" class="small-box-footer">@lang('site.read') <i class="fa fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('dashboard.categories.index') }}" class="small-box-footer">عرض <i class="fa fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
 
@@ -38,12 +38,12 @@
                         <div class="inner">
                             <h3>{{ $products_count }}</h3>
 
-                            <p>@lang('site.products')</p>
+                            <p>المنتجات</p>
                         </div>
                         <div class="icon">
                             <i class="ion ion-stats-bars"></i>
                         </div>
-                        <a href="{{ route('dashboard.products.index') }}" class="small-box-footer">@lang('site.read') <i class="fa fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('dashboard.products.index') }}" class="small-box-footer">عرض <i class="fa fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
 
@@ -53,12 +53,12 @@
                         <div class="inner">
                             <h3>{{ $clients_count }}</h3>
 
-                            <p>@lang('site.clients')</p>
+                            <p>العملاء</p>
                         </div>
                         <div class="icon">
                             <i class="fa fa-user"></i>
                         </div>
-                        <a href="{{ route('dashboard.clients.index') }}" class="small-box-footer">@lang('site.read') <i class="fa fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('dashboard.clients.index') }}" class="small-box-footer">عرض <i class="fa fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
 
@@ -68,12 +68,12 @@
                         <div class="inner">
                             <h3>{{ $users_count }}</h3>
 
-                            <p>@lang('site.users')</p>
+                            <p>المستخدمون</p>
                         </div>
                         <div class="icon">
                             <i class="fa fa-users"></i>
                         </div>
-                        <a href="{{ route('dashboard.users.index') }}" class="small-box-footer">@lang('site.read') <i class="fa fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('dashboard.users.index') }}" class="small-box-footer">عرض <i class="fa fa-arrow-circle-right"></i></a>
                     </div>
                 </div>
 
@@ -114,7 +114,7 @@
             ],
             xkey: 'ym',
             ykeys: ['sum'],
-            labels: ['@lang('site.total')'],
+            labels: ['الإجمالي'],
             lineWidth: 2,
             hideHover: 'auto',
             gridStrokeWidth: 0.4,

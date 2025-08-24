@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+Route::get('/custom-login', function() {
+    return view('auth.custom-login');
+})->name('custom-login');
 
 
 Route::get('/', function () {
@@ -10,7 +13,7 @@ Route::get('/', function () {
 
 Auth::routes(['register' => false]);
 
-Route::get('/home', 'HomeController@index')->name('home');
+// Route::get('/home', 'HomeController@index')->name('home');
 
 
 

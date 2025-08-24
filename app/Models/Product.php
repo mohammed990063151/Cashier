@@ -14,11 +14,13 @@ class Product extends Model
     protected $appends = ['image_path', 'profit_percent'];
 
 
-    public function getImagePathAttribute()
-    {
+  public function getImagePathAttribute()
+{
+    if ($this->image && file_exists(public_path('uploads/product_images/' . $this->image))) {
         return asset('uploads/product_images/' . $this->image);
-
-    }//end of image path attribute
+    }
+    return asset('uploads/product_images/default.png');
+}
 
     public function getProfitPercentAttribute()
     {
@@ -39,5 +41,6 @@ class Product extends Model
         return $this->belongsToMany(Order::class, 'product_order');
 
     }//end of orders
+
 
 }//end of model

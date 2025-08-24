@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\SaleInvoiceController;
 use App\Http\Controllers\Dashboard\SupplierController;
 use App\Http\Controllers\Dashboard\CashController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use \App\Livewire\Dashboard\Clients;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
 // Redirect root to dashboard
@@ -47,6 +48,8 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
 
     // Client routes
     Route::resource('clients', ClientController::class)->except(['show']);
+    // Route::get('clients', \App\Livewire\Dashboard\Clients::class)->name('clients.index');
+
     Route::resource('clients.orders', ClientOrderController::class)->except(['show']);
 
     // Order routes
@@ -91,6 +94,7 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
     // Dashboard Reports Controller
     Route::prefix('reports')->name('reports.')->group(function () {
         // Sales
+          Route::get('sales/detail', [DashboardController::class, 'salesDetail'])->name('sales_detail');
         Route::get('sales/detail', [DashboardController::class, 'salesDetail'])->name('sales.detail');
         Route::get('sales/summary', [DashboardController::class, 'salesSummary'])->name('sales.summary');
         Route::get('sales/by_category', [DashboardController::class, 'salesByCategory'])->name('sales.by_category');
@@ -98,23 +102,27 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
         Route::get('sales/all_invoices', [DashboardController::class, 'salesAllInvoices'])->name('sales.all_invoices');
 
         // Profits
+         Route::get('profits', [DashboardController::class, 'profitsDetail'])->name('profits');
         Route::get('profits/detail', [DashboardController::class, 'profitsDetail'])->name('profits.detail');
         Route::get('profits/summary', [DashboardController::class, 'profitsSummary'])->name('profits.summary');
         Route::get('profits/by_products', [DashboardController::class, 'profitsByProducts'])->name('profits.by_products');
 
         // Clients
+          Route::get('clients_remaining', [DashboardController::class, 'clientsRemaining'])->name('clients_remaining');
         Route::get('clients/remaining', [DashboardController::class, 'clientsRemaining'])->name('clients.remaining');
         Route::get('clients/invoices', [DashboardController::class, 'clientsInvoices'])->name('clients.invoices');
         Route::get('clients/products', [DashboardController::class, 'clientsProducts'])->name('clients.products');
         Route::get('clients/statement', [DashboardController::class, 'clientsStatement'])->name('clients.statement');
 
         // Suppliers
+         Route::get('suppliers_remaining', [DashboardController::class, 'suppliersRemaining'])->name('suppliers_remaining');
         Route::get('suppliers/remaining', [DashboardController::class, 'suppliersRemaining'])->name('suppliers.remaining');
         Route::get('suppliers/invoices', [DashboardController::class, 'suppliersInvoices'])->name('suppliers.invoices');
         Route::get('suppliers/products', [DashboardController::class, 'suppliersProducts'])->name('suppliers.products');
         Route::get('suppliers/statement', [DashboardController::class, 'suppliersStatement'])->name('suppliers.statement');
 
         // Purchases
+         Route::get('purchases_detail', [DashboardController::class, 'purchasesDetail'])->name('purchases_detail');
         Route::get('purchases/detail', [DashboardController::class, 'purchasesDetail'])->name('purchases.detail');
         Route::get('purchases/summary', [DashboardController::class, 'purchasesSummary'])->name('purchases.summary');
         Route::get('purchases/by_category', [DashboardController::class, 'purchasesByCategory'])->name('purchases.by_category');
@@ -122,11 +130,13 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
         Route::get('purchases/all_invoices', [DashboardController::class, 'purchasesAllInvoices'])->name('purchases.all_invoices');
 
         // Stock
+         Route::get('stock_detail', [DashboardController::class, 'stockDetail'])->name('stock_detail');
         Route::get('stock/detail', [DashboardController::class, 'stockDetail'])->name('stock.detail');
         Route::get('stock/summary', [DashboardController::class, 'stockSummary'])->name('stock.summary');
         Route::get('stock/price_changes', [DashboardController::class, 'stockPriceChanges'])->name('stock.price_changes');
 
         // Expenses
+          Route::get('expenses_detail', [DashboardController::class, 'expensesDetail'])->name('expenses_detail');
         Route::get('expenses/detail', [DashboardController::class, 'expensesDetail'])->name('expenses.detail');
         Route::get('expenses/summary', [DashboardController::class, 'expensesSummary'])->name('expenses.summary');
 

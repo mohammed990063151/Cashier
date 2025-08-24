@@ -31,12 +31,6 @@ class CategoryController extends Controller
     {
         $rules = [];
 
-        foreach (config('translatable.locales') as $locale) {
-
-            $rules += [$locale . '.name' => ['required', Rule::unique('category_translations', 'name')]];
-
-        }//end of for each
-
         $request->validate($rules);
 
         Category::create($request->all());

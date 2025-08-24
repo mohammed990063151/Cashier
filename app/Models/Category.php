@@ -10,7 +10,7 @@ class Category extends Model
     // use Translatable;
 
     protected $guarded = [];
-    public $translatedAttributes = ['name'];
+    // public $translatedAttributes = ['name'];
 
     public function products()
     {

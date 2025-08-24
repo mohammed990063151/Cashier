@@ -1,5 +1,6 @@
 <?php
 
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -55,7 +56,10 @@ class LaratrustSeeder extends Seeder
             ]);
 
             // ربط المستخدم بالدور
-            $user->roles()->attach($role->id);
+           // ربط المستخدمين المخصصين بالصلاحيات
+$user->permissions()->syncWithPivotValues($permissions, ['user_type' => User::class]);
+
+
         }
 
         // إنشاء مستخدمين مع صلاحيات مخصصة
@@ -79,7 +83,8 @@ class LaratrustSeeder extends Seeder
                     ])->id;
                 }
             }
-            $user->permissions()->sync($permissions);
+            $user->permissions()->syncWithPivotValues($permissions, ['user_type' => User::class]);
+
         }
     }
 
