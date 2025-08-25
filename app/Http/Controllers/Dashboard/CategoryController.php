@@ -34,7 +34,7 @@ class CategoryController extends Controller
         $request->validate($rules);
 
         Category::create($request->all());
-        session()->flash('success', __('site.added_successfully'));
+        session()->flash('success', __('تم الإضافة بنجاح'));
         return redirect()->route('dashboard.categories.index');
 
     }//end of store
@@ -58,7 +58,7 @@ class CategoryController extends Controller
         $request->validate($rules);
 
         $category->update($request->all());
-        session()->flash('success', __('site.updated_successfully'));
+        session()->flash('success', __('تم التعديل بنجاح'));
         return redirect()->route('dashboard.categories.index');
 
     }//end of update
@@ -66,7 +66,7 @@ class CategoryController extends Controller
     public function destroy(Category $category)
     {
         $category->delete();
-        session()->flash('success', __('site.deleted_successfully'));
+        session()->flash('success', __('تم الحذف بنجاح'));
         return redirect()->route('dashboard.categories.index');
 
     }//end of destroy

@@ -74,7 +74,7 @@ class ProductController extends Controller
         }//end of if
 
         Product::create($request_data);
-        session()->flash('success', __('site.added_successfully'));
+        session()->flash('success', __('تم الإضافة بنجاح'));
         return redirect()->route('dashboard.products.index');
 
     }//end of store
@@ -128,7 +128,7 @@ class ProductController extends Controller
         }//end of if
 
         $product->update($request_data);
-        session()->flash('success', __('site.updated_successfully'));
+        session()->flash('success', __('تم التعديل بنجاح'));
         return redirect()->route('dashboard.products.index');
 
     }//end of update
@@ -142,7 +142,7 @@ class ProductController extends Controller
         }//end of if
 
         $product->delete();
-        session()->flash('success', __('site.deleted_successfully'));
+        session()->flash('success', __('تم الحذف بنجاح'));
         return redirect()->route('dashboard.products.index');
 
     }//end of destroy

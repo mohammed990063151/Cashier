@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Dashboard\Client;
-
+use Illuminate\Support\Str;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Order;
@@ -15,23 +15,57 @@ class OrderController extends Controller
     public function create(Client $client)
     {
         $categories = Category::with('products')->get();
-        $orders = $client->orders()->with('products')->paginate(5);
-        return view('dashboard.clients.orders.create', compact( 'client', 'categories', 'orders'));
+
+    // العميل الافتراضي
+    $client = $this->getDefaultClient();
+
+    $orders = $client->orders()->with('products')->paginate(5);
+
+    return view('dashboard.clients.orders.create', compact('client', 'categories', 'orders'));
 
     }//end of create
 
-    public function store(Request $request, Client $client)
-    {
-        $request->validate([
-            'products' => 'required|array',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'products' => 'required|array',
+    ]);
 
-        $this->attach_order($request, $client);
+    $client = $this->getDefaultClient();
 
-        session()->flash('success', __('site.added_successfully'));
-        return redirect()->route('dashboard.orders.index');
+    // توليد رقم طلب فريد
+    $orderNumber = $this->generateUniqueOrderNumber();
 
-    }//end of store
+    // تمرير الرقم الفريد عند إضافة الطلب
+    $this->attach_order($request, $client, $orderNumber);
+
+    session()->flash('success', __('تم الإضافة بنجاح'));
+    return redirect()->route('dashboard.orders.index');
+}
+
+/**
+ * توليد رقم طلب فريد بصيغة SU-XXXX
+ */
+protected function generateUniqueOrderNumber()
+{
+    do {
+       $randomNumber = 'SU-' . mt_rand(10000, 99999); // مثال: SU-A1B2
+    } while (\App\Models\Order::where('order_number', $randomNumber)->exists());
+
+    return $randomNumber;
+}
+
+    private function getDefaultClient()
+{
+    $client = Client::firstOrCreate(
+        ['name' => 'زبون مباشر'],
+       [
+        'phone' => '0912345678',
+        'address' => '-', // قيمة افتراضية
+    ]
+    );
+    return $client;
+}
 
     public function edit(Client $client, Order $order)
     {
@@ -49,16 +83,18 @@ class OrderController extends Controller
 
         $this->detach_order($order);
 
-        $this->attach_order($request, $client);
+        $this->attach_order($request, $client , $order->order_number);
 
-        session()->flash('success', __('site.updated_successfully'));
+        session()->flash('success', __('تم التعديل بنجاح'));
         return redirect()->route('dashboard.orders.index');
 
     }//end of update
 
-    private function attach_order($request, $client)
+    private function attach_order($request, $client ,$orderNumber = null)
     {
-        $order = $client->orders()->create([]);
+        $order = $client->orders()->create([
+            'order_number' => $orderNumber,
+        ]);
 
         $order->products()->attach($request->products);
 

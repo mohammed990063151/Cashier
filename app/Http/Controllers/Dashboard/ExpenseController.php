@@ -29,7 +29,7 @@ class ExpenseController extends Controller
         ]);
 
         Expense::create($request->except('_token'));
-        session()->flash('success', __('site.added_successfully'));
+        session()->flash('success', __('تم الإضافة بنجاح'));
         return redirect()->route('dashboard.expenses.index');
     }
 

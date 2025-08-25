@@ -6,12 +6,12 @@
 
         <section class="content-header">
 
-            <h1>@lang('site.edit_order')</h1>
+            <h1>تعديل الطلب</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.clients.index') }}">@lang('site.clients')</a></li>
-                <li class="active">@lang('site.edit_order')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.clients.index') }}">العملاء</a></li>
+                <li class="active">تعديل الطلب</li>
             </ol>
         </section>
 
@@ -25,9 +25,9 @@
 
                         <div class="box-header">
 
-                            <h3 class="box-title" style="margin-bottom: 10px">@lang('site.categories')</h3>
+                            <h3 class="box-title" style="margin-bottom: 10px">الفئات</h3>
 
-                        </div><!-- end of box header -->
+                        </div><!-- نهاية رأس الصندوق -->
 
                         <div class="box-body">
 
@@ -51,10 +51,10 @@
 
                                                     <table class="table table-hover">
                                                         <tr>
-                                                            <th>@lang('site.name')</th>
-                                                            <th>@lang('site.stock')</th>
-                                                            <th>@lang('site.price')</th>
-                                                            <th>@lang('site.add')</th>
+                                                            <th>الاسم</th>
+                                                            <th>المخزون</th>
+                                                            <th>السعر</th>
+                                                            <th>إضافة</th>
                                                         </tr>
 
                                                         @foreach ($category->products as $product)
@@ -75,27 +75,27 @@
                                                             </tr>
                                                         @endforeach
 
-                                                    </table><!-- end of table -->
+                                                    </table><!-- نهاية الجدول -->
 
                                                 @else
-                                                    <h5>@lang('site.no_records')</h5>
+                                                    <h5>لا توجد سجلات</h5>
                                                 @endif
 
-                                            </div><!-- end of panel body -->
+                                            </div><!-- نهاية جسم البانل -->
 
-                                        </div><!-- end of panel collapse -->
+                                        </div><!-- نهاية الانهيار -->
 
-                                    </div><!-- end of panel primary -->
+                                    </div><!-- نهاية البانل -->
 
-                                </div><!-- end of panel group -->
+                                </div><!-- نهاية المجموعة -->
 
                             @endforeach
 
-                        </div><!-- end of box body -->
+                        </div><!-- نهاية جسم الصندوق -->
 
-                    </div><!-- end of box -->
+                    </div><!-- نهاية الصندوق -->
 
-                </div><!-- end of col -->
+                </div><!-- نهاية العمود -->
 
                 <div class="col-md-6">
 
@@ -103,9 +103,9 @@
 
                         <div class="box-header">
 
-                            <h3 class="box-title">@lang('site.orders')</h3>
+                            <h3 class="box-title">الطلبات</h3>
 
-                        </div><!-- end of box header -->
+                        </div><!-- نهاية رأس الصندوق -->
 
                         <div class="box-body">
 
@@ -119,9 +119,9 @@
                                 <table class="table table-hover">
                                     <thead>
                                     <tr>
-                                        <th>@lang('site.product')</th>
-                                        <th>@lang('site.quantity')</th>
-                                        <th>@lang('site.price')</th>
+                                        <th>المنتج</th>
+                                        <th>الكمية</th>
+                                        <th>السعر</th>
                                     </tr>
                                     </thead>
 
@@ -140,17 +140,17 @@
 
                                     </tbody>
 
-                                </table><!-- end of table -->
+                                </table><!-- نهاية الجدول -->
 
-                                <h4>@lang('site.total') : <span class="total-price">{{ number_format($order->total_price, 2) }}</span></h4>
+                                <h4>الإجمالي: <span class="total-price">{{ number_format($order->total_price, 2) }}</span></h4>
 
-                                <button class="btn btn-primary btn-block" id="form-btn"><i class="fa fa-edit"></i> @lang('site.edit_order')</button>
+                                <button class="btn btn-primary btn-block" id="form-btn"><i class="fa fa-edit"></i> تعديل الطلب</button>
 
-                            </form><!-- end of form -->
+                            </form><!-- نهاية النموذج -->
 
-                        </div><!-- end of box body -->
+                        </div><!-- نهاية جسم الصندوق -->
 
-                    </div><!-- end of box -->
+                    </div><!-- نهاية الصندوق -->
 
                     @if ($client->orders->count() > 0)
 
@@ -158,11 +158,11 @@
 
                             <div class="box-header">
 
-                                <h3 class="box-title" style="margin-bottom: 10px">@lang('site.previous_orders')
+                                <h3 class="box-title" style="margin-bottom: 10px">الطلبات السابقة
                                     <small>{{ $orders->total() }}</small>
                                 </h3>
 
-                            </div><!-- end of box header -->
+                            </div><!-- نهاية رأس الصندوق -->
 
                             <div class="box-body">
 
@@ -188,30 +188,30 @@
                                                         @endforeach
                                                     </ul>
 
-                                                </div><!-- end of panel body -->
+                                                </div><!-- نهاية جسم البانل -->
 
-                                            </div><!-- end of panel collapse -->
+                                            </div><!-- نهاية الانهيار -->
 
-                                        </div><!-- end of panel primary -->
+                                        </div><!-- نهاية البانل -->
 
-                                    </div><!-- end of panel group -->
+                                    </div><!-- نهاية المجموعة -->
 
                                 @endforeach
 
                                 {{ $orders->links() }}
 
-                            </div><!-- end of box body -->
+                            </div><!-- نهاية جسم الصندوق -->
 
-                        </div><!-- end of box -->
+                        </div><!-- نهاية الصندوق -->
 
                     @endif
 
-                </div><!-- end of col -->
+                </div><!-- نهاية العمود -->
 
-            </div><!-- end of row -->
+            </div><!-- نهاية الصف -->
 
-        </section><!-- end of content -->
+        </section><!-- نهاية المحتوى -->
 
-    </div><!-- end of content wrapper -->
+    </div><!-- نهاية حاوية المحتوى -->
 
 @endsection

@@ -6,12 +6,12 @@
 
         <section class="content-header">
 
-            <h1>@lang('site.add_order')</h1>
+            <h1>إضافة طلب</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.clients.index') }}">@lang('site.clients')</a></li>
-                <li class="active">@lang('site.add_order')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.clients.index') }}">العملاء</a></li>
+                <li class="active">إضافة طلب</li>
             </ol>
         </section>
 
@@ -25,14 +25,14 @@
 
                         <div class="box-header">
 
-                            <h3 class="box-title" style="margin-bottom: 10px">@lang('site.categories')</h3>
+                            <h3 class="box-title" style="margin-bottom: 10px">الفئات</h3>
 
                         </div><!-- end of box header -->
 
                         <div class="box-body">
 
                             @foreach ($categories as $category)
-                                
+
                                 <div class="panel-group">
 
                                     <div class="panel panel-info">
@@ -51,10 +51,10 @@
 
                                                     <table class="table table-hover">
                                                         <tr>
-                                                            <th>@lang('site.name')</th>
-                                                            <th>@lang('site.stock')</th>
-                                                            <th>@lang('site.price')</th>
-                                                            <th>@lang('site.add')</th>
+                                                            <th>الاسم</th>
+                                                            <th>المخزون</th>
+                                                            <th>السعر</th>
+                                                            <th>إضافة</th>
                                                         </tr>
 
                                                         @foreach ($category->products as $product)
@@ -78,7 +78,7 @@
                                                     </table><!-- end of table -->
 
                                                 @else
-                                                    <h5>@lang('site.no_records')</h5>
+                                                    <h5>لا توجد سجلات</h5>
                                                 @endif
 
                                             </div><!-- end of panel body -->
@@ -103,7 +103,7 @@
 
                         <div class="box-header">
 
-                            <h3 class="box-title">@lang('site.orders')</h3>
+                            <h3 class="box-title">الطلبات</h3>
 
                         </div><!-- end of box header -->
 
@@ -119,22 +119,21 @@
                                 <table class="table table-hover">
                                     <thead>
                                     <tr>
-                                        <th>@lang('site.product')</th>
-                                        <th>@lang('site.quantity')</th>
-                                        <th>@lang('site.price')</th>
+                                        <th>المنتج</th>
+                                        <th>الكمية</th>
+                                        <th>السعر</th>
                                     </tr>
                                     </thead>
 
                                     <tbody class="order-list">
 
-
                                     </tbody>
 
                                 </table><!-- end of table -->
 
-                                <h4>@lang('site.total') : <span class="total-price">0</span></h4>
+                                <h4>الإجمالي: <span class="total-price">0</span></h4>
 
-                                <button class="btn btn-primary btn-block disabled" id="add-order-form-btn"><i class="fa fa-plus"></i> @lang('site.add_order')</button>
+                                <button class="btn btn-primary btn-block disabled" id="add-order-form-btn"><i class="fa fa-plus"></i> إضافة الطلب</button>
 
                             </form>
 
@@ -148,7 +147,7 @@
 
                             <div class="box-header">
 
-                                <h3 class="box-title" style="margin-bottom: 10px">@lang('site.previous_orders')
+                                <h3 class="box-title" style="margin-bottom: 10px">الطلبات السابقة
                                     <small>{{ $orders->total() }}</small>
                                 </h3>
 

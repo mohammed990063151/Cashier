@@ -76,7 +76,7 @@ class UserController extends Controller
         $user->attachRole('admin');
         $user->syncPermissions($request->permissions);
 
-        session()->flash('success', __('site.added_successfully'));
+        session()->flash('success', __('تم الإضافة بنجاح'));
         return redirect()->route('dashboard.users.index');
 
     }//end of store
@@ -122,7 +122,7 @@ class UserController extends Controller
         $user->update($request_data);
 
         $user->syncPermissions($request->permissions);
-        session()->flash('success', __('site.updated_successfully'));
+        session()->flash('success', __('تم التعديل بنجاح'));
         return redirect()->route('dashboard.users.index');
 
     }//end of update
@@ -137,7 +137,7 @@ class UserController extends Controller
         }//end of if
 
         $user->delete();
-        session()->flash('success', __('site.deleted_successfully'));
+        session()->flash('success', __('تم الحذف بنجاح'));
         return redirect()->route('dashboard.users.index');
 
     }//end of destroy

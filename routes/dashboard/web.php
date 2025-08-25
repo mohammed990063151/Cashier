@@ -52,8 +52,12 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
 
     Route::resource('clients.orders', ClientOrderController::class)->except(['show']);
 
+    Route::get('direct-sale', [ClientOrderController::class, 'create'])->name('direct-sale');
+Route::post('direct-sale', [ClientOrderController::class, 'store'])->name('direct-sale.store');
+
     // Order routes
     Route::resource('orders', OrderController::class);
+    Route::get('orders/{order}/pdf', [OrderController::class, 'generatePdf'])->name('orders.pdf');
     Route::get('orders/{order}/products', [OrderController::class, 'products'])->name('orders.products');
 
     // User routes
