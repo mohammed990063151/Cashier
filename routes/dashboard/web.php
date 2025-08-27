@@ -18,6 +18,7 @@ use App\Http\Controllers\Dashboard\SaleInvoiceController;
 use App\Http\Controllers\Dashboard\SupplierController;
 use App\Http\Controllers\Dashboard\CashController;
 use App\Http\Controllers\Dashboard\DashboardController;
+use App\Http\Controllers\Dashboard\PaymentController;
 use \App\Livewire\Dashboard\Clients;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
@@ -59,6 +60,12 @@ Route::post('direct-sale', [ClientOrderController::class, 'store'])->name('direc
     Route::resource('orders', OrderController::class);
     Route::get('orders/{order}/pdf', [OrderController::class, 'generatePdf'])->name('orders.pdf');
     Route::get('orders/{order}/products', [OrderController::class, 'products'])->name('orders.products');
+    Route::get('/dashboard/orders/{order}', [OrderController::class, 'showAjax'])->name('dashboard.orders.showAjax');
+
+ Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
+    // Route لتحميل المدفوعات عبر AJAX
+Route::get('orders/{order}/payments', [PaymentController::class, 'showPayments'])->name('dashboard.orders.payments');
 
     // User routes
     Route::resource('users', UserController::class)->except(['show']);

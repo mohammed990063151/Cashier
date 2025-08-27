@@ -16,7 +16,7 @@ class CreateRevenuesTable extends Migration
         Schema::create('revenues', function (Blueprint $table) {
             $table->increments('id');
             $table->string('source')->nullable(); // مثال: بيع منتجات
-            $table->decimal('amount', 10, 2);
+            $table->decimal('amount', 15, 2);
             $table->text('note')->nullable();
             $table->timestamps();
         });

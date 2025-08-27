@@ -18,7 +18,7 @@ class CreateSaleInvoicesTable extends Migration
     $table->string('invoice_number')->unique();
     $table->unsignedInteger('client_id'); 
     $table->date('invoice_date');
-    $table->decimal('total_amount', 12, 2)->default(0);
+    $table->decimal('total_amount', 15, 2)->default(0);
     $table->timestamps();
 
     $table->foreign('client_id')->references('id')->on('clients')->onDelete('cascade');

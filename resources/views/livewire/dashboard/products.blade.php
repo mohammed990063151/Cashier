@@ -24,7 +24,7 @@
 
                 <div class="row">
                     <div class="col-md-4">
-                    <input type="text" id="searchInput" wire:model.debounce.500ms="search" placeholder="بحث في كل الأعمدة" class="form-control">
+                        <input type="text" id="searchInput" wire:model.debounce.500ms="search" placeholder="بحث في كل الأعمدة" class="form-control">
 
 
 
@@ -79,7 +79,12 @@
                             <td>{{ $product->name ?? "-" }}</td>
                             <td>{!! $product->description ?? "-" !!}</td>
                             <td>{{ $product->category->name }}</td>
-                            <td><img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail"></td>
+                            <td>
+                                <img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail" alt="صورة المنتج">
+                            </td>
+
+
+
                             <td>{{ $product->purchase_price }}</td>
                             <td>{{ $product->sale_price }}</td>
                             <td>{{ $product->profit_percent }} %</td>
@@ -117,107 +122,107 @@
                 <div class="modal fade" id="productModal" tabindex="-1" role="dialog" aria-labelledby="productModalLabel" aria-hidden="true" wire:ignore.self>
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
-                        <div class="modal-header" style="background-color: {{ $editMode ? '#007bff' : 'orange' }}; color: white;">
-                            <h3 class="modal-title" id="productModalLabel">
-                                {{ $editMode ? 'تعديل المنتج' : 'إضافة منتج' }}
-                            </h3>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-
-
-                        <div class="modal-body">
-
-                            <div class="form-group">
-                                <label>القسم</label>
-                                <select wire:model="category_id" class="form-control">
-                                    <option value="">اختر القسم</option>
-                                    @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('category_id') <span class="text-danger">{{ $message }}</span> @enderror
+                            <div class="modal-header" style="background-color: {{ $editMode ? '#007bff' : 'orange' }}; color: white;">
+                                <h3 class="modal-title" id="productModalLabel">
+                                    {{ $editMode ? 'تعديل المنتج' : 'إضافة منتج' }}
+                                </h3>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
                             </div>
 
-                            <div class="form-group">
-                                <label>الاسم</label>
-                                <input wire:model.defer="name" type="text" class="form-control">
-                                @error('name') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
 
-                            <div class="form-group">
-                                <label>الوصف</label>
-                                <textarea wire:model.defer="description" class="form-control"></textarea>
-                                @error('description') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
+                            <div class="modal-body">
 
-                            <div class="form-group">
-                                <label>سعر الشراء</label>
-                                <input wire:model.defer="purchase_price" type="number" class="form-control">
-                                @error('purchase_price') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
+                                <div class="form-group">
+                                    <label>القسم</label>
+                                    <select wire:model="category_id" class="form-control">
+                                        <option value="">اختر القسم</option>
+                                        @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('category_id') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
 
-                            <div class="form-group">
-                                <label>سعر البيع</label>
-                                <input wire:model.defer="sale_price" type="number" class="form-control">
-                                @error('sale_price') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
+                                <div class="form-group">
+                                    <label>الاسم</label>
+                                    <input wire:model.defer="name" type="text" class="form-control">
+                                    @error('name') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
 
-                            <div class="form-group">
-                                <label>المخزون</label>
-                                <input wire:model.defer="stock" type="number" class="form-control">
-                                @error('stock') <span class="text-danger">{{ $message }}</span> @enderror
-                            </div>
+                                <div class="form-group">
+                                    <label>الوصف</label>
+                                    <textarea wire:model.defer="description" class="form-control"></textarea>
+                                    @error('description') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
 
-                            {{-- <div class="form-group">
+                                <div class="form-group">
+                                    <label>سعر الشراء</label>
+                                    <input wire:model.defer="purchase_price" type="number" class="form-control">
+                                    @error('purchase_price') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label>سعر البيع</label>
+                                    <input wire:model.defer="sale_price" type="number" class="form-control">
+                                    @error('sale_price') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label>المخزون</label>
+                                    <input wire:model.defer="stock" type="number" class="form-control">
+                                    @error('stock') <span class="text-danger">{{ $message }}</span> @enderror
+                                </div>
+
+                                {{-- <div class="form-group">
                                     <label>الصورة</label>
                                     <input wire:model="image" type="file" class="form-control">
                                     @error('image') <span class="text-danger">{{ $message }}</span> @enderror
 
-                            @if ($image)
-                            <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
-                            @endif
-                            @if ($image)
-                            <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
-                            @endif
+                                @if ($image)
+                                <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
+                                @endif
+                                @if ($image)
+                                <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
+                                @endif
 
-                        </div> --}}
-                        <div class="form-group">
-                            <label>الصورة</label>
-                            <input wire:model="image" type="file" class="form-control">
-                            @error('image') <span class="text-danger">{{ $message }}</span> @enderror
+                            </div> --}}
+                            <div class="form-group">
+                                <label>الصورة</label>
+                                <input wire:model="image" type="file" class="form-control">
+                                @error('image') <span class="text-danger">{{ $message }}</span> @enderror
 
-                            @if ($image instanceof \Livewire\TemporaryUploadedFile)
-                            <!-- الصورة الجديدة عند رفع ملف -->
-                            <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
-                            @elseif($editMode && $productId)
-                            <!-- عرض الصورة القديمة عند التعديل -->
-                            @php
-                            $oldImage = \App\Models\Product::find($productId)->image ?? null;
-                            @endphp
-                            @if($oldImage)
-                            <img src="{{ asset('uploads/product_images/' . $oldImage) }}" width="100" class="img-thumbnail mt-2">
-                            @endif
-                            @endif
+                                @if ($image instanceof \Livewire\TemporaryUploadedFile)
+                                <!-- الصورة الجديدة عند رفع ملف -->
+                                <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
+                                @elseif($editMode && $productId)
+                                <!-- عرض الصورة القديمة عند التعديل -->
+                                @php
+                                $oldImage = \App\Models\Product::find($productId)->image ?? null;
+                                @endphp
+                                @if($oldImage)
+                                <img src="{{ asset('uploads/product_images/' . $oldImage) }}" width="100" class="img-thumbnail mt-2">
+                                @endif
+                                @endif
+                            </div>
+
+
                         </div>
 
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-                        <button wire:click.prevent="{{ $editMode ? 'update' : 'store' }}" class="btn btn-primary">
-                            {{ $editMode ? 'تحديث' : 'إضافة' }}
-                        </button>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+                            <button wire:click.prevent="{{ $editMode ? 'update' : 'store' }}" class="btn btn-primary">
+                                {{ $editMode ? 'تحديث' : 'إضافة' }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+
+
         </div>
-
-
-
-</div>
 </div>
 
 <!-- Button to open modal -->
@@ -242,18 +247,19 @@
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const input = document.getElementById('searchInput');
-    const table = document.getElementById('productsTable');
-    const rows = table.querySelectorAll('tbody tr');
-    input.addEventListener('keyup', function() {
-        const filter = input.value.toLowerCase();
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('searchInput');
+        const table = document.getElementById('productsTable');
+        const rows = table.querySelectorAll('tbody tr');
+        input.addEventListener('keyup', function() {
+            const filter = input.value.toLowerCase();
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
         });
     });
-});
+
 </script>
 
 @endpush

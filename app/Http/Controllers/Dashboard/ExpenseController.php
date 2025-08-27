@@ -13,11 +13,20 @@ class ExpenseController extends Controller
         $expenses = Expense::latest()->paginate(20);
         return view('expenses.index', compact('expenses'));
     }
+public function edit($id)
+{
+    // جلب المصروف حسب المعرف
+    $expense = Expense::findOrFail($id);
+
+    // تمرير البيانات إلى صفحة التعديل
+    return view('expenses.edit', compact('expense'));
+}
 
     public function create()
     {
         return view('expenses.create');
     }
+
 
     public function store(Request $request)
     {

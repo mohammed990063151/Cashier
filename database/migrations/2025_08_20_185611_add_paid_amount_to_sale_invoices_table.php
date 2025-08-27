@@ -14,7 +14,7 @@ class AddPaidAmountToSaleInvoicesTable extends Migration
    public function up()
 {
     Schema::table('sale_invoices', function($table) {
-        $table->decimal('paid_amount', 10, 2)->default(0);
+        $table->decimal('paid_amount', 15, 2)->default(0);
     });
 }
 

@@ -2,216 +2,345 @@
 
 @section('content')
 
-    <div class="content-wrapper">
+<div class="content-wrapper">
 
-        <section class="content-header">
+    <section class="content-header">
 
-            <h1>تعديل الطلب</h1>
+        <h1>تعديل الطلب</h1>
 
-            <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
-                <li><a href="{{ route('dashboard.clients.index') }}">العملاء</a></li>
-                <li class="active">تعديل الطلب</li>
-            </ol>
-        </section>
+        <ol class="breadcrumb">
+            <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+            <li><a href="{{ route('dashboard.clients.index') }}">العملاء</a></li>
+            <li class="active">تعديل الطلب</li>
+        </ol>
+    </section>
 
-        <section class="content">
+    <section class="content">
 
-            <div class="row">
+        <div class="row">
 
-                <div class="col-md-6">
+            <div class="col-md-6">
 
-                    <div class="box box-primary">
+                <div class="box box-primary">
 
-                        <div class="box-header">
+                    <div class="box-header">
 
-                            <h3 class="box-title" style="margin-bottom: 10px">الفئات</h3>
+                        <h3 class="box-title" style="margin-bottom: 10px">الفئات</h3>
 
-                        </div><!-- نهاية رأس الصندوق -->
+                    </div><!-- نهاية رأس الصندوق -->
 
-                        <div class="box-body">
+                    <div class="box-body">
 
-                            @foreach ($categories as $category)
+                        @foreach ($categories as $category)
 
-                                <div class="panel-group">
+                        <div class="panel-group">
 
-                                    <div class="panel panel-info">
+                            <div class="panel panel-info">
 
-                                        <div class="panel-heading">
-                                            <h4 class="panel-title">
-                                                <a data-toggle="collapse" href="#{{ str_replace(' ', '-', $category->name) }}">{{ $category->name }}</a>
-                                            </h4>
-                                        </div>
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" href="#{{ str_replace(' ', '-', $category->name) }}">{{ $category->name }}</a>
+                                    </h4>
+                                </div>
 
-                                        <div id="{{ str_replace(' ', '-', $category->name) }}" class="panel-collapse collapse">
+                                <div id="{{ str_replace(' ', '-', $category->name) }}" class="panel-collapse collapse">
 
-                                            <div class="panel-body">
+                                    <div class="panel-body">
 
-                                                @if ($category->products->count() > 0)
+                                        @if ($category->products->count() > 0)
 
-                                                    <table class="table table-hover">
-                                                        <tr>
-                                                            <th>الاسم</th>
-                                                            <th>المخزون</th>
-                                                            <th>السعر</th>
-                                                            <th>إضافة</th>
-                                                        </tr>
+                                        <table class="table table-hover">
+                                            <tr>
+                                                <th>الاسم</th>
+                                                <th>المخزون</th>
+                                                <th>السعر</th>
+                                                <th>إضافة</th>
+                                            </tr>
 
-                                                        @foreach ($category->products as $product)
-                                                            <tr>
-                                                                <td>{{ $product->name }}</td>
-                                                                <td>{{ $product->stock }}</td>
-                                                                <td>{{ $product->sale_price }}</td>
-                                                                <td>
-                                                                    <a href=""
-                                                                       id="product-{{ $product->id }}"
-                                                                       data-name="{{ $product->name }}"
-                                                                       data-id="{{ $product->id }}"
-                                                                       data-price="{{ $product->sale_price }}"
-                                                                       class="btn {{ in_array($product->id, $order->products->pluck('id')->toArray()) ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
-                                                                        <i class="fa fa-plus"></i>
-                                                                    </a>
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
+                                            @foreach ($category->products as $product)
+                                            <tr>
+                                                <td>{{ $product->name }}</td>
+                                                <td>{{ $product->stock }}</td>
+                                                <td>{{ $product->sale_price }}</td>
+                                                <td>
+                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" class="btn {{ in_array($product->id, $order->products->pluck('id')->toArray()) ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
+                                                        <i class="fa fa-plus"></i>
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            @endforeach
 
-                                                    </table><!-- نهاية الجدول -->
+                                        </table><!-- نهاية الجدول -->
 
-                                                @else
-                                                    <h5>لا توجد سجلات</h5>
-                                                @endif
+                                        @else
+                                        <h5>لا توجد سجلات</h5>
+                                        @endif
 
-                                            </div><!-- نهاية جسم البانل -->
+                                    </div><!-- نهاية جسم البانل -->
 
-                                        </div><!-- نهاية الانهيار -->
+                                </div><!-- نهاية الانهيار -->
 
-                                    </div><!-- نهاية البانل -->
+                            </div><!-- نهاية البانل -->
 
-                                </div><!-- نهاية المجموعة -->
+                        </div><!-- نهاية المجموعة -->
 
-                            @endforeach
+                        @endforeach
 
-                        </div><!-- نهاية جسم الصندوق -->
+                    </div><!-- نهاية جسم الصندوق -->
 
-                    </div><!-- نهاية الصندوق -->
+                </div><!-- نهاية الصندوق -->
 
-                </div><!-- نهاية العمود -->
+            </div><!-- نهاية العمود -->
 
-                <div class="col-md-6">
+            <div class="col-md-6">
 
-                    <div class="box box-primary">
+                <div class="box box-primary">
 
-                        <div class="box-header">
+                    <div class="box-header">
 
-                            <h3 class="box-title">الطلبات</h3>
+                        <h3 class="box-title">الطلبات</h3>
 
-                        </div><!-- نهاية رأس الصندوق -->
+                    </div><!-- نهاية رأس الصندوق -->
 
-                        <div class="box-body">
+                    <div class="box-body">
+                        @if(session('error'))
+                        <div id="error-alert" class="alert alert-danger text-center">
+                            {{ session('error') }}
+                        </div>
+                        @endif
+                        @include('partials._errors')
 
-                            @include('partials._errors')
+                        <form action="{{ route('dashboard.clients.orders.update', ['order' => $order->id, 'client' => $client->id]) }}" method="post">
 
-                            <form action="{{ route('dashboard.clients.orders.update', ['order' => $order->id, 'client' => $client->id]) }}" method="post">
+                            {{ csrf_field() }}
+                            {{ method_field('put') }}
 
-                                {{ csrf_field() }}
-                                {{ method_field('put') }}
-
-                                <table class="table table-hover">
-                                    <thead>
+                            <table class="table table-hover">
+                                <thead>
                                     <tr>
                                         <th>المنتج</th>
                                         <th>الكمية</th>
-                                        <th>السعر</th>
+                                        <th>سعر الوحد</th>
+                                        <th>الاجمالي</th>
                                     </tr>
-                                    </thead>
+                                </thead>
 
-                                    <tbody class="order-list">
+                                <tbody class="order-list">
 
                                     @foreach ($order->products as $product)
-                                        <tr>
-                                            <td>{{ $product->name }}</td>
-                                            <td><input type="number" name="products[{{ $product->id }}][quantity]" data-price="{{ number_format($product->sale_price, 2) }}" class="form-control input-sm product-quantity" min="1" value="{{ $product->pivot->quantity }}"></td>
-                                            <td class="product-price">{{ number_format($product->sale_price * $product->pivot->quantity, 2) }}</td>
-                                            <td>
-                                                <button class="btn btn-danger btn-sm remove-product-btn" data-id="{{ $product->id }}"><span class="fa fa-trash"></span></button>
-                                            </td>
-                                        </tr>
+                                    <tr>
+                                        <td>{{ $product->name }}</td>
+                                        <td>
+                                            <input type="number" name="products[{{ $product->id }}][quantity]" class="form-control input-sm product-quantity" min="1" value="{{ $product->pivot->quantity }}">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="products[{{ $product->id }}][sale_price]" class="form-control input-sm product-unit-price" min="1" step="1" value="{{ $product->pivot->sale_price }}">
+                                        </td>
+                                        <td>
+                                            <span class="product-price">{{ number_format($product->pivot->quantity * $product->pivot->sale_price, 2) }}</span>
+                                            <input type="hidden" name="products[{{ $product->id }}][total_price]" value="{{ $product->pivot->quantity * $product->pivot->sale_price }}">
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-danger btn-sm remove-product-btn" data-id="{{ $product->id }}"><span class="fa fa-trash"></span></button>
+
+                                        </td>
+                                    </tr>
                                     @endforeach
 
-                                    </tbody>
 
-                                </table><!-- نهاية الجدول -->
+                                </tbody>
 
-                                <h4>الإجمالي: <span class="total-price">{{ number_format($order->total_price, 2) }}</span></h4>
+                            </table><!-- نهاية الجدول -->
 
-                                <button class="btn btn-primary btn-block" id="form-btn"><i class="fa fa-edit"></i> تعديل الطلب</button>
+                            <h4>الإجمالي: <span class="total-price" style="color: #046b0a; font-weight: bold;">{{ number_format($order->total_price, 2) }}</span></h4>
 
-                            </form><!-- نهاية النموذج -->
+                            <div class="form-group">
+                                <label for="discount">الخصم</label>
+                                <input type="number" name="discount" id="discount" class="form-control" min="0" step="1" value="{{ $order->discount }}">
+                            </div>
 
-                        </div><!-- نهاية جسم الصندوق -->
 
-                    </div><!-- نهاية الصندوق -->
+                            <div class="form-group">
+                                <label>المتبقي:</label>
+                                <input type="text" name="remaining" id="remaining" class="form-control" readonly value="{{ number_format($order->remaining, 2) }}" style="color: #d50606; font-weight: bold;">
+                            </div>
 
-                    @if ($client->orders->count() > 0)
 
-                        <div class="box box-primary">
+                            <button class="btn btn-primary btn-block" id="add-order-form-btn"><i class="fa fa-edit"></i> تعديل الطلب</button>
+ {{-- <button class="btn btn-primary btn-block disabled" id="add-order-form-btn"><i class="fa fa-plus"></i> إضافة الطلب</button> --}}
+                        </form><!-- نهاية النموذج -->
 
-                            <div class="box-header">
+                    </div><!-- نهاية جسم الصندوق -->
 
-                                <h3 class="box-title" style="margin-bottom: 10px">الطلبات السابقة
-                                    <small>{{ $orders->total() }}</small>
-                                </h3>
+                </div><!-- نهاية الصندوق -->
 
-                            </div><!-- نهاية رأس الصندوق -->
+                @if ($client->orders->count() > 0)
 
-                            <div class="box-body">
+                <div class="box box-primary">
 
-                                @foreach ($orders as $order)
+                    <div class="box-header">
 
-                                    <div class="panel-group">
+                        <h3 class="box-title" style="margin-bottom: 10px">
+                            الطلبات السابقة
+                            <small>{{ $orders->total() }}</small>
+                        </h3>
 
-                                        <div class="panel panel-success">
+                    </div><!-- نهاية رأس الصندوق -->
 
-                                            <div class="panel-heading">
-                                                <h4 class="panel-title">
-                                                    <a data-toggle="collapse" href="#{{ $order->created_at->format('d-m-Y-s') }}">{{ $order->created_at->toFormattedDateString() }}</a>
-                                                </h4>
+                    <div class="box-body">
+
+                        @foreach ($orders as $order)
+
+                        <div class="panel-group">
+
+                            <div class="panel panel-success">
+
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a data-toggle="collapse" href="#order-{{ $order->id }}">
+                                            رقم الطلب# {{ $order->created_at->toFormattedDateString() }} - {{ $order->order_number  }}
+                                        </a>
+                                    </h4>
+                                </div>
+
+                                <div id="order-{{ $order->id  }}" class="panel-collapse collapse">
+
+                                    <div class="panel-body">
+
+                                        <!-- جدول المنتجات -->
+                                        <div class="table-responsive shadow rounded-lg border p-3 bg-white">
+                                            <table class="table table-hover table-bordered align-middle text-center mb-0">
+                                                <thead class="table-primary">
+                                                    <tr>
+                                                        <th class="fw-bold">المنتج</th>
+                                                        <th class="fw-bold">الكمية</th>
+                                                        <th class="fw-bold">سعر الوحدة</th>
+                                                        <th class="fw-bold">الإجمالي</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach ($order->products as $product)
+                                                    <tr>
+                                                        <td class="fw-bold text-start">{{ $product->name }}</td>
+                                                        <td>{{ $product->pivot->quantity }}</td>
+                                                        <td class="text-success fw-bold">{{ number_format($product->pivot->sale_price,2) }} ج.س</td>
+                                                        <td class="text-primary fw-bold">{{ number_format($product->pivot->sale_price * $product->pivot->quantity,2) }} ج.س</td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                                <tfoot>
+                                                    <tr>
+                                                        <th colspan="3" class="text-end fw-bold">الإجمالي الكلي:</th>
+                                                        <th class="text-danger fw-bold">
+                                                            {{ number_format($order->products->sum(fn($p) => $p->pivot->sale_price * $p->pivot->quantity),2) }} ج.س
+                                                        </th>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+
+  @php
+                $paid = $order->payments->sum('amount');
+            @endphp
+                                        <!-- معلومات الطلب -->
+                                        <div class="row mt-2">
+                                            <div class="col-md-3">
+                                                <strong>الإجمالي:</strong> {{ number_format($order->total_price,2) }} ج.س
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>الخصم:</strong> {{ number_format($order->discount,2) }} ج.س
+                                            </div>
+                                             <div class="col-md-3">
+                                                <strong>اجمالي المدفوع:</strong> {{ number_format($paid,2) }} ج.س
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>المتبقي:</strong> {{ number_format($order->remaining,2) }} ج.س
                                             </div>
 
-                                            <div id="{{ $order->created_at->format('d-m-Y-s') }}" class="panel-collapse collapse">
+                                        </div>
 
-                                                <div class="panel-body">
+                                    </div><!-- نهاية جسم البانل -->
 
-                                                    <ul class="list-group">
-                                                        @foreach ($order->products as $product)
-                                                            <li class="list-group-item">{{ $product->name }}</li>
-                                                        @endforeach
-                                                    </ul>
+                                </div><!-- نهاية الانهيار -->
 
-                                                </div><!-- نهاية جسم البانل -->
+                            </div><!-- نهاية البانل -->
 
-                                            </div><!-- نهاية الانهيار -->
+                        </div><!-- نهاية المجموعة -->
 
-                                        </div><!-- نهاية البانل -->
+                        @endforeach
 
-                                    </div><!-- نهاية المجموعة -->
+                        {{ $orders->links() }}
 
-                                @endforeach
+                    </div><!-- نهاية جسم الصندوق -->
 
-                                {{ $orders->links() }}
+                </div><!-- نهاية الصندوق -->
 
-                            </div><!-- نهاية جسم الصندوق -->
+                @endif
 
-                        </div><!-- نهاية الصندوق -->
+            </div><!-- نهاية العمود -->
 
-                    @endif
+        </div><!-- نهاية الصف -->
 
-                </div><!-- نهاية العمود -->
+    </section><!-- نهاية المحتوى -->
 
-            </div><!-- نهاية الصف -->
+</div><!-- نهاية حاوية المحتوى -->
+@push('scripts')
+{{-- <script>
+    $(document).ready(function() {
 
-        </section><!-- نهاية المحتوى -->
+        function calculateTotal() {
+            let total = 0;
 
-    </div><!-- نهاية حاوية المحتوى -->
+            $('.order-list tr').each(function() {
+                let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
+                let price = parseFloat($(this).find('.product-quantity').data('price')) || 0;
+                let productTotal = quantity * price;
+
+                $(this).find('.product-price').text(productTotal.toFixed(2));
+                total += productTotal;
+            });
+
+            $('.total-price').text(total.toFixed(2));
+
+            let discount = parseFloat($('#discount').val()) || 0;
+            let remaining = total - discount;
+
+            $('.remaining-price').text(remaining.toFixed(2));
+        }
+
+        // تحديث عند تغيير الكمية
+        $(document).on('input', '.product-quantity', function() {
+            calculateTotal();
+        });
+
+        // تحديث عند إدخال الخصم
+        $(document).on('input', '#discount', function() {
+            calculateTotal();
+        });
+
+        // حساب الإجمالي عند تحميل الصفحة
+        calculateTotal();
+    });
+
+</script> --}}
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let alertBox = document.getElementById('error-alert');
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.transition = "opacity 0.5s";
+                alertBox.style.opacity = "0";
+                setTimeout(() => alertBox.remove(), 500);
+            }, 5000); // تختفي بعد 3 ثواني
+        }
+    });
+
+</script>
+
+
+@endpush
 
 @endsection

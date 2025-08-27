@@ -5,13 +5,13 @@
 
     <section class="content-header">
         <h1>المصروفات
-            <small>إضافة</small>
+            <small>تعديل</small>
         </h1>
 
         <ol class="breadcrumb">
             <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
             <li><a href="{{ route('dashboard.expenses.index') }}">المصروفات</a></li>
-            <li class="active">إضافة</li>
+            <li class="active">تعديل</li>
         </ol>
     </section>
 
@@ -23,7 +23,7 @@
                 <div class="box box-primary">
 
                     <div class="box-header with-border">
-                        <h3 class="box-title">إضافة مصروف</h3>
+                        <h3 class="box-title">تعديل المصروف</h3>
                     </div><!-- end of box header -->
 
                     <div class="box-body">
@@ -38,34 +38,35 @@
                             </div>
                         @endif
 
-                        <form action="{{ route('dashboard.expenses.store') }}" method="POST">
+                        <form action="{{ route('dashboard.expenses.update', $expense->id) }}" method="POST">
                             @csrf
+                            @method('PUT')
 
                             <div class="form-group">
                                 <label>العنوان</label>
-                                <input type="text" name="title" class="form-control" required value="{{ old('title') }}">
+                                <input type="text" name="title" class="form-control" required value="{{ old('title', $expense->title) }}">
                             </div>
 
                             <div class="form-group">
                                 <label>المبلغ</label>
-                                <input type="number" step="0.01" name="amount" class="form-control" required value="{{ old('amount') }}">
+                                <input type="number" step="0.01" name="amount" class="form-control" required value="{{ old('amount', $expense->amount) }}">
                             </div>
 
                             <div class="form-group">
                                 <label>النوع</label>
                                 <select name="type" class="form-control" required>
-                                    <option value="operational">تشغيلي</option>
-                                    <option value="other">أخرى</option>
+                                    <option value="operational" {{ old('type', $expense->type) == 'operational' ? 'selected' : '' }}>تشغيلي</option>
+                                    <option value="other" {{ old('type', $expense->type) == 'other' ? 'selected' : '' }}>أخرى</option>
                                 </select>
                             </div>
 
                             <div class="form-group">
                                 <label>ملاحظة</label>
-                                <textarea name="note" class="form-control">{{ old('note') }}</textarea>
+                                <textarea name="note" class="form-control">{{ old('note', $expense->note) }}</textarea>
                             </div>
 
                             <div class="form-group text-center">
-                                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> حفظ</button>
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> تحديث</button>
                                 <a href="{{ route('dashboard.expenses.index') }}" class="btn btn-default"><i class="fa fa-arrow-left"></i> رجوع</a>
                             </div>
 

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\Dashboard;
+
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseInvoice;
 use App\Models\Supplier;
@@ -30,14 +31,14 @@ class PurchaseInvoiceController extends Controller
             'items.*.price'      => 'required|numeric|min:0',
         ]);
 
-    $total = \collect($request->items)->sum(function ($item) {
-    return $item['quantity'] * $item['price'];
-});
+        $total = \collect($request->items)->sum(function ($item) {
+            return $item['quantity'] * $item['price'];
+        });
 
-$invoice = PurchaseInvoice::create([
-    'supplier_id' => $request->supplier_id,
-    'total'       => $total,
-]);
+        $invoice = PurchaseInvoice::create([
+            'supplier_id' => $request->supplier_id,
+            'total'       => $total,
+        ]);
 
 
         foreach ($request->items as $item) {
@@ -49,7 +50,7 @@ $invoice = PurchaseInvoice::create([
         }
 
         return redirect()->route('purchase-invoices.show', $invoice->id)
-                         ->with('success', 'تم إنشاء الفاتورة بنجاح');
+            ->with('success', 'تم إنشاء الفاتورة بنجاح');
     }
 
     // عرض فاتورة معينة

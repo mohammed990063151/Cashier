@@ -14,7 +14,7 @@ class AddTotalReturnToSaleInvoicesTable extends Migration
    public function up()
 {
     Schema::table('sale_invoices', function (Blueprint $table) {
-        $table->decimal('total_return', 10, 2)->default(0);
+        $table->decimal('total_return', 15, 2)->default(0);
     });
 }
 

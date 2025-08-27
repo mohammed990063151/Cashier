@@ -27,6 +27,8 @@ class SupplierController extends Controller
             'address' => 'nullable|string',
             'balance' => 'nullable|numeric',
         ]);
+        
+
 
         Supplier::create($request->all());
 

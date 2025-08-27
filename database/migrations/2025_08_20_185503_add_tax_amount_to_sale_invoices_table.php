@@ -14,7 +14,7 @@ class AddTaxAmountToSaleInvoicesTable extends Migration
    public function up()
 {
     Schema::table('sale_invoices', function($table) {
-        $table->decimal('tax_amount', 10, 2)->default(0);
+        $table->decimal('tax_amount', 15, 2)->default(0);
     });
 }
 

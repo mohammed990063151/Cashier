@@ -31,38 +31,25 @@
                         <form action="{{ route('dashboard.orders.index') }}" method="get">
 
                             <div class="row">
-
-                                {{-- <div class="col-md-8">
-                                    <input type="text" name="search" class="form-control" placeholder="بحث" value="{{ request()->search }}">
-                                </div>
-
-                                <div class="col-md-4">
-                                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> بحث</button>
-                                </div>
-                                <div class="col-md-4">
-                                <a href="{{ route('dashboard.direct-sale') }}" class="btn btn-success">
-                                    <i class="fa fa-cash-register"></i> بيع مباشر
-                                </a>
-                                </div> --}}
                                 <di class="row g-2 align-items-center mb-3">
-    <!-- حقل البحث -->
-    <div class="col-md-6 col-sm-16">
-        <input type="text" name="search" class="form-control" placeholder="بحث" value="{{ request()->search }}">
-    </div>
+                                    <!-- حقل البحث -->
+                                    <div class="col-md-6 col-sm-16">
+                                        <input type="text" name="search" class="form-control" placeholder="بحث" value="{{ request()->search }}">
+                                    </div>
 
-    <!-- زر البحث -->
-    <div class="col-md-3 col-sm-3">
-        <button type="submit" class="btn btn-primary w-100">
-            <i class="fa fa-search"></i> بحث
-        </button>
-    </div>
+                                    <!-- زر البحث -->
+                                    <div class="col-md-3 col-sm-3">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fa fa-search"></i> بحث
+                                        </button>
+                                    </div>
 
-    <!-- زر البيع المباشر -->
-    <div class="col-md-3 col-sm-3">
-        <a href="{{ route('dashboard.direct-sale') }}" class="btn btn-success w-100">
-            <i class="fa fa-cash-register"></i> بيع مباشر
-        </a>
-    </div>
+                                    <!-- زر البيع المباشر -->
+                                    <div class="col-md-3 col-sm-3">
+                                        <a href="{{ route('dashboard.direct-sale') }}" class="btn btn-success w-100">
+                                            <i class="fa fa-cash-register"></i> بيع مباشر
+                                        </a>
+                                    </div>
 
 
 
@@ -80,8 +67,9 @@
                             <tr>
                                 <th>رقم الطلب</th>
                                 <th>اسم العميل</th>
-                                <th>السعر</th>
-                                {{-- <th>الحالة</th>--}}
+                                <th>اجمالي طلب</th>
+                                <th>الخصم</th>
+                                <th>المتبقي عليه</th>
                                 <th>تاريخ الإنشاء</th>
                                 <th>الإجراءات</th>
                             </tr>
@@ -90,18 +78,9 @@
                             <tr>
                                 <td>{{ $order->order_number }}</td>
                                 <td>{{ $order->client->name }}</td>
-                                <td>{{ number_format($order->total_price, 2) }}</td>
-                                {{--<td>--}}
-                                {{--<button--}}
-                                {{--data-status="{{ __('site.' . $order->status) }}"--}}
-                                {{--data-url="{{ route('dashboard.orders.update_status', $order->id) }}"--}}
-                                {{--data-method="put"--}}
-                                {{--data-available-status='["{{ __('site.processing') }}", "{{ __('site.finished') }}"]'--}}
-                                {{--class="order-status-btn btn {{ $order->status == 'processing' ? 'btn-warning' : 'btn-success disabled' }} btn-sm"--}}
-                                {{-->--}}
-                                {{--{{ __('site.' . $order->status) }}--}}
-                                {{--</button>--}}
-                                {{--</td>--}}
+                                <td style="color: #01941f; font-weight: bold;">{{ number_format($order->total_price, 2) }}</td>
+                                <td>{{ number_format($order->discount, 2) }}</td>
+                                <td style="color: #e74c3c; font-weight: bold;">{{ number_format($order->remaining, 2) }}</td>
                                 <td>{{ $order->created_at->toFormattedDateString() }}</td>
                                 <td>
                                     <button class="btn btn-primary btn-sm order-products" data-url="{{ route('dashboard.orders.products', $order->id) }}" data-method="get">
@@ -127,6 +106,12 @@
                                     @else
                                     <a href="#" class="btn btn-danger btn-sm" disabled><i class="fa fa-trash"></i> حذف</a>
                                     @endif
+<button type="button" class="btn btn-info btn-sm view-order-btn"
+        data-toggle="modal"
+        data-target="#orderModal"
+        data-order-id="{{ $order->id }}">
+    عرض الطلب
+</button>
 
                                 </td>
 
@@ -183,4 +168,52 @@
 
 </div><!-- end of content wrapper -->
 
+
+<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="orderModalLabel">تفاصيل الطلب</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" id="orderModalContent">
+        <!-- سيتم تحميل تفاصيل الطلب هنا -->
+        <p class="text-center">جارٍ تحميل البيانات...</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('.view-order-btn').on('click', function() {
+        var orderId = $(this).data('order-id');
+        var url = '/dashboard/orders/' + orderId; // رابط API أو Route يعيد HTML الطلب
+
+        $('#orderModalContent').html('<p class="text-center">جارٍ تحميل البيانات...</p>');
+
+        $.ajax({
+            url: url,
+            type: 'GET',
+            success: function(response) {
+                // ضع البيانات داخل المودال
+                $('#orderModalContent').html(response);
+            },
+            error: function() {
+                $('#orderModalContent').html('<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات</p>');
+            }
+        });
+    });
+});
+
+    </script>
+
+@endpush
 @endsection

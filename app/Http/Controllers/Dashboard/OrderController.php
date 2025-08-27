@@ -9,6 +9,32 @@ use App\Http\Controllers\Controller;
 use Mpdf\Mpdf;
 class OrderController extends Controller
 {
+
+
+
+public function show($id)
+{
+    $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
+
+    // حساب إجمالي الشراء: كمية كل منتج × سعر الشراء من جدول products
+    $totalPurchase = $order->products->sum(function ($product) {
+        return $product->pivot->quantity * $product->purchase_price;
+    });
+
+    // حساب إجمالي البيع: كمية كل منتج × سعر البيع من جدول products
+    $totalSale = $order->products->sum(function ($product) {
+        return $product->pivot->quantity * $product->pivot->sale_price;
+    });
+
+    // حساب الربح والمكسب بالنسبة المئوية
+    $profit = $totalSale - $totalPurchase;
+    $profitPercentage = $totalPurchase > 0 ? ($profit / $totalPurchase) * 100 : 0;
+
+    return view('dashboard.orders.order_details', compact(
+        'order', 'totalPurchase', 'totalSale', 'profit', 'profitPercentage'
+    ));
+}
+
     public function index(Request $request)
     {
        $search = $request->search;
@@ -82,5 +108,10 @@ public function generatePdf($orderId)
         return redirect()->route('dashboard.orders.index');
 
     }//end of order
+
+//     public function showAjax(Order $order)
+// {
+//     return view('dashboard.orders.order_details', compact('order'));
+// }
 
 }//end of controller

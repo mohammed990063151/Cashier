@@ -8,10 +8,15 @@ class PurchaseInvoice extends Model
 {
     protected $fillable = ['supplier_id', 'total'];
 
+    // public function items()
+    // {
+    //     return $this->hasMany(PurchaseInvoiceItem::class);
+    // }
     public function items()
-    {
-        return $this->hasMany(PurchaseInvoiceItem::class);
-    }
+{
+    return $this->hasMany(PurchaseItem::class, 'purchase_invoice_id');
+}
+
 
     public function supplier()
     {

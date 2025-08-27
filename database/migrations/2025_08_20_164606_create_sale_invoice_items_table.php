@@ -18,7 +18,7 @@ class CreateSaleInvoiceItemsTable extends Migration
     $table->unsignedInteger('sale_invoice_id'); // << هنا
     $table->unsignedInteger('product_id');
     $table->integer('quantity');
-    $table->decimal('price', 12, 2);
+    $table->decimal('price', 15, 2);
     $table->timestamps();
 
     $table->foreign('sale_invoice_id')->references('id')->on('sale_invoices')->onDelete('cascade');

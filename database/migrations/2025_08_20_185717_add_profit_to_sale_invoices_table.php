@@ -14,7 +14,7 @@ class AddProfitToSaleInvoicesTable extends Migration
    public function up()
 {
     Schema::table('sale_invoices', function ($table) {
-        $table->decimal('profit', 10, 2)->default(0);
+        $table->decimal('profit', 15, 2)->default(0);
     });
 }
 

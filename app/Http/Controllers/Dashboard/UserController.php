@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Models\User;
+use App\Models\Role;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -21,22 +23,20 @@ class UserController extends Controller
 
     }//end of constructor
 
-    public function index(Request $request)
-    {
-        $users = User::whereRoleIs('admin')->where(function ($q) use ($request) {
+  public function index(Request $request)
+{
+    $users = User::whereHas('roles', function ($q) {
+        $q->where('name', 'admin');
+    })->where(function ($q) use ($request) {
+        $q->when($request->search, function ($query) use ($request) {
+            $query->where('first_name', 'like', '%' . $request->search . '%')
+                ->orWhere('last_name', 'like', '%' . $request->search . '%');
+        });
+    })->latest()->paginate(5);
 
-            return $q->when($request->search, function ($query) use ($request) {
+    return view('dashboard.users.index', compact('users'));
+}
 
-                return $query->where('first_name', 'like', '%' . $request->search . '%')
-                    ->orWhere('last_name', 'like', '%' . $request->search . '%');
-
-            });
-
-        })->latest()->paginate(5);
-
-        return view('dashboard.users.index', compact('users'));
-
-    }//end of index
 
     public
     function create()
@@ -45,41 +45,44 @@ class UserController extends Controller
 
     }//end of create
 
-    public
-    function store(Request $request)
-    {
-        $request->validate([
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'email' => 'required|unique:users',
-            'image' => 'image',
-            'password' => 'required|confirmed',
-            'permissions' => 'required|min:1'
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'first_name' => 'required',
+        'last_name' => 'required',
+        'email' => 'required|unique:users',
+        'image' => 'image',
+        'password' => 'required|confirmed',
+        'permissions' => 'required|min:1'
+    ]);
 
-        $request_data = $request->except(['password', 'password_confirmation', 'permissions', 'image']);
-        $request_data['password'] = bcrypt($request->password);
+    $request_data = $request->except(['password', 'password_confirmation', 'permissions', 'image']);
+    $request_data['password'] = bcrypt($request->password);
 
-        if ($request->image) {
+    if ($request->image) {
+        Image::make($request->image)
+            ->resize(300, null, function ($constraint) {
+                $constraint->aspectRatio();
+            })
+            ->save(public_path('uploads/user_images/' . $request->image->hashName()));
 
-            Image::make($request->image)
-                ->resize(300, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                })
-                ->save(public_path('uploads/user_images/' . $request->image->hashName()));
+        $request_data['image'] = $request->image->hashName();
+    }
 
-            $request_data['image'] = $request->image->hashName();
+    $user = User::create($request_data);
+    // ربط الدور
+    $user->roles()->attach(Role::where('name', 'admin')->first()->id , ['user_type' => User::class]);
+$permissionIds = Permission::whereIn('name', $request->permissions)->pluck('id')->toArray();
+$user->permissions()->syncWithPivotValues($permissionIds, ['user_type' => User::class]);
 
-        }//end of if
+    // ربط الصلاحيات
+    // $user->permissions()->sync($request->permissions);
 
-        $user = User::create($request_data);
-        $user->attachRole('admin');
-        $user->syncPermissions($request->permissions);
 
-        session()->flash('success', __('تم الإضافة بنجاح'));
-        return redirect()->route('dashboard.users.index');
+    session()->flash('success', 'تم الإضافة بنجاح');
+    return redirect()->route('dashboard.users.index');
+}
 
-    }//end of store
 
     public
     function edit(User $user)

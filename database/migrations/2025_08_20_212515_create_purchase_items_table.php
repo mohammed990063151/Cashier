@@ -13,7 +13,7 @@ class CreatePurchaseItemsTable extends Migration
      */
     public function up()
     {
- Schema::create('purchase_items', function (Blueprint $table) {
+ Schema::create('purchase_invoice_items', function (Blueprint $table) {
     $table->increments('id'); // بدل $table->id();
     $table->unsignedInteger('invoice_id'); // بدل $table->foreignId()
     $table->unsignedInteger('product_id');

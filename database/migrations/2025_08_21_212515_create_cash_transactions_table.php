@@ -25,7 +25,7 @@ class CreateCashTransactionsTable extends Migration
     public function up()
 {
     Schema::create('cash_transactions', function (Blueprint $table) {
-        $table->increments('id'); 
+        $table->increments('id');
         $table->enum('type', ['add', 'deduct']); // نوع العملية
         $table->decimal('amount', 15, 2);
         $table->string('description')->nullable();

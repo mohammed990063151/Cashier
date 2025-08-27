@@ -162,7 +162,9 @@
 
     <!-- الإجمالي -->
     <div class="total">
-        جملة المبلغ: <span>{{ number_format($order->total_price, 2) }} جنية </span>
+      <p>  جملة المبلغ: <span>{{ number_format($order->total_price, 2) }} ج.س </span></p>
+        <p>الخصم: <span>{{ number_format($order->discount, 0) }} ج.س</span></p>
+    <p>المتبقي: <span>{{ number_format($order->remaining, 0) }} ج.س</span></p>
     </div>
 
     <!-- الملاحظات -->

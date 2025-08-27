@@ -6,12 +6,12 @@
 
         <section class="content-header">
 
-            <h1>@lang('site.users')</h1>
+            <h1>المستخدمين</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.users.index') }}"> @lang('site.users')</a></li>
-                <li class="active">@lang('site.add')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.users.index') }}">المستخدمين</a></li>
+                <li class="active">إضافة</li>
             </ol>
         </section>
 
@@ -20,7 +20,7 @@
             <div class="box box-primary">
 
                 <div class="box-header">
-                    <h3 class="box-title">@lang('site.add')</h3>
+                    <h3 class="box-title">إضافة</h3>
                 </div><!-- end of box header -->
 
                 <div class="box-body">
@@ -33,22 +33,22 @@
                         {{ method_field('post') }}
 
                         <div class="form-group">
-                            <label>@lang('site.first_name')</label>
+                            <label>الاسم الأول</label>
                             <input type="text" name="first_name" class="form-control" value="{{ old('first_name') }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.last_name')</label>
+                            <label>الاسم الأخير</label>
                             <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.email')</label>
+                            <label>البريد الإلكتروني</label>
                             <input type="email" name="email" class="form-control" value="{{ old('email') }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.image')</label>
+                            <label>الصورة</label>
                             <input type="file" name="image" class="form-control image">
                         </div>
 
@@ -57,27 +57,29 @@
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.password')</label>
+                            <label>كلمة المرور</label>
                             <input type="password" name="password" class="form-control">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.password_confirmation')</label>
+                            <label>تأكيد كلمة المرور</label>
                             <input type="password" name="password_confirmation" class="form-control">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.permissions')</label>
+                            <label>الصلاحيات</label>
                             <div class="nav-tabs-custom">
 
                                 @php
                                     $models = ['users', 'categories', 'products', 'clients', 'orders'];
                                     $maps = ['create', 'read', 'update', 'delete'];
+                                    $models_ar = ['المستخدمين', 'الأقسام', 'المنتجات', 'العملاء', 'الطلبات'];
+                                    $maps_ar = ['إضافة', 'عرض', 'تعديل', 'حذف'];
                                 @endphp
 
                                 <ul class="nav nav-tabs">
                                     @foreach ($models as $index=>$model)
-                                        <li class="{{ $index == 0 ? 'active' : '' }}"><a href="#{{ $model }}" data-toggle="tab">@lang('site.' . $model)</a></li>
+                                        <li class="{{ $index == 0 ? 'active' : '' }}"><a href="#{{ $model }}" data-toggle="tab">{{ $models_ar[$index] }}</a></li>
                                     @endforeach
                                 </ul>
 
@@ -87,8 +89,8 @@
 
                                         <div class="tab-pane {{ $index == 0 ? 'active' : '' }}" id="{{ $model }}">
 
-                                            @foreach ($maps as $map)
-                                                <label><input type="checkbox" name="permissions[]" value="{{ $map . '_' . $model }}"> @lang('site.' . $map)</label>
+                                            @foreach ($maps as $i => $map)
+                                                <label><input type="checkbox" name="permissions[]" value="{{ $map . '_' . $model }}"> {{ $maps_ar[$i] }}</label>
                                             @endforeach
 
                                         </div>
@@ -102,7 +104,7 @@
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> @lang('site.add')</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة</button>
                         </div>
 
                     </form><!-- end of form -->

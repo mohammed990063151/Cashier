@@ -13,7 +13,7 @@ class CreateStockMovementsTable extends Migration
     $table->unsignedInteger('product_id'); // متوافق مع products.id (increments)
     $table->integer('quantity');
     $table->enum('type', ['in','out']);
-    $table->decimal('price', 10, 2)->default(0);
+    $table->decimal('price', 15, 2)->default(0);
     $table->timestamps();
 
     // العلاقة مع جدول المنتجات

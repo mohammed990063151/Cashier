@@ -7,6 +7,15 @@
     padding: 0;
     box-sizing: border-box;
 }
+.invoice-total p {
+    margin: 4px 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.invoice-total span {
+    color: #e74c3c;
+    margin-left: 5px;
+}
 
 /* Print area / Card */
 #print-area {
@@ -196,9 +205,13 @@
         </tbody>
     </table>
 
+   
     <div class="invoice-total">
-        جملة المبلغ: <span>{{ number_format($order->total_price, 0) }}  جنية </span>
-    </div>
+    <p>جملة المبلغ: <span>{{ number_format($order->total_price, 0) }} ج.س</span></p>
+    <p>الخصم: <span>{{ number_format($order->discount, 0) }} ج.س</span></p>
+    <p>المتبقي: <span>{{ number_format($order->remaining, 0) }} ج.س</span></p>
+</div>
+
 
     <!-- ✅ الملاحظات أو الشروط -->
     <div class="notes">
