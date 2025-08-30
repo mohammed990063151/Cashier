@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class PurchaseItem extends Model
+class PurchaseInvoiceItem extends Model
 {
-    protected $fillable = ['purchase_invoice_id', 'product_id', 'quantity', 'price'];
+    protected $fillable = ['purchase_invoice_id', 'product_id', 'quantity', 'price', 'subtotal'];
     protected $table = 'purchase_invoice_items';
 
     // protected $fillable = ['purchase_invoice_id', 'product_id', 'quantity', 'price'];

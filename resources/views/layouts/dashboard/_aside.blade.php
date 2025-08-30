@@ -33,27 +33,37 @@
             @if (auth()->user()->hasPermission('read_orders'))
             <li><a href="{{ route('dashboard.orders.index') }}"><i class="fa fa-th"></i> <span>الطلبات</span></a></li>
 
-             <li class="treeview {{ request()->routeIs('stock.*') ? 'active menu-open' : '' }}">
+            <li class="treeview {{ request()->routeIs('stock.*') ? 'active menu-open' : '' }}">
                 <a href="#">
                     <i class="fa fa-cubes"></i> <span>اداراة الطلبات</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
                     <li><a href="{{ route('dashboard.orders.index') }}"><i class="fa fa-circle-o"></i> الطلبات </a></li>
-                    <li><a href="{{ route('dashboard.payments.index') }}"><i class="fa fa-circle-o"></i> المدفوعات  </a></li>
+                    <li><a href="{{ route('dashboard.payments.index') }}"><i class="fa fa-circle-o"></i> المدفوعات </a></li>
                     <li>
-                <a href="{{ route('dashboard.purchase-invoices.create') }}">
-                    <i class="fa fa-file-text"></i>
-                    <span>فواتير الشراء</span>
-                </a>
-            </li>
+                        <a href="{{ route('dashboard.purchase-invoices.index') }}">
+                            <i class="fa fa-file-text"></i>
+                            <span>فواتير الشراء</span>
+                        </a>
+                    </li>
 
-            <li>
-                <a href="{{ route('dashboard.sale-invoices.index') }}">
-                    <i class="fa fa-file-text"></i>
-                    <span>فواتير البيع</span>
-                </a>
-            </li>
+                    <li>
+                        <a href="{{ route('dashboard.sale-invoices.index') }}">
+                            <i class="fa fa-file-text"></i>
+                            <span>فواتير البيع</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('dashboard.orders.trashed') }}">
+                            <i class="fa fa-trash"></i> <span>الطلبات المحذوفة</span>
+                        </a>
+                    </li>
+
+
+
+
                 </ul>
             </li>
             @endif

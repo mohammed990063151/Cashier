@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 class Order extends Model
 {
+    use SoftDeletes;
     protected $guarded = [];
 
     public function client()
@@ -24,4 +25,10 @@ public function payments()
 {
     return $this->hasMany(Payment::class);
 }
+
+public function transactions()
+{
+    return $this->hasMany(CashTransaction::class, 'order_id');
+}
+
 }//end of model

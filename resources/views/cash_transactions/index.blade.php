@@ -22,12 +22,12 @@
             <div class="col-md-8">
                 <div class="box box-primary">
                     <div class="box-header">
-                        <h3 class="box-title">حركات الصندوق</h3>
+                        <h3 class="box-title">قائمة حركات الصندوق</h3>
 
                         <form action="{{ route('dashboard.cash.transactions') }}" method="get" class="mt-2">
                             <div class="row">
                                 <div class="col-md-8">
-                                    <input type="text" name="search" class="form-control" placeholder="بحث" value="{{ request()->search }}">
+                                    <input type="text" name="search" class="form-control" placeholder="بحث بالحركة" value="{{ request()->search }}">
                                 </div>
                                 <div class="col-md-4">
                                     <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> بحث</button>
@@ -41,7 +41,7 @@
                             <table class="table table-hover">
                                 <tr>
                                     <th>#</th>
-                                    <th>النوع</th>
+                                    <th>نوع الحركة</th>
                                     <th>المبلغ</th>
                                     <th>المصدر</th>
                                     <th>التاريخ</th>
@@ -61,8 +61,8 @@
                                                 {{ number_format($t->amount,2) }} ر.س
                                             </strong>
                                         </td>
-                                        <td>{{ $t->source }}</td>
-                                        <td>{{ $t->created_at->format('Y-m-d H:i') }}</td>
+                                        <td>{{ $t->description ?? '—' }}</td>
+                                        <td>{{ $t->transaction_date->format('Y-m-d H:i') }}</td>
                                     </tr>
                                 @endforeach
                             </table>
@@ -70,7 +70,7 @@
                             {{ $transactions->appends(request()->query())->links() }}
 
                         @else
-                            <h4 class="text-center text-muted mt-3">لا توجد حركات حالياً</h4>
+                            <h4 class="text-center text-muted mt-3">لا توجد أي حركات حالياً</h4>
                         @endif
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                     </div>
 
                     <div class="box-footer text-center mt-3">
-                        <a href="{{ route('dashboard.reports.profitLoss') }}" class="btn btn-outline-primary">📊 تقرير الأرباح والخسائر</a>
+                        <a href="{{ route('dashboard.reports.profitLoss') }}" class="btn btn-outline-primary">📊 عرض تقرير الأرباح والخسائر</a>
                     </div>
                 </div>
             </div>

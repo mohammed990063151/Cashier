@@ -22,6 +22,7 @@ class CreatePurchaseInvoicesTable  extends Migration
     $table->timestamps();
 
     $table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('cascade');
+    $table->softDeletes(); 
 });
     }
 

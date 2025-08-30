@@ -36,4 +36,8 @@ class Payment extends Model
     {
         return $this->belongsTo(Order::class);
     }
+      public function transaction()
+    {
+        return $this->hasOne(CashTransaction::class);
+    }
 }

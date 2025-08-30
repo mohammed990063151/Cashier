@@ -87,33 +87,33 @@
                                         <i class="fa fa-list"></i>
                                         عرض
                                     </button>
-                                    {{-- <a href="{{ route('dashboard.orders.pdf', $order->id) }}" class="btn btn-primary">
-                                    <i class="fa fa-print"></i> طباعة PDF
-                                    </a> --}}
                                     @if (auth()->user()->hasPermission('update_orders'))
                                     <a href="{{ route('dashboard.clients.orders.edit', ['client' => $order->client->id, 'order' => $order->id]) }}" class="btn btn-warning btn-sm"><i class="fa fa-pencil"></i> تعديل</a>
                                     @else
                                     <a href="#" disabled class="btn btn-warning btn-sm"><i class="fa fa-edit"></i> تعديل</a>
                                     @endif
-
+                                    <button type="button" class="btn btn-info btn-sm view-order-btn" data-toggle="modal" data-target="#orderModal" data-order-id="{{ $order->id }}">
+                                        عرض الطلب
+                                    </button>
                                     @if (auth()->user()->hasPermission('delete_orders'))
-                                    <form action="{{ route('dashboard.orders.destroy', $order->id) }}" method="post" style="display: inline-block;">
-                                        {{ csrf_field() }}
-                                        {{ method_field('delete') }}
-                                        <button type="submit" class="btn btn-danger btn-sm delete"><i class="fa fa-trash"></i> حذف</button>
+                                    <form action="{{ route('dashboard.orders.destroy', $order->id) }}" method="post" class="delete-form" style="display: inline-block;">
+                                        @csrf
+                                        @method('delete')
+                                        <button type="button" class="btn btn-danger btn-sm delete-btn">
+                                            <i class="fa fa-trash"></i> حذف
+                                        </button>
                                     </form>
-
                                     @else
                                     <a href="#" class="btn btn-danger btn-sm" disabled><i class="fa fa-trash"></i> حذف</a>
                                     @endif
-<button type="button" class="btn btn-info btn-sm view-order-btn"
-        data-toggle="modal"
-        data-target="#orderModal"
-        data-order-id="{{ $order->id }}">
-    عرض الطلب
-</button>
+
+
+
+
 
                                 </td>
+
+
 
                             </tr>
 
@@ -170,50 +170,78 @@
 
 
 <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="orderModalLabel">تفاصيل الطلب</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
-          <span aria-hidden="true">&times;</span>
-        </button>
-      </div>
-      <div class="modal-body" id="orderModalContent">
-        <!-- سيتم تحميل تفاصيل الطلب هنا -->
-        <p class="text-center">جارٍ تحميل البيانات...</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-      </div>
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderModalLabel">تفاصيل الطلب</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="orderModalContent">
+                <!-- سيتم تحميل تفاصيل الطلب هنا -->
+                <p class="text-center">جارٍ تحميل البيانات...</p>
+            </div>
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-$(document).ready(function() {
-    $('.view-order-btn').on('click', function() {
-        var orderId = $(this).data('order-id');
-        var url = '/dashboard/orders/' + orderId; // رابط API أو Route يعيد HTML الطلب
+    $(document).ready(function() {
+        $('.view-order-btn').on('click', function() {
+            var orderId = $(this).data('order-id');
+            var url = '/dashboard/orders/' + orderId; // رابط API أو Route يعيد HTML الطلب
 
-        $('#orderModalContent').html('<p class="text-center">جارٍ تحميل البيانات...</p>');
+            $('#orderModalContent').html('<p class="text-center">جارٍ تحميل البيانات...</p>');
 
-        $.ajax({
-            url: url,
-            type: 'GET',
-            success: function(response) {
-                // ضع البيانات داخل المودال
-                $('#orderModalContent').html(response);
-            },
-            error: function() {
-                $('#orderModalContent').html('<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات</p>');
-            }
+            $.ajax({
+                url: url
+                , type: 'GET'
+                , success: function(response) {
+                    // ضع البيانات داخل المودال
+                    $('#orderModalContent').html(response);
+                }
+                , error: function() {
+                    $('#orderModalContent').html('<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات</p>');
+                }
+            });
         });
     });
-});
 
-    </script>
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.delete-btn').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                let form = this.closest('.delete-form');
 
+                Swal.fire({
+                    title: 'هل أنت متأكد؟'
+                    , text: "لن تتمكن من التراجع عن الحذف!"
+                    , icon: 'warning'
+                    , showCancelButton: true
+                    , confirmButtonColor: '#d33'
+                    , cancelButtonColor: '#3085d6'
+                    , confirmButtonText: 'نعم، احذف!'
+                    , cancelButtonText: 'إلغاء'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+    });
+
+</script>
 @endpush
 @endsection

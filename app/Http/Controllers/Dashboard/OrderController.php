@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 // use Barryvdh\DomPDF\Facade\Mpdf;
 use Mpdf\Mpdf;
+use App\Services\CashService;
+use App\Models\CashTransaction;
 class OrderController extends Controller
 {
 
@@ -93,25 +95,86 @@ public function generatePdf($orderId)
      return $mpdf->Output("invoice-{$order->id}.pdf", 'D');
 }
 
-    public function destroy(Order $order)
-    {
-        foreach ($order->products as $product) {
 
-            $product->update([
-                'stock' => $product->stock + $product->pivot->quantity
-            ]);
+  public function destroy(Order $order , CashService $cashService)
+{
+    // إعادة المنتجات إلى المخزون
+    foreach ($order->products as $product) {
+        $product->update([
+            'stock' => $product->stock + $product->pivot->quantity
+        ]);
+    }
 
-        }//end of for each
+    // تحديث بيانات الطلب قبل الحذف
+    $order->update([
+        'total_return' => $order->total_price,
+    ]);
 
-        $order->delete();
-        session()->flash('success', __('تم الحذف بنجاح'));
-        return redirect()->route('dashboard.orders.index');
+    // Soft Delete
+    $order->delete();
 
-    }//end of order
+      // تحديث/حذف حركة الخزينة المرتبطة بالطلب
+    $transaction = CashTransaction::where('order_id', $order->id)->first();
+    if ($transaction) {
+        $cashService->deleteTransaction($transaction);
+    }
+    session()->flash('success', "تم حذف الطلب (#{$order->order_number}) مؤقتاً.");
+    return redirect()->route('dashboard.orders.index');
+}
+public function softdelet()
+{
+    // return 0;
+    $orders = Order::onlyTrashed()->with('client')->paginate(10);
 
-//     public function showAjax(Order $order)
-// {
-//     return view('dashboard.orders.order_details', compact('order'));
-// }
+    return view('dashboard.orders.trashed', compact('orders'));
+}
+
+
+public function restore($id , CashService $cashService)
+{
+    $order = Order::withTrashed()->findOrFail($id);
+
+    // استرجاع الطلب نفسه
+    $order->restore();
+
+    // استرجاع المنتجات المرتبطة
+    foreach ($order->products as $product) {
+        $product->update([
+            'stock' => $product->stock - $product->pivot->quantity
+        ]);
+    }
+
+    // إعادة القيم الأصلية إذا أحببت
+    $order->update([
+        'total_return' => 0,
+        'remaining' => $order->remaining,
+        'profit' => $order->profit, // حسب الحاجة
+    ]);
+
+     // تحديث أو إعادة تسجيل حركة الخزينة المرتبطة بالطلب
+    $transaction = CashTransaction::where('order_id', $order->id)->first();
+    if ($transaction) {
+        $cashService->updateTransaction(
+            $transaction,
+            $order->discount,
+            "استرجاع الدفعيات على الطلب رقم #{$order->order_number}   من العميل {$order->client->name}",
+            'discount',
+            now()
+        );
+    } elseif ($order->discount > 0) {
+        $cashService->record(
+            'add',
+            $order->discount,
+            "استرجاع الدفعيات على الطلب رقم #{$order->order_number} من العميل {$order->client->name}",
+            'discount',
+            now(),
+            $order->id
+        );
+    }
+
+    session()->flash('success', "تم استرجاع الطلب بالكامل: #{$order->order_number}");
+    return redirect()->route('dashboard.orders.index');
+}
+
 
 }//end of controller

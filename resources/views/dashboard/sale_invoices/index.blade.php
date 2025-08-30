@@ -27,7 +27,7 @@
 
                         <h3 class="box-title" style="margin-bottom: 10px">فواتير البيع</h3>
 
-                        <form action="{{ route('dashboard.sale_invoices.index') }}" method="get">
+                        <form action="{{ route('dashboard.sale-invoices.index') }}" method="get">
 
                             <div class="row">
 

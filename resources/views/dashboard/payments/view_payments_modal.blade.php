@@ -19,10 +19,15 @@
             <td>{{ $payment->notes ?? '-' }}</td>
             <td>{{ $payment->created_at->format('d-m-Y') }}</td>
         </tr>
-        @empty
+
+                @empty
         <tr>
             <td colspan="4" class="text-center">لا توجد مدفوعات</td>
         </tr>
         @endforelse
+        <tr>
+            <td colspan="4" class="text-right" ><strong >الإجمالي المدفوع
+            :<strong style="color: green;"> {{ number_format($totalPaid, 2) }}</strong></strong></td>
+        </tr>
     </tbody>
 </table>
