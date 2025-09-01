@@ -113,9 +113,136 @@
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
-                    <li><a href="{{ route('dashboard.reports.sales') }}"><i class="fa fa-circle-o"></i> تقرير المبيعات</a></li>
-                    <li><a href="{{ route('dashboard.reports.profit') }}"><i class="fa fa-circle-o"></i> تقرير الأرباح والخسائر</a></li>
-                    <li><a href="{{ route('dashboard.reports.clients') }}"><i class="fa fa-circle-o"></i> تقرير العملاء</a></li>
+
+
+                    <li class="treeview {{ request()->routeIs('stock.*') ? 'active menu-open' : '' }}">
+                        <a href="#">
+                            <i class="fa fa-cubes"></i> <span>  المبيعات</span>
+                                    <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
+                        </a>
+                        <ul class="treeview-menu">
+                            <li><a href="{{ route('dashboard.reports.sales') }}"><i class="fa fa-circle-o"></i> تقرير المبيعات</a></li>
+                            <li><a href="{{ route('dashboard.reports.summary') }}" class="fa fa-circle-o">
+                                    📊 تقرير مجمل
+                                </a></li>
+                            <li>
+                                <a href="{{ route('dashboard.reports.detailed') }}" class="fa fa-circle-o">
+                                    📑 تقرير مفصل
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="{{ route('dashboard.reports.byCategory') }}" class="fa fa-circle-o">
+                                    🏷️ تقرير حسب التصنيف
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="{{ route('dashboard.reports.slas.unpaid') }}" class="fa fa-circle-o">
+                                    💳 الفواتير غير المسددة
+                                </a>
+                            </li>
+
+
+
+
+                        </ul>
+
+
+                    </li>
+
+
+
+                      <li class="treeview {{ request()->routeIs('stock.*') ? 'active menu-open' : '' }}">
+                        <a href="#">
+                            <i class="fa fa-cubes"></i> <span>   الأرباح والخسائر</span>
+                                    <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
+                        </a>
+                        <ul class="treeview-menu">
+                          <li><a href="{{ route('dashboard.reports.profit') }}"><i class="fa fa-circle-o"></i> تقرير الأرباح والخسائر</a></li>
+                             <li><a href="{{ route('dashboard.reports.profit_detailed') }}"><i class="fa fa-line-chart"></i> أرباح مفصل</a></li>
+
+    <li><a href="{{ route('dashboard.reports.profit_summary') }}"><i class="fa fa-pie-chart"></i> أرباح مجمل</a></li>
+    <li><a href="{{ route('dashboard.reports.profit_ratio') }}"><i class="fa fa-percent"></i> نسبة أرباح المنتجات</a></li>
+
+
+
+
+
+
+
+                        </ul>
+
+
+                    </li>
+                     <li>
+            <a href="{{ route('dashboard.reports.reports.index') }}">
+                <i class="fa fa-circle-o"></i> 👥 قائمة العملاء مع الأرصدة
+            </a>
+        </li>
+          <li>
+
+            <a href="{{ route('dashboard.reports.suppliers.index') }}">
+                <i class="fa fa-circle-o"></i> كشف حساب الموردين
+            </a>
+        </li>
+        <li>
+
+            <a href="{{ route('dashboard.reports.purchases.index') }}">
+                <i class="fa fa-circle-o"></i> المشتريات
+            </a>
+        </li>
+
+           <li>
+
+            <a href="{{ route('dashboard.reports.inventory.report') }}">
+                <i class="fa fa-circle-o"></i> المخزن
+            </a>
+        </li>
+  <li>
+
+            <a href="{{ route('dashboard.reports.reports.expenses') }}">
+                <i class="fa fa-circle-o"></i> تقرير المصروفات
+            </a>
+        </li>
+
+         <li>
+
+            <a href="{{ route('dashboard.reports.report.cash') }}">
+                <i class="fa fa-circle-o"></i> تقرير الخزينة
+            </a>
+        </li>
+                    {{-- <li class="treeview {{ request()->routeIs('reports.clients.*') ? 'active menu-open' : '' }}">
+    <a href="#">
+        <i class="fa fa-users"></i> <span>تقارير العملاء</span>
+        <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
+    </a>
+    <ul class="treeview-menu">
+        <li><a href="{{ route('dashboard.reports.clients') }}"><i class="fa fa-circle-o"></i> تقرير العملاء</a></li>
+        <li>
+            <a href="{{ route('dashboard.reports.reports.index') }}">
+                <i class="fa fa-circle-o"></i> 👥 قائمة العملاء مع الأرصدة
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('dashboard.reports.reports.invoices', ['client' => 1]) }}">
+                <i class="fa fa-circle-o"></i> 🧾 فواتير عميل محدد
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('dashboard.reports.reports.products', ['client' => 1]) }}">
+                <i class="fa fa-circle-o"></i> 📦 المنتجات المباعة لعميل
+            </a>
+        </li>
+        <li>
+            <a href="{{ route('dashboard.reports.reports.statement', ['client' => 1]) }}">
+                <i class="fa fa-circle-o"></i> 📑 كشف حساب عميل
+            </a>
+        </li>
+    </ul>
+</li> --}}
+
+
                 </ul>
             </li>
         </ul>

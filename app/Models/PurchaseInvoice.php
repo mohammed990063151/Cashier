@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseInvoice extends Model
 {
-    protected $fillable = ['supplier_id', 'total'];
+    protected $fillable = ['supplier_id', 'total','remaining','paid','paid_amount','total_amount'];
 
     // public function items()
     // {
@@ -22,5 +22,10 @@ class PurchaseInvoice extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+    public function payments()
+{
+    return $this->hasMany(SupplierPayment::class, 'purchase_invoice_id');
+}
+
 }
 

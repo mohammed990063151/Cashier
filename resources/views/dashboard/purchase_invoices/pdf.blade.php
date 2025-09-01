@@ -116,6 +116,7 @@
             </td>
             <!-- بيانات الفاتورة -->
             <td class="invoice-info">
+                <br />
                 <p><strong>رقم الفاتورة:</strong> {{ $purchaseInvoice->id }}</p>
                 <p><strong>التاريخ:</strong> {{ $purchaseInvoice->created_at->format('Y-m-d') }}</p>
                 <p><strong>الوقت:</strong> {{ $purchaseInvoice->created_at->format('H:i') }}</p>
@@ -152,6 +153,8 @@
     <!-- الإجماليات -->
     <div class="summary">
         <p><strong>الإجمالي الكلي:</strong> {{ number_format($purchaseInvoice->total, 2) }} ج.س</p>
+         <p><strong>الإجمالي المدفوع:</strong> {{ number_format($purchaseInvoice->paid, 2) }} ج.س</p>
+          <p><strong>الإجمالي المتبقي:</strong> {{ number_format($purchaseInvoice->remaining, 2) }} ج.س</p>
     </div>
 
     <!-- الملاحظات -->

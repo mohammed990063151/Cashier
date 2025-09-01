@@ -17,7 +17,7 @@ class Order extends Model
 
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'product_order')->withPivot('quantity' ,'sale_price');
+        return $this->belongsToMany(Product::class, 'product_order')->withPivot('quantity','sale_price');
 }
 
 
@@ -30,5 +30,20 @@ public function transactions()
 {
     return $this->hasMany(CashTransaction::class, 'order_id');
 }
+
+public function getTotalAmountAttribute()
+    {
+        return $this->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
+    }
+
+    public function getPaidAmountAttribute()
+    {
+        return $this->payments->sum('amount');
+    }
+
+    public function getRemainingAmountAttribute()
+    {
+        return $this->total_amount - $this->paid_amount;
+    }
 
 }//end of model

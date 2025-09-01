@@ -28,6 +28,20 @@ class Client extends Model
     return $this->hasMany(SaleInvoice::class);
 }
 
+ public function getRemainingBalanceAttribute()
+    {
+        // eager loaded relations better: orders, orders.products, orders.payments
+        $orders = $this->orders ?? $this->orders()->with(['products','payments'])->get();
+
+        return $orders->sum(function($order){
+            $total = $order->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
+            $paid  = $order->payments->sum('amount') + $order->discount ;
+            // لو عندك عمود remaining في order ممكن تستخدمه بدل الحساب:
+            return $order->remaining ?? ($total - $paid);
+            // return ($total - $paid);
+        });
+    }
+
 
 
 }//end of model

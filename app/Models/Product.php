@@ -38,9 +38,32 @@ class Product extends Model
 
     public function orders()
     {
-        return $this->belongsToMany(Order::class, 'product_order');
+        return $this->belongsToMany(Order::class, 'product_order')->withPivot('quantity','sale_price');
 
     }//end of orders
+protected static function booted()
+{
+    static::updating(function ($product) {
+        if ($product->isDirty('purchase_price')) {
+            PriceHistory::create([
+                'product_id' => $product->id,
+                'old_price'  => $product->getOriginal('purchase_price'),
+                'new_price'  => $product->purchase_price,
+                'type'       => 'purchase',
+            ]);
+        }
+
+        if ($product->isDirty('sale_price')) {
+            PriceHistory::create([
+                'product_id' => $product->id,
+                'old_price'  => $product->getOriginal('sale_price'),
+                'new_price'  => $product->sale_price,
+                'type'       => 'sale',
+            ]);
+        }
+    });
+}
+
 
 
 }//end of model

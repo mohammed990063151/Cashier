@@ -76,6 +76,11 @@
         }
 
     </style>
+
+
+
+
+
     {{--<!-- jQuery 3 -->--}}
     <script src="{{ asset('dashboard_files/js/jquery.min.js') }}"></script>
 
@@ -240,6 +245,7 @@
         @yield('content')
 
         @include('partials._session')
+        @include('partials._errors')
 
         <footer class="main-footer">
             <div class="pull-right hidden-xs">

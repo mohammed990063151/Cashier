@@ -96,8 +96,22 @@
                             <!-- الإجمالي -->
                             <div class="form-group">
                                 <label>إجمالي الفاتورة:</label>
-                                <strong id="invoiceTotal">{{ $invoice->total }}</strong> ريال
+                                <strong id="invoiceTotal">{{ $invoice->total }}</strong> ج.س
                             </div>
+<!-- المدفوع -->
+<div class="form-group">
+    <label for="paid">المبلغ المدفوع:</label>
+    <input type="number" name="paid" id="paid"
+           class="form-control"
+           value="{{ $invoice->paid }}"
+           min="0" step="0.01">
+</div>
+
+<!-- المتبقي -->
+<div class="form-group">
+    <label>المتبقي:</label>
+    <strong id="remaining">{{ $invoice->remaining }}</strong> ج.س
+</div>
 
                             <button type="submit" class="btn btn-primary">💾 حفظ التعديلات</button>
                             <a href="{{ route('dashboard.purchase-invoices.index') }}" class="btn btn-default">إلغاء</a>
@@ -183,5 +197,34 @@
         document.getElementById('invoiceTotal').innerText = sum.toFixed(2);
     }
 </script>
+<script>
+    function updateInvoiceTotal() {
+        let totals = document.querySelectorAll('.row-total');
+        let sum = 0;
+        totals.forEach(td => sum += parseFloat(td.innerText) || 0);
+        document.getElementById('invoiceTotal').innerText = sum.toFixed(2);
+
+        // تحديث المتبقي بناءً على المدفوع
+        updateRemaining();
+    }
+
+    function updateRemaining() {
+        let total = parseFloat(document.getElementById('invoiceTotal').innerText) || 0;
+        let paid = parseFloat(document.getElementById('paid').value) || 0;
+        let remaining = Math.max(total - paid, 0);
+        document.getElementById('remaining').innerText = remaining.toFixed(2);
+    }
+
+    // تحديث المتبقي عند إدخال المدفوع
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'paid') {
+            updateRemaining();
+        }
+    });
+
+    // أول تحميل: حساب المتبقي من القيم القديمة
+    updateRemaining();
+</script>
+
 
 @endsection

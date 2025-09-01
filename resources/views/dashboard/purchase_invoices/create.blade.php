@@ -79,10 +79,25 @@
                             <button type="button" id="addRow" class="btn btn-secondary mb-3">➕ إضافة صف</button>
 
                             <!-- الإجمالي -->
-                            <div class="form-group">
-                                <label>إجمالي الفاتورة:</label>
-                                <strong id="invoiceTotal">0</strong> ريال
-                            </div>
+                          <!-- .الإجمالي -->
+                          <br /><br /><br />
+<div class="form-group">
+    <label>إجمالي الفاتورة:</label>
+    <strong id="invoiceTotal">0</strong> ج.س
+    <input type="hidden" name="total" id="totalInput" value="0">
+</div>
+
+<!-- المدفوع -->
+<div class="form-group">
+    <label for="paid">المدفوع:</label>
+    <input type="number" step="1" name="paid" id="paid" class="form-control" value="0">
+</div>
+
+<!-- المتبقي -->
+<div class="form-group">
+    <label for="remaining">المتبقي:</label>
+    <input type="text" name="remaining" id="remaining" class="form-control" value="0" readonly style="color:#c00;font-weight:bold;">
+</div>
 
                             <button type="submit" class="btn btn-primary">💾 حفظ الفاتورة</button>
                         </form>
@@ -115,7 +130,7 @@
 </div><!-- end content-wrapper -->
 
 <!-- Script لإضافة الصفوف وحساب الإجمالي -->
-<script>
+{{-- <script>
     let rowIndex = 1;
 
     document.getElementById('addRow').addEventListener('click', function() {
@@ -162,6 +177,71 @@
         let sum = 0;
         totals.forEach(td => sum += parseFloat(td.innerText) || 0);
         document.getElementById('invoiceTotal').innerText = sum.toFixed(2);
+    }
+</script> --}}
+
+
+    <script>
+    let rowIndex = 1;
+
+    document.getElementById('addRow').addEventListener('click', function() {
+        let tableBody = document.querySelector('#itemsTable tbody');
+        let newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>
+                <select name="items[${rowIndex}][product_id]" class="form-control" required>
+                    <option value="">اختر المنتج</option>
+                    @foreach($products as $product)
+                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td><input type="number" name="items[${rowIndex}][quantity]" class="form-control quantity" value="1" min="1" required></td>
+            <td><input type="number" name="items[${rowIndex}][price]" class="form-control price" value="0" min="0" step="0.01" required></td>
+            <td class="row-total">0</td>
+            <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+        `;
+        tableBody.appendChild(newRow);
+        rowIndex++;
+    });
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('quantity') || e.target.classList.contains('price')) {
+            let row = e.target.closest('tr');
+            let qty = parseFloat(row.querySelector('.quantity').value) || 0;
+            let price = parseFloat(row.querySelector('.price').value) || 0;
+            let total = qty * price;
+            row.querySelector('.row-total').innerText = total.toFixed(2);
+            updateInvoiceTotal();
+        }
+
+        // تحديث المتبقي عند تعديل المدفوع
+        if (e.target.id === 'paid') {
+            updateRemaining();
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('tr').remove();
+            updateInvoiceTotal();
+        }
+    });
+
+    function updateInvoiceTotal() {
+        let totals = document.querySelectorAll('.row-total');
+        let sum = 0;
+        totals.forEach(td => sum += parseFloat(td.innerText) || 0);
+        document.getElementById('invoiceTotal').innerText = sum.toFixed(2);
+        document.getElementById('totalInput').value = sum.toFixed(2);
+        updateRemaining();
+    }
+
+    function updateRemaining() {
+        let total = parseFloat(document.getElementById('totalInput').value) || 0;
+        let paid = parseFloat(document.getElementById('paid').value) || 0;
+        let remaining = total - paid;
+        document.getElementById('remaining').value = remaining.toFixed(2);
     }
 </script>
 

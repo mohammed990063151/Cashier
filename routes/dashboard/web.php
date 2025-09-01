@@ -19,7 +19,12 @@ use App\Http\Controllers\Dashboard\SupplierController;
 use App\Http\Controllers\Dashboard\CashController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PaymentController;
-use \App\Livewire\Dashboard\Clients;
+use App\Http\Controllers\Dashboard\ProfitReportController;
+use App\Http\Controllers\Dashboard\SupplierReportController;
+use App\Http\Controllers\Dashboard\PurchaseReportController;
+use App\Http\Controllers\Dashboard\ExpenseReportController;
+use App\Http\Controllers\Dashboard\ClientReportController;
+use App\Http\Controllers\Dashboard\CashReportController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
 // Redirect root to dashboard
@@ -68,15 +73,15 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
     // web.php
-Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
+    Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
 
 
-Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
-    ->name('payments.edit');
+    Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
+        ->name('payments.edit');
 
 
-// Route::get('/dashboard/orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
-//     ->name('dashboard.payments.edit');
+    // Route::get('/dashboard/orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
+    //     ->name('dashboard.payments.edit');
 
 
     // Route لتحميل المدفوعات عبر AJAX
@@ -89,6 +94,46 @@ Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayme
 
     // Reports routes
     Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/summary', [ReportController::class, 'summary'])->name('summary');
+        Route::get('/detailed', [ReportController::class, 'detailed'])->name('detailed');
+        Route::get('/by-category', [ReportController::class, 'byCategory'])->name('byCategory');
+        Route::get('/slas/unpaid', [ReportController::class, 'unpaid'])->name('slas.unpaid');
+
+        Route::get('profit/detailed', [ProfitReportController::class, 'detailed'])->name('profit_detailed');
+        Route::get('profit/summary', [ProfitReportController::class, 'summary'])->name('profit_summary');
+        Route::get('profit/products', [ProfitReportController::class, 'productRatio'])->name('profit_ratio');
+
+
+        Route::get('/reports/index', [ClientReportController::class, 'index'])->name('reports.index'); // قائمة العملاء مع الأرصدة المتبقية
+        Route::get('clients/{client}/show', [ClientReportController::class, 'show'])->name('reports.show');
+
+        Route::get('/suppliers', [SupplierReportController::class, 'index'])->name('suppliers.index');
+        Route::get('suppliers/{supplier}/show', [SupplierReportController::class, 'show'])
+            ->name('suppliers.show'); // كشف حساب عميل
+        Route::get('/invoice/{invoice}/invoice_details', [SupplierReportController::class, 'invoiceDetails'])->name('suppliers.invoice_details');
+
+
+
+        Route::get('/purchases/index', [PurchaseReportController::class, 'index'])->name('purchases.index'); // التبويب الرئيسي
+        Route::get('/purchases/detailed', [PurchaseReportController::class, 'detailed'])->name('purchases.detailed'); // تقرير مفصل
+        Route::get('/purchases/summarys', [PurchaseReportController::class, 'summary'])->name('purchases.summarys'); // تقرير مجمل
+        Route::get('/byCategory', [PurchaseReportController::class, 'byCategory'])->name('purchases.byCategory'); // حسب التصنيف
+        Route::get('/unpaid', [PurchaseReportController::class, 'unpaid'])->name('purchases.unpaid'); // الفواتير الغير مسددة
+        Route::get('/invoice/{invoice}', [PurchaseReportController::class, 'invoiceDetails'])->name('purchases.invoice_details'); //
+        // Route::get('/invoice/{invoice}', [PurchaseReportController::class, 'invoiceDetails'])
+        // ->name('dashboard.reports.purchases.invoice_details');
+
+        Route::get('/reports/expenses', [ExpenseReportController::class, 'index'])
+    ->name('reports.expenses');
+
+
+    Route::get('/report/cash', [CashReportController::class,'index'])->name('report.cash');
+
+   // routes/web.php
+Route::get('/inventory-report', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'index'])->name('inventory.report');
+Route::post('/inventory-report/data', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'getData'])->name('inventory.getData');
+
+
         Route::get('profit-loss', [ReportController::class, 'profitLoss'])->name('profitLoss');
         Route::get('sales', [ReportController::class, 'salesReport'])->name('sales');
         Route::get('profit', [ReportController::class, 'profitLoss'])->name('profit');
@@ -111,6 +156,10 @@ Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayme
 
     // Suppliers
     Route::resource('suppliers', SupplierController::class);
+    Route::post('supplier-payments/store', [SupplierController::class, 'storepayme'])->name('supplier-payments.store');
+    Route::put('supplier-payments/{payment}', [SupplierController::class, 'updatepayme'])
+        ->name('dashboard.supplier-payments.update');
+
 
     // Cash Controller
     Route::get('cash', [CashController::class, 'index'])->name('cash.index');
@@ -151,7 +200,7 @@ Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayme
 
         // Purchases
         Route::get('purchases_detail', [DashboardController::class, 'purchasesDetail'])->name('purchases_detail');
-        Route::get('purchases/detail', [DashboardController::class, 'purchasesDetail'])->name('purchases.detail');
+        // Route::get('purchases/detail', [DashboardController::class, 'purchasesDetail'])->name('purchases.detail');
         Route::get('purchases/summary', [DashboardController::class, 'purchasesSummary'])->name('purchases.summary');
         Route::get('purchases/by_category', [DashboardController::class, 'purchasesByCategory'])->name('purchases.by_category');
         Route::get('purchases/unpaid_invoices', [DashboardController::class, 'purchasesUnpaidInvoices'])->name('purchases.unpaid_invoices');

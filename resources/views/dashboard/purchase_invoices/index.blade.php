@@ -52,6 +52,8 @@
                                 <th>المورد</th>
                                 <th>التاريخ</th>
                                 <th>الإجمالي</th>
+                                 <th>المدفوع</th>
+                                  <th>المتبقي</th>
                                 <th>الإجراءات</th>
                             </tr>
                         </thead>
@@ -62,6 +64,8 @@
                                     <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
                                     <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
                                     <td>{{ number_format($invoice->total, 2) }}</td>
+                                     <td>{{ number_format($invoice->paid, 2) }}</td>
+                                      <td>{{ number_format($invoice->remaining, 2) }}</td>
                                     <td>
     {{-- زر عرض --}}
     <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
