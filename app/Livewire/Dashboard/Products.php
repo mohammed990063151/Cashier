@@ -82,7 +82,7 @@ public function boot()
     public function getImagePathAttribute()
     {
         if (!$this->image) {
-            return asset('dashboard_files/img/logoatabi.jpg');
+            return asset('dashboard_files/img/logo.png');
         }
 
         $localPath = public_path('uploads/product_images/' . $this->image);
@@ -90,7 +90,7 @@ public function boot()
             return asset('uploads/product_images/' . $this->image);
         }
 
-        return asset('dashboard_files/img/logoatabi.jpg');
+        return asset('dashboard_files/img/logo.png');
     }
 
     public function render()
@@ -204,7 +204,7 @@ public function boot()
             ];
 
             if ($this->image) {
-                if ($product->image && $product->image !== 'default.png') {
+                if ($product->image && $product->image !== 'logo.png') {
                     Storage::disk('public')->delete('uploads/product_images/' . $product->image);
                 }
 

@@ -24,7 +24,54 @@
             </div>
         </div>
 
+        {{-- مخطط بياني --}}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-info">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">المبيعات حسب الفترة الزمنية</h3>
+                    </div>
+                    <div class="box-body">
+                        <canvas id="salesChart" height="100"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </section>
 
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: @json($dates),
+            datasets: [{
+                label: 'إجمالي المبيعات',
+                data: @json($totals),
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true,
+                pointBackgroundColor: '#28a745',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: true, labels: { font: { size: 14 } } },
+            },
+            scales: {
+                x: { title: { display: true, text: 'التاريخ' } },
+                y: { title: { display: true, text: 'المبيعات (ج.س)' }, beginAtZero: true }
+            }
+        }
+    });
+</script>
+@endpush

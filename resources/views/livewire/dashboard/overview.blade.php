@@ -9,21 +9,12 @@
     </section>
 
     {{-- مؤشرات تحميل --}}
-    <div wire:loading wire:target="startDate,endDate" class="alert alert-info">
-        جاري تحميل البيانات...
-    </div>
 
-    {{-- نمو المبيعات --}}
-    <div class="alert alert-success">
-        <strong>نمو المبيعات:</strong>
-        {{ number_format($salesGrowth, 2) }}%
-        (مقارنة بالشهر السابق)
-    </div>
 
     {{-- المحتوى الرئيسي --}}
     <section class="content">
         {{-- الفلاتر --}}
-        <div class="row mb-3">
+        {{-- <div class="row mb-3">
             <div class="col-md-4">
                 <div class="form-group">
                     <label>اختيار نطاق زمني:</label>
@@ -46,7 +37,7 @@
                     <input type="date" wire:model="endDate" class="form-control">
                 </div>
             @endif
-        </div>
+        </div> --}}
 
         {{-- البطاقات الرئيسية --}}
         <div class="row">
@@ -115,7 +106,7 @@
             <div class="col-lg-3 col-md-6">
                 <div class="small-box bg-yellow">
                     <div class="inner">
-                        <h3>{{ $clientsOverview['total_due'] ?? 0 }} ج.س</h3>
+                        <h3>{{ number_format($clientsOverview['total_due'] ?? 0, 2) }} ج.س</h3>
                         <p>المبالغ المتبقية للعملاء</p>
                     </div>
                     <div class="icon"><i class="fa fa-users"></i></div>
@@ -124,7 +115,7 @@
             <div class="col-lg-3 col-md-6">
                 <div class="small-box bg-red">
                     <div class="inner">
-                        <h3>{{ $suppliersOverview['total_due'] ?? 0 }} ج.س</h3>
+                        <h3>{{ number_format($suppliersOverview['total_due'] ?? 0, 2)  }} ج.س</h3>
                         <p>المبالغ المتبقية للموردين</p>
                     </div>
                     <div class="icon"><i class="fa fa-truck"></i></div>
@@ -133,42 +124,6 @@
         </div>
 
         {{-- آخر الحركات في الخزينة --}}
-        <div class="box box-info mt-4">
-            <div class="box-header"><h3 class="box-title">آخر الحركات في الخزينة</h3></div>
-            <div class="box-body">
-                <ul class="list-group">
-                    @foreach($transactions->take(5) as $transaction)
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ $transaction->transaction_date }} - {{ $transaction->type === 'add' ? 'إضافة' : 'خصم' }} 
-                            بقيمة <strong>{{ number_format($transaction->amount, 2) }}</strong>
-                        </li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-
-        {{-- أفضل المنتجات --}}
-        <div class="table-responsive mt-4">
-            <h4>أفضل المنتجات مبيعًا</h4>
-            <table class="table table-bordered table-striped">
-                <thead class="thead-dark">
-                    <tr>
-                        <th>المنتج</th>
-                        <th>عدد الطلبات</th>
-                        <th>السعر</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($topProducts as $product)
-                        <tr>
-                            <td>{{ $product->name }}</td>
-                            <td>{{ $product->orders_count }}</td>
-                            <td>{{ number_format($product->sale_price, 2) }} ج.س</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
 
         {{-- الرسوم البيانية --}}
         <div class="row mt-4">
@@ -198,8 +153,55 @@
                 </div>
             </div>
         </div>
-    </section>
+           <div class="box box-info mt-4">
+            <div class="box-header"><h3 class="box-title">آخر الحركات في الخزينة</h3></div>
+            <div class="box-body">
+                <ul class="list-group">
+                    @foreach($transactions->take(5) as $transaction)
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ $transaction->transaction_date }} - {{ $transaction->type === 'add' ? 'إضافة' : 'خصم' }}
+                            بقيمة <strong>{{ number_format($transaction->amount, 2) }}</strong>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+
+        {{-- أفضل المنتجات --}}
+        <div class="table-responsive mt-4">
+            <h4>أفضل المنتجات مبيعًا</h4>
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>المنتج</th>
+                        <th>عدد الطلبات</th>
+                        <th>السعر</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($topProducts as $product)
+                        <tr>
+                            <td>{{ $product->name }}</td>
+                            <td>{{ $product->orders_count }}</td>
+                            <td>{{ number_format($product->sale_price, 2) }} ج.س</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+ <div wire:loading wire:target="startDate,endDate" class="alert alert-info">
+        جاري تحميل البيانات...
+    </div>
+
+    {{-- نمو المبيعات --}}
+    <div class="alert alert-success">
+        <strong>نمو المبيعات:</strong>
+        {{ number_format($salesGrowth, 2) }}%
+        (مقارنة بالشهر السابق)
+    </div>
 </div>
+    </section>
+
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -229,9 +231,9 @@ let clientsDueChart = new Chart(document.getElementById('clientsDueChart').getCo
             backgroundColor: 'rgba(255, 206, 86, 0.7)'
         }]
     },
-    options: { 
-        responsive: true, 
-        scales: { y: { beginAtZero: true } } 
+    options: {
+        responsive: true,
+        scales: { y: { beginAtZero: true } }
     }
 });
 

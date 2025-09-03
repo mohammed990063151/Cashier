@@ -39,6 +39,8 @@
                                     <th>اسم العميل</th>
                                     <th>المنتجات</th>
                                     <th>المبلغ</th>
+                                    <th>المدفوع</th>
+                                    <th>المتبقي</th>
                                     <th>تاريخ الطلب</th>
                                 </tr>
                             </thead>
@@ -53,6 +55,8 @@
                                             @endforeach
                                         </td>
                                         <td>{{ number_format($order->total_price,2) }} ج.س</td>
+                                        <td>{{ number_format($order->discount + $order->payments->sum('amount'), 2) }} ج.س</td>
+                                        <td>{{ number_format($order->remaining,2) }} ج.س</td>
                                         <td>{{ $order->created_at->format('Y-m-d H:i') }}</td>
                                     </tr>
                                 @endforeach

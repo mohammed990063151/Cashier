@@ -169,26 +169,6 @@
 </div><!-- end of content wrapper -->
 
 
-{{-- <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="orderModalLabel">تفاصيل الطلب</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="orderModalContent">
-                <!-- سيتم تحميل تفاصيل الطلب هنا -->
-                <p class="text-center">جارٍ تحميل البيانات...</p>
-            </div>
-            <div class="modal-footer">
-
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-            </div>
-        </div>
-    </div>
-</div> --}}
 
 <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">

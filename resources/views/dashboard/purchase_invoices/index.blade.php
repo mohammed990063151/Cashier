@@ -18,94 +18,80 @@
         <div class="box box-primary">
 
             <div class="box-header with-border">
-                <h3 class="box-title">قائمة الفواتير <small>{{ $purchaseInvoices->total() }}</small></h3>
+                <h3 class="box-title">
+                    قائمة الفواتير <small>{{ $purchaseInvoices->total() }}</small>
+                </h3>
 
                 <form action="{{ route('dashboard.purchase-invoices.index') }}" method="get">
                     <div class="row" style="margin-top: 10px">
 
-                        <div class="col-md-4">
+                        <div class="col-md-4 col-sm-6 col-xs-12" style="margin-bottom:10px">
                             <input type="text" name="search" class="form-control" placeholder="بحث باسم المورد أو رقم الفاتورة" value="{{ request()->search }}">
                         </div>
 
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> بحث</button>
+                        <div class="col-md-4 col-sm-6 col-xs-12" style="margin-bottom:10px">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fa fa-search"></i> بحث
+                            </button>
+                        </div>
 
-                            {{-- @if (auth()->user()->hasPermission('create_purchase_invoices')) --}}
-                                <a href="{{ route('dashboard.purchase-invoices.create') }}" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة</a>
-                            {{-- @else
-                                <button class="btn btn-primary disabled"><i class="fa fa-plus"></i> إضافة</button>
-                            @endif --}}
+                        <div class="col-md-4 col-sm-12 col-xs-12" style="margin-bottom:10px">
+                            <a href="{{ route('dashboard.purchase-invoices.create') }}" class="btn btn-success btn-block">
+                                <i class="fa fa-plus"></i> إضافة
+                            </a>
                         </div>
 
                     </div>
                 </form>
-
             </div><!-- /.box-header -->
 
             <div class="box-body">
 
                 @if ($purchaseInvoices->count() > 0)
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>المورد</th>
-                                <th>التاريخ</th>
-                                <th>الإجمالي</th>
-                                 <th>المدفوع</th>
-                                  <th>المتبقي</th>
-                                <th>الإجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($purchaseInvoices as $index => $invoice)
+                    <div class="table-responsive">
+                        <table id="purchaseInvoicesTable" class="table table-hover table-bordered text-center">
+                            <thead>
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
-                                    <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
-                                    <td>{{ number_format($invoice->total, 2) }}</td>
-                                     <td>{{ number_format($invoice->paid, 2) }}</td>
-                                      <td>{{ number_format($invoice->remaining, 2) }}</td>
-                                    <td>
-    {{-- زر عرض --}}
-    <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
-        <i class="fa fa-eye"></i> عرض
-    </a>
-
-    {{-- زر طباعة --}}
-    <a href="{{ route('dashboard.purchase-invoices.print', $invoice->id) }}" class="btn btn-default btn-sm" target="_blank">
-        <i class="fa fa-print"></i> طباعة
-    </a>
-
-    {{-- زر تعديل --}}
-    {{-- @if (auth()->user()->hasPermission('update_purchase_invoices')) --}}
-        <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary btn-sm">
-            <i class="fa fa-edit"></i> تعديل
-        </a>
-    {{-- @else
-        <a href="#" class="btn btn-primary btn-sm disabled">
-            <i class="fa fa-edit"></i> تعديل
-        </a>
-    @endif --}}
-
-    {{-- زر حذف --}}
-    {{-- @if (auth()->user()->hasPermission('delete_purchase_invoices')) --}}
-        <form action="{{ route('dashboard.purchase-invoices.destroy', $invoice->id) }}" method="post" style="display: inline-block">
-            @csrf
-            @method('delete')
-            <button type="submit" class="btn btn-danger btn-sm delete">
-                <i class="fa fa-trash"></i> حذف
-            </button>
-        </form>
-    {{-- @else
-        <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
-    @endif --}}
-</td>
-
+                                    <th>#</th>
+                                    <th>المورد</th>
+                                    <th>التاريخ</th>
+                                    <th>الإجمالي</th>
+                                    <th>المدفوع</th>
+                                    <th>المتبقي</th>
+                                    <th>الإجراءات</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach ($purchaseInvoices as $index => $invoice)
+                                    <tr>
+                                        <td>{{ $index + 1 }}</td>
+                                        <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
+                                        <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
+                                        <td>{{ number_format($invoice->total, 2) }}</td>
+                                        <td>{{ number_format($invoice->paid, 2) }}</td>
+                                        <td>{{ number_format($invoice->remaining, 2) }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group" style="flex-wrap: wrap;">
+                                                <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
+                                                    <i class="fa fa-eye"></i> عرض
+                                                </a>
+                                                <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary btn-sm">
+                                                    <i class="fa fa-edit"></i> تعديل
+                                                </a>
+                                                <form action="{{ route('dashboard.purchase-invoices.destroy', $invoice->id) }}" method="post" style="display:inline-block">
+                                                    @csrf
+                                                    @method('delete')
+                                                    <button type="submit" class="btn btn-danger btn-sm delete">
+                                                        <i class="fa fa-trash"></i> حذف
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
 
                     {{ $purchaseInvoices->appends(request()->query())->links() }}
 
@@ -122,3 +108,64 @@
 </div><!-- /.content-wrapper -->
 
 @endsection
+
+@push('scripts')
+<!-- CSS DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<!-- JS DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.flash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#purchaseInvoicesTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'copy',
+                exportOptions: { columns: [0,1,2,3,4,5] } // استبعاد عمود الإجراءات
+            },
+            {
+                extend: 'excel',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            },
+            {
+                extend: 'csv',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            },
+            {
+                extend: 'pdf',
+                exportOptions: { columns: [0,1,2,3,4,5] },
+                orientation: 'landscape',
+                pageSize: 'A4'
+            },
+            {
+                extend: 'print',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            }
+        ],
+        order: [[0, 'desc']],
+        pageLength: 50,
+        language: {
+            search: "بحث:",
+            lengthMenu: "عرض _MENU_ سجل",
+            info: "عرض _START_ إلى _END_ من _TOTAL_ سجل",
+            infoEmpty: "لا توجد سجلات متاحة",
+            zeroRecords: "لا توجد سجلات مطابقة",
+            paginate: { first: "الأول", last: "الأخير", next: "التالي", previous: "السابق" },
+            buttons: { copy: "نسخ", excel: "تصدير Excel", csv: "تصدير CSV", pdf: "تصدير PDF", print: "طباعة" }
+        },
+        responsive: true
+    });
+});
+</script>
+@endpush

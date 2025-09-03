@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\SaleInvoice;
 use Illuminate\Support\Facades\DB;
+use App\Models\Order;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 
@@ -12,10 +13,17 @@ use Illuminate\Http\Request;
 
 class SaleInvoiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = SaleInvoice::with('client')->latest()->paginate(20);
-        return view('dashboard.sale_invoices.index', compact('invoices'));
+       $search = $request->search;
+
+    $orders = Order::whereHas('client', function ($q) use ($search) {
+        $q->where('name', 'like', '%' . $search . '%');
+    })
+    ->orWhere('order_number', 'like', '%' . $search . '%')
+     ->orderBy('created_at', 'desc')
+    ->paginate(10);
+        return view('dashboard.sale_invoices.index', compact('orders'));
     }
 
     public function create()

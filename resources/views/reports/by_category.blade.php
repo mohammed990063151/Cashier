@@ -53,6 +53,14 @@
                             <div class="text-center mt-3 text-muted">لا توجد بيانات حالياً</div>
                         @endif
                     </div>
+<div class="row">
+    <div class="col-md-12 d-flex justify-content-center">
+        <div style="width: 60%; max-width: 600px;">
+            <canvas id="salesByCategoryChart" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
 
                 </div>
             </div>
@@ -78,6 +86,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    var ctx = document.getElementById('salesByCategoryChart').getContext('2d');
+    var salesByCategoryChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: @json($labels),
+            datasets: [{
+                label: 'إجمالي المبيعات (ج.س)',
+                data: @json($totals),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { color: '#333' }
+                },
+                title: {
+                    display: true,
+                    text: '📊 المبيعات حسب التصنيف',
+                    font: { size: 18 }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#333' }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#333' }
+                }
+            }
+        }
+    });
+</script>
 
 <script>
 $(document).ready(function () {

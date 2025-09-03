@@ -24,6 +24,9 @@ class CashManagement extends Component
 public $filterDescription;
 public $filterDate;
 public $totalAmount = 0;
+public $totalDeducted = 0;
+public $totalAdded = 0;
+
 
 
 
@@ -65,9 +68,12 @@ if (!empty($this->filterDate)) {
     $query->where('transaction_date', $this->filterDate);
 }
         $transactions = $query->latest()->paginate(50);
-        $this->totalAmount = $query->get()->sum(function($trx) {
-    return $trx->type === 'add' ? $trx->amount : -$trx->amount;
-});
+//         $this->totalAmount = $query->get()->sum(function($trx) {
+//     return $trx->type === 'add' ? $trx->amount : -$trx->amount;
+// });
+$this->totalAdded = $transactions->where('type', 'add')->sum('amount');       // مجموع المضاف
+$this->totalDeducted = $transactions->where('type', 'deduct')->sum('amount'); // مجموع المسحوب
+$this->totalAmount = $this->totalAdded - $this->totalDeducted;               // الرصيد النهائي
 
         return view('livewire.dashboard.cash-management', [
             'cash' => $cash,

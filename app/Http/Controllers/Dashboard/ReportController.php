@@ -44,14 +44,21 @@ class ReportController extends Controller
         return view('reports.sales', compact('orders', 'totalSales'));
     }
 
-    public function summary()
+   public function summary()
     {
-        $totalSales = Order::sum('total_price');
-        $totalOrders = Order::count();
+       $sales = \App\Models\Order::selectRaw('DATE(created_at) as date, SUM(total_price) as total_sales')
+        ->groupBy('date')
+        ->orderBy('date', 'asc')
+        ->get();
 
-        return view('reports.summary', compact('totalSales', 'totalOrders'));
+    $dates = $sales->pluck('date');
+    $totals = $sales->pluck('total_sales');
+
+    $totalSales = $sales->sum('total_sales');
+    $totalOrders = \App\Models\Order::count();
+
+        return view('reports.summary', compact('sales', 'dates', 'totals', 'totalSales', 'totalOrders'));
     }
-
     // تقرير المبيعات المفصل
     public function detailed()
     {
@@ -64,16 +71,22 @@ class ReportController extends Controller
     public function byCategory()
     {
         $salesByCategory = DB::table('product_order')
-            ->join('products', 'product_order.product_id', '=', 'products.id')
-            ->join('categories', 'products.category_id', '=', 'categories.id')
-            ->select(
-                'categories.name as category_name',
-                DB::raw('SUM(product_order.quantity * product_order.sale_price) as total_sales')
-            )
-            ->groupBy('categories.id', 'categories.name')
-            ->get();
+        ->join('products', 'product_order.product_id', '=', 'products.id')
+        ->join('categories', 'products.category_id', '=', 'categories.id')
+        ->select(
+            'categories.name as category_name',
+            DB::raw('SUM(product_order.quantity * product_order.sale_price) as total_sales')
+        )
+        ->groupBy('categories.id', 'categories.name')
+        ->orderByDesc('total_sales')
+        ->get();
 
-        return view('reports.by_category', compact('salesByCategory'));
+    $labels = $salesByCategory->pluck('category_name');
+    $totals = $salesByCategory->pluck('total_sales');
+
+    // return view('reports.by_category', compact('salesByCategory', 'labels', 'totals'))
+
+        return view('reports.by_category', compact('salesByCategory', 'labels', 'totals'));
     }
 
     // تقرير الفواتير غير المسددة

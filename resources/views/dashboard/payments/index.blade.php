@@ -9,21 +9,16 @@
     <section class="content">
         <div class="box box-primary">
 
-            <!-- Header مع البحث والعنوان -->
             <div class="box-header d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <h3 class="box-title mb-2 mb-md-0">قائمة الطلبات</h3>
-                <form action="{{ route('dashboard.payments.index') }}" method="GET" class="form-inline mb-2 mb-md-0">
-                    <div class="form-group mr-2">
-                        <input type="text" name="search" id="searchInput" class="form-control" placeholder="بحث باسم العميل أو رقم الطلب" value="{{ request()->search }}">
-                    </div>
-                    <button type="submit" class="btn btn-primary"><i class="fa fa-search"></i> بحث</button>
-                </form>
+                <div class="form-inline mb-2 mb-md-0">
+                    <input type="text" id="searchInput" class="form-control" placeholder="بحث باسم العميل أو رقم الطلب">
+                </div>
             </div>
 
-            <!-- جدول الطلبات -->
             <div class="box-body table-responsive">
-                <table class="table table-bordered table-hover table-striped">
-                    <thead class="thead-light">
+                <table id="paymentsTable" class="table table-bordered table-hover text-center">
+                    <thead>
                         <tr>
                             <th>رقم الطلب</th>
                             <th>اسم العميل</th>
@@ -43,22 +38,23 @@
                             <td style="color: rgb(163, 153, 6);">{{ number_format($order->discount,2) }}</td>
                             <td style="color: rgb(86, 157, 23);">{{ number_format($order->payments->sum('amount'),2) }}</td>
                             <td style="color: red;">{{ number_format($order->remaining,2) }}</td>
-                            <td class="d-flex flex-wrap">
+                            <td class="d-flex flex-wrap justify-content-center">
                                 <button class="btn btn-success btn-sm mr-1 mb-1 add-payment-btn" 
-        data-toggle="modal" 
-        data-target="#paymentModal" 
-        data-order-id="{{ $order->id }}"
-        data-remaining="{{ $order->remaining }}">
-    إضافة دفعة
-</button>
+                                        data-toggle="modal" 
+                                        data-target="#paymentModal" 
+                                        data-order-id="{{ $order->id }}"
+                                        data-remaining="{{ $order->remaining }}">
+                                    إضافة دفعة
+                                </button>
 
-                                <a href="{{ route('dashboard.payments.edit', $order->id) }}" class="btn btn-warning">
-    <i class="fa fa-edit"></i> تعديل دفعات الطلب
-</a>
+                                <a href="{{ route('dashboard.payments.edit', $order->id) }}" class="btn btn-warning btn-sm mr-1 mb-1">
+                                    تعديل دفعات الطلب
+                                </a>
 
-
-
-                                <button class="btn btn-info btn-sm mb-1 view-payments-btn" data-toggle="modal" data-target="#viewPaymentsModal" data-order-id="{{ $order->id }}">
+                                <button class="btn btn-info btn-sm mb-1 view-payments-btn" 
+                                        data-toggle="modal" 
+                                        data-target="#viewPaymentsModal" 
+                                        data-order-id="{{ $order->id }}">
                                     عرض المدفوعات
                                 </button>
                             </td>
@@ -67,186 +63,72 @@
                     </tbody>
                 </table>
             </div>
+
         </div>
     </section>
 </div>
-
-<!-- مودال إضافة الدفعة -->
-<div class="modal fade" id="paymentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <form id="paymentForm" method="POST" action="{{ route('dashboard.payments.store') }}">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">إضافة دفعة</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="order_id" id="paymentOrderId">
-                    <div class="form-group">
-                        <label>المبلغ</label>
-                        <input type="number" step="0.01" name="amount" class="form-control" required>
-                          <small class="remaining-text">رصيد المتبقي الحالي: 0.00</small>
-                    </div>
-                    <div class="form-group">
-                        <label>طريقة الدفع</label>
-                        <select name="method" class="form-control">
-                            <option value="cash">كاش</option>
-                            <option value="bank">تحويل بنكي</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>ملاحظات</label>
-                        <textarea name="notes" class="form-control"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- مودال عرض المدفوعات -->
-<div class="modal fade" id="viewPaymentsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">المدفوعات</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body" id="viewPaymentsContent">
-                <p class="text-center">جارٍ تحميل البيانات...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-<div class="modal fade" id="editPaymentModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">تعديل دفعات الطلب</h5>
-                <button type="button" class="close" data-dismiss="modal">&times;</button>
-            </div>
-            <div class="modal-body" id="editPaymentsContent">
-                <p class="text-center">جارٍ تحميل الدفعات...</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
+<!-- DataTables CSS & JS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
 <script>
-    $(document).ready(function() {
+$(document).ready(function() {
 
-        // ضبط زر إضافة الدفعة
-        // $('.add-payment-btn').on('click', function() {
-        //     var orderId = $(this).data('order-id');
-        //     $('#paymentOrderId').val(orderId);
-        // });
-        $('.add-payment-btn').on('click', function() {
-    var orderId = $(this).data('order-id');
-    var remaining = $(this).data('remaining'); // المتبقي للطلب
-
-    $('#paymentOrderId').val(orderId);
-    $('#paymentModal').find('small.remaining-text').text('رصيد المورد الحالي: ' + parseFloat(remaining).toFixed(2));
-});
-
-
-        // ضبط زر عرض المدفوعات
-        $('.view-payments-btn').on('click', function() {
-            var orderId = $(this).data('order-id');
-            var url = '/dashboard/orders/' + orderId + '/payments';
-
-            $('#viewPaymentsContent').html('<p class="text-center">جارٍ تحميل البيانات...</p>');
-
-            $.ajax({
-                url: url
-                , type: 'GET'
-                , success: function(response) {
-                    $('#viewPaymentsContent').html(response);
-                }
-                , error: function() {
-                    $('#viewPaymentsContent').html('<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات</p>');
-                }
-            });
-        });
-
-        // بحث مباشر في الجدول (JS)
-        $('#searchInput').on('keyup', function() {
-            var value = $(this).val().toLowerCase();
-            $('table tbody tr').filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-            });
-        });
-
-    });
-
-</script>
-<script>
-$('.edit-payment-btn').on('click', function() {
-    var orderId = $(this).data('order-id');
-    var url = '/dashboard/orders/' + orderId + '/payments/edit';
-
-    $('#editPaymentsContent').html('<p class="text-center">جارٍ تحميل الدفعات...</p>');
-
-    $.ajax({
-        url: url,
-        type: 'GET',
-        success: function(response) {
-            $('#editPaymentsContent').html(response);
+    var table = $('#paymentsTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            {
+                extend: 'copy',
+                exportOptions: { columns: [0,1,2,3,4,5] } // استبعاد عمود العمليات
+            },
+            {
+                extend: 'excel',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            },
+            {
+                extend: 'csv',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            },
+            {
+                extend: 'pdf',
+                exportOptions: { columns: [0,1,2,3,4,5] },
+                orientation: 'landscape',
+                pageSize: 'A4'
+            },
+            {
+                extend: 'print',
+                exportOptions: { columns: [0,1,2,3,4,5] }
+            }
+        ],
+        language: {
+            search: "بحث:",
+            lengthMenu: "عرض _MENU_ سجل",
+            info: "عرض _START_ إلى _END_ من _TOTAL_ سجل",
+            infoEmpty: "لا توجد سجلات متاحة",
+            zeroRecords: "لا توجد سجلات مطابقة",
+            paginate: { first: "الأول", last: "الأخير", next: "التالي", previous: "السابق" },
+            buttons: { copy: "نسخ", excel: "تصدير Excel", csv: "تصدير CSV", pdf: "تصدير PDF", print: "طباعة" }
         },
-        error: function(xhr) {
-            console.log(xhr); // <-- لعرض سبب الخطأ في الكونسول
-            $('#editPaymentsContent').html('<p class="text-danger text-center">حدث خطأ أثناء تحميل البيانات</p>');
-        }
+        pageLength: 25,
+        responsive: true
     });
+
+    // ربط البحث الخارجي مع DataTable
+    $('#searchInput').on('keyup', function(){
+        table.search(this.value).draw();
+    });
+
 });
-
-
-
-
 </script>
-<style>
-    /* تحسين العرض على الشاشات الصغيرة */
-    @media (max-width: 576px) {
-
-        .table td,
-        .table th {
-            font-size: 12px;
-            padding: 4px 6px;
-        }
-
-        .btn {
-            font-size: 12px;
-            padding: 4px 6px;
-        }
-
-        .box-header form {
-            width: 100%;
-        }
-
-        .box-header form .form-group {
-            width: 70%;
-        }
-
-        .box-header form button {
-            width: 28%;
-        }
-    }
-
-</style>
 @endpush

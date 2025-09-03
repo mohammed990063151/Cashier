@@ -139,6 +139,11 @@
                     <li><a href="{{ route('dashboard.reports.report.cash') }}"><i class="fa fa-archive"></i> تقرير الخزينة</a></li>
                 </ul>
             </li>
+            <li>
+                <a href="{{ route('dashboard.settings.edit') }}">
+                    <i class="fa fa-cogs"></i> <span>اعدادات</span>
+                </a>
+            </li>
 
         </ul>
     </section>

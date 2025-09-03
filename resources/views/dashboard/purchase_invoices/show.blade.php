@@ -5,7 +5,7 @@
 <div class="content-wrapper">
 
     <section class="content-header">
-        <h1>فاتورة الشراء رقم #{{ $purchaseInvoice->id }}</h1>
+        <h1>فاتورة الشراء رقم #{{ $purchaseInvoice->invoice_number}}</h1>
 
         <ol class="breadcrumb">
             <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> الرئيسية</a></li>
@@ -42,7 +42,7 @@
                                 <th>المنتج</th>
                                 <th>الكمية</th>
                                 <th>السعر</th>
-                                <th>الإجمالي (Subtotal)</th>
+                                <th>الإجمالي (السعر)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -53,6 +53,7 @@
                                     <td>{{ $item->quantity }}</td>
                                     <td>{{ number_format($item->price, 2) }}</td>
                                     <td>{{ number_format($item->subtotal, 2) }}</td>
+                                    
                                 </tr>
                             @endforeach
                         </tbody>
@@ -70,10 +71,18 @@
         </div>
 
         {{-- زر الرجوع --}}
-        <a href="{{ route('dashboard.purchase-invoices.index') }}" class="btn btn-default">
+        <a href="{{ route('dashboard.purchase-invoices.index') }}" class="btn btn-default"
+        style="
+    color: #d9bb12;
+">
             <i class="fa fa-arrow-left"></i> العودة إلى القائمة
         </a>
-
+<a href="{{ route('dashboard.purchase-invoices.print', $purchaseInvoice->id ) }}" class="btn btn-default btn-sm" target="_blank"
+    style="
+    color: #057dc2;
+">
+                                                    <i class="fa fa-print"></i> طباعة
+                                                </a>
     </section>
 
 </div><!-- /.content-wrapper -->

@@ -25,6 +25,7 @@ use App\Http\Controllers\Dashboard\PurchaseReportController;
 use App\Http\Controllers\Dashboard\ExpenseReportController;
 use App\Http\Controllers\Dashboard\ClientReportController;
 use App\Http\Controllers\Dashboard\CashReportController;
+use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
 // Redirect root to dashboard
@@ -82,7 +83,8 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
 
     // Route::get('/dashboard/orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
     //     ->name('dashboard.payments.edit');
-
+    Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
+    Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
 
     // Route لتحميل المدفوعات عبر AJAX
     Route::get('orders/{order}/payments', [PaymentController::class, 'showPayments'])->name('dashboard.orders.payments');
@@ -124,14 +126,14 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
         // ->name('dashboard.reports.purchases.invoice_details');
 
         Route::get('/reports/expenses', [ExpenseReportController::class, 'index'])
-    ->name('reports.expenses');
+            ->name('reports.expenses');
 
 
-    Route::get('/report/cash', [CashReportController::class,'index'])->name('report.cash');
+        Route::get('/report/cash', [CashReportController::class, 'index'])->name('report.cash');
 
-   // routes/web.php
-Route::get('/inventory-report', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'index'])->name('inventory.report');
-Route::post('/inventory-report/data', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'getData'])->name('inventory.getData');
+        // routes/web.php
+        Route::get('/inventory-report', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'index'])->name('inventory.report');
+        Route::post('/inventory-report/data', [App\Http\Controllers\Dashboard\InventoryReportController::class, 'getData'])->name('inventory.getData');
 
 
         Route::get('profit-loss', [ReportController::class, 'profitLoss'])->name('profitLoss');
@@ -159,12 +161,12 @@ Route::post('/inventory-report/data', [App\Http\Controllers\Dashboard\InventoryR
     // Route::post('supplier-payments/store', [SupplierController::class, 'storepayme'])->name('supplier-payments.store');
     Route::put('supplier-payments/{payment}', [SupplierController::class, 'updatepayme'])
         ->name('dashboard.supplier-payments.update');
-Route::get('suppliers/{supplier}/payments/create', [SupplierController::class, 'createPayment'])
-    ->name('supplier-payments.create');
-Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])
-    ->name('supplier-payments.store');
+    Route::get('suppliers/{supplier}/payments/create', [SupplierController::class, 'createPayment'])
+        ->name('supplier-payments.create');
+    Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])
+        ->name('supplier-payments.store');
 
-     Route::get('{supplier}/payments', [SupplierController::class, 'show_payments'])->name('suppliers.payments');
+    Route::get('{supplier}/payments', [SupplierController::class, 'show_payments'])->name('suppliers.payments');
     // Route::get('{supplier}/payments/create', [SupplierPaymentController::class, 'create'])->name('dashboard.suppliers.payments.create');
     // Route::post('{supplier}/payments', [SupplierPaymentController::class, 'store'])->name('dashboard.suppliers.payments.store');
     Route::get('payments/{payment}/edit', [SupplierController::class, 'edit_payment'])->name('suppliers.payments.edit');

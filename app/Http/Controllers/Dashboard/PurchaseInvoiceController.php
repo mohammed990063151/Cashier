@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseInvoice;
+use App\Models\SupplierPayment;
 use App\Models\Supplier;
 use App\Models\Product;
 use App\Models\CashTransaction;
@@ -48,146 +49,226 @@ class PurchaseInvoiceController extends Controller
         return view('dashboard.purchase_invoices.create', compact('suppliers', 'products'));
     }
 
-    // حفظ الفاتورة
+
     // public function store(Request $request)
     // {
-    //     // التحقق من صحة البيانات
+
     //     $request->validate([
-    //         'supplier_id' => 'required|exists:suppliers,id',
-    //         'items'       => 'required|array',
-    //         'items.*.product_id' => 'required|exists:products,id',
-    //         'items.*.quantity'   => 'required|numeric|min:1',
-    //         'items.*.price'      => 'required|numeric|min:0',
+    //         'supplier_id'         => 'required|exists:suppliers,id',
+    //         'items'               => 'required|array',
+    //         'items.*.product_id'  => 'required|exists:products,id',
+    //         'items.*.quantity'    => 'required|numeric|min:1',
+    //         'items.*.price'       => 'required|numeric|min:0',
+    //         'paid'                => 'nullable|numeric|min:0', // المدفوع لازم >= 0
     //     ]);
 
-    //     // حساب المجموع الكلي للفاتورة
-    //     $total = collect($request->items)->sum(function ($item) {
-    //         return $item['quantity'] * $item['price'];
-    //     });
+    //     // حساب الإجمالي
+    //     $total = $request->total ?? 0;
+    //     $paid = $request->paid ?? 0;
 
+    //     // ✅ لو المدفوع أكبر من الإجمالي → رجوع بخطأ
+    //     if ($paid > $total) {
+    //         return redirect()->back()
+    //             ->withInput()
+    //             ->with('error', '⚠️ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!');
+    //     }
+
+    //     $remaining = max($total - $paid, 0); // دايماً صفر أو أكثر
+
+    //     $lastInvoice = PurchaseInvoice::orderBy('id', 'desc')->first();
+
+    //     if ($lastInvoice && preg_match('/RQI-(\d{5})/', $lastInvoice->invoice_number, $matches)) {
+    //         $lastNumber = (int) $matches[1];
+    //         $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+    //     } else {
+    //         $newNumber = '00001';
+    //     }
+    //     $newInvoiceNumber = 'RQI-' . $newNumber;
     //     // إنشاء الفاتورة
     //     $invoice = PurchaseInvoice::create([
+    //         'invoice_number' => $newInvoiceNumber,
     //         'supplier_id' => $request->supplier_id,
     //         'total'       => $total,
+    //         'paid'        => $paid,
+    //         'remaining'   => $remaining,
     //     ]);
 
-    //     // حفظ عناصر الفاتورة مع حساب subtotal لكل عنصر
+    //     // حفظ العناصر وتحديث المخزون
     //     foreach ($request->items as $item) {
     //         $invoice->items()->create([
     //             'product_id' => $item['product_id'],
     //             'quantity'   => $item['quantity'],
     //             'price'      => $item['price'],
-    //             'subtotal'   => $item['quantity'] * $item['price'], // ✅ السطر المضاف
+    //             'subtotal'   => $item['quantity'] * $item['price'],
+    //         ]);
+
+    //         $product = Product::findOrFail($item['product_id']);
+    //         $product->update([
+    //             'stock' => $product->stock + $item['quantity'], // ✅ زيادة الكمية
     //         ]);
     //     }
-    //     // return  $total;
 
-    //     if ($total > 0) {
+    //     // تسجيل الحركة في الخزنة (خصم المبلغ)
+    //     if ($paid > 0) {
     //         try {
     //             $this->cashService->record(
     //                 'deduct',
-    //                 $total,
-    //                 "دفعة نقدية فاتورة شراء رقم {$invoice->id}",
+    //                 $paid, // ✅ خصم المدفوع فقط
+    //                 "دفعة نقدية لفاتورة شراء رقم {$invoice->id}",
     //                 'purchase',
     //                 now(),
-    //                 null, // order_id
-    //                 null, // payment_id
-    //                 $invoice->id // purchase_invoice_id
+    //                 null,
+    //                 null,
+    //                 $invoice->id
     //             );
     //         } catch (\Exception $e) {
-    //            return $e;
     //             return redirect()->back()
-    //                 ->with('error', "لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ")
-    //                 ->withInput();
+    //                 ->withInput()
+    //                 ->with('error', '⚠️ لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ');
     //         }
     //     }
 
 
+    //     $supplier = Supplier::findOrFail($request->supplier_id);
+    //     $supplier->update([
+    //         'balance' => $supplier->balance + $remaining, // ✅ فقط المتبقي يضاف لرصيد المورد
+    //     ]);
+    //     if ($paid > 0) {
+    //         SupplierPayment::create([
+    //             'supplier_id'        => $request->supplier_id,
+    //             'purchase_invoice_id' => $invoice->id,
+    //             'amount'             => $paid,
+    //             'payment_date'       => now()->toDateString(),
+    //             'note'               => "دفعة لفاتورة شراء رقم {$invoice->invoice_number}",
+    //         ]);
+    //     }
 
-    //     // إعادة التوجيه مع رسالة النجاح
+
+
     //     return redirect()->route('dashboard.purchase-invoices.show', $invoice->id)
     //         ->with('success', 'تم إنشاء الفاتورة بنجاح');
     // }
 
     public function store(Request $request)
-    {
-       
-        $request->validate([
-            'supplier_id'         => 'required|exists:suppliers,id',
-            'items'               => 'required|array',
-            'items.*.product_id'  => 'required|exists:products,id',
-            'items.*.quantity'    => 'required|numeric|min:1',
-            'items.*.price'       => 'required|numeric|min:0',
-            'paid'                => 'nullable|numeric|min:0', // المدفوع لازم >= 0
+{
+    $request->validate([
+        'supplier_id'         => 'required|exists:suppliers,id',
+        'items'               => 'required|array',
+        'items.*.product_id'  => 'required|exists:products,id',
+        'items.*.quantity'    => 'required|numeric|min:1',
+        'items.*.price'       => 'required|numeric|min:0',
+        'paid'                => 'nullable|numeric|min:0', // المدفوع لازم >= 0
+    ]);
+
+    // حساب الإجمالي
+    $total = $request->total ?? 0;
+    $paid = $request->paid ?? 0;
+
+    // ✅ لو المدفوع أكبر من الإجمالي → رجوع بخطأ
+    if ($paid > $total) {
+        return redirect()->back()
+            ->withInput()
+            ->with('error', '⚠️ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!');
+    }
+
+    $remaining = max($total - $paid, 0); // دايماً صفر أو أكثر
+
+    // رقم الفاتورة
+    $lastInvoice = PurchaseInvoice::orderBy('id', 'desc')->first();
+    if ($lastInvoice && preg_match('/RQI-(\d{5})/', $lastInvoice->invoice_number, $matches)) {
+        $lastNumber = (int) $matches[1];
+        $newNumber = str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+    } else {
+        $newNumber = '00001';
+    }
+    $newInvoiceNumber = 'RQI-' . $newNumber;
+
+    // إنشاء الفاتورة
+    $invoice = PurchaseInvoice::create([
+        'invoice_number' => $newInvoiceNumber,
+        'supplier_id'    => $request->supplier_id,
+        'total'          => $total,
+        'paid'           => $paid,
+        'remaining'      => $remaining,
+    ]);
+
+    // حفظ العناصر وتحديث المخزون
+    foreach ($request->items as $item) {
+        $invoice->items()->create([
+            'product_id' => $item['product_id'],
+            'quantity'   => $item['quantity'],
+            'price'      => $item['price'],
+            'subtotal'   => $item['quantity'] * $item['price'],
         ]);
 
-        // حساب الإجمالي
-        $total = $request->total ?? 0;
-        $paid = $request->paid ?? 0;
+        $product = Product::findOrFail($item['product_id']);
 
-        // ✅ لو المدفوع أكبر من الإجمالي → رجوع بخطأ
-        if ($paid > $total) {
+        // 🔹 الكمية القديمة والسعر القديم
+        $oldQuantity = $product->stock;
+        $oldPrice    = $product->purchase_price ?? 0;
+
+        // 🔹 الكمية الجديدة والسعر الجديد
+        $newQuantity = $item['quantity'];
+        $newPrice    = $item['price'];
+
+        // 🔹 إجمالي الكمية
+        $totalQuantity = $oldQuantity + $newQuantity;
+
+        // 🔹 حساب متوسط السعر الجديد
+        if ($totalQuantity > 0) {
+            $avgPrice = (($oldQuantity * $oldPrice) + ($newQuantity * $newPrice)) / $totalQuantity;
+        } else {
+            $avgPrice = $newPrice;
+        }
+$avgPrice = floor($avgPrice);
+        // تحديث المنتج
+        $product->update([
+            'stock'          => $totalQuantity,
+            'purchase_price' => $avgPrice, // ✅ تحديث السعر بالمتوسط
+        ]);
+    }
+
+    // تسجيل الحركة في الخزنة (خصم المبلغ)
+    if ($paid > 0) {
+        try {
+            $this->cashService->record(
+                'deduct',
+                $paid, // ✅ خصم المدفوع فقط
+                "دفعة نقدية لفاتورة شراء رقم {$invoice->id}",
+                'purchase',
+                now(),
+                null,
+                null,
+                $invoice->id
+            );
+        } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', '⚠️ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!');
+                ->with('error', '⚠️ لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ');
         }
-
-        $remaining = max($total - $paid, 0); // دايماً صفر أو أكثر
-
- 
-        // إنشاء الفاتورة
-        $invoice = PurchaseInvoice::create([
-            'supplier_id' => $request->supplier_id,
-            'total'       => $total,
-            'paid'        => $paid,
-            'remaining'   => $remaining,
-        ]);
-// return $invoice;
-        // حفظ العناصر وتحديث المخزون
-        foreach ($request->items as $item) {
-            $invoice->items()->create([
-                'product_id' => $item['product_id'],
-                'quantity'   => $item['quantity'],
-                'price'      => $item['price'],
-                'subtotal'   => $item['quantity'] * $item['price'],
-            ]);
-
-            $product = Product::findOrFail($item['product_id']);
-            $product->update([
-                'stock' => $product->stock + $item['quantity'], // ✅ زيادة الكمية
-            ]);
-        }
-
-        // تسجيل الحركة في الخزنة (خصم المبلغ)
-        if ($paid > 0) {
-            try {
-                $this->cashService->record(
-                    'deduct',
-                    $paid, // ✅ خصم المدفوع فقط
-                    "دفعة نقدية لفاتورة شراء رقم {$invoice->id}",
-                    'purchase',
-                    now(),
-                    null,
-                    null,
-                    $invoice->id
-                );
-            } catch (\Exception $e) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', '⚠️ لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ');
-            }
-        }
-
-
-        $supplier = Supplier::findOrFail($request->supplier_id);
-        $supplier->update([
-            'balance' => $supplier->balance + $remaining, // ✅ فقط المتبقي يضاف لرصيد المورد
-        ]);
-
-
-        return redirect()->route('dashboard.purchase-invoices.show', $invoice->id)
-            ->with('success', 'تم إنشاء الفاتورة بنجاح');
     }
+
+    // تحديث رصيد المورد
+    $supplier = Supplier::findOrFail($request->supplier_id);
+    $supplier->update([
+        'balance' => $supplier->balance + $remaining, // ✅ فقط المتبقي يضاف لرصيد المورد
+    ]);
+
+    // حفظ الدفعة للمورد
+    if ($paid > 0) {
+        SupplierPayment::create([
+            'supplier_id'         => $request->supplier_id,
+            'purchase_invoice_id' => $invoice->id,
+            'amount'              => $paid,
+            'payment_date'        => now()->toDateString(),
+            'note'                => "دفعة لفاتورة شراء رقم {$invoice->invoice_number}",
+        ]);
+    }
+
+    return redirect()->route('dashboard.purchase-invoices.show', $invoice->id)
+        ->with('success', 'تم إنشاء الفاتورة بنجاح ✅');
+}
+
 
     // عرض صفحة التعديل
     public function edit($id)
@@ -199,34 +280,51 @@ class PurchaseInvoiceController extends Controller
         return view('dashboard.purchase_invoices.edit', compact('invoice', 'suppliers', 'products'));
     }
 
-    // تحديث الفاتورة
+
     // public function update(Request $request, $id)
     // {
-
     //     $request->validate([
-    //         'supplier_id' => 'required|exists:suppliers,id',
-    //         'items'       => 'required|array',
-    //         'items.*.product_id' => 'required|exists:products,id',
-    //         'items.*.quantity'   => 'required|numeric|min:1',
-    //         'items.*.price'      => 'required|numeric|min:0',
+    //         'supplier_id'         => 'required|exists:suppliers,id',
+    //         'items'               => 'required|array',
+    //         'items.*.product_id'  => 'required|exists:products,id',
+    //         'items.*.quantity'    => 'required|numeric|min:1',
+    //         'items.*.price'       => 'required|numeric|min:0',
+    //         'paid'                => 'nullable|numeric|min:0',
     //     ]);
 
     //     $invoice = PurchaseInvoice::findOrFail($id);
 
-    //     // حساب الإجمالي الجديد
-    //     $total = collect($request->items)->sum(function ($item) {
-    //         return $item['quantity'] * $item['price'];
-    //     });
+    //     // ✅ رجّع المخزون قبل ما نحذف العناصر
+    //     foreach ($invoice->items as $oldItem) {
+    //         $product = Product::findOrFail($oldItem->product_id);
+    //         $product->update([
+    //             'stock' => $product->stock - $oldItem->quantity,
+    //         ]);
+    //     }
 
-    //     // تحديث الفاتورة
+    //     // احذف العناصر القديمة
+    //     $invoice->items()->delete();
+
+    //     // احسب الإجمالي والمدفوع
+    //     $total = collect($request->items)->sum(fn($item) => $item['quantity'] * $item['price']);
+    //     $paid = $request->paid ?? $invoice->paid; // لو ما بعث paid خليه زي القديم
+    //     if ($paid > $total) {
+    //         return redirect()->back()
+    //             ->withInput()
+    //             ->with('error', '⚠️ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!');
+    //     }
+    //     $remaining = max($total - $paid, 0);
+
+
+    //     // ✅ تحديث الفاتورة
     //     $invoice->update([
     //         'supplier_id' => $request->supplier_id,
     //         'total'       => $total,
+    //         'paid'        => $paid,
+    //         'remaining'   => $remaining,
     //     ]);
 
-    //     // حذف العناصر القديمة وإعادة إدخالها (ممكن لاحقاً نعمل update بدل الحذف)
-    //     $invoice->items()->delete();
-
+    //     // إعادة إدخال العناصر + تحديث المخزون
     //     foreach ($request->items as $item) {
     //         $invoice->items()->create([
     //             'product_id' => $item['product_id'],
@@ -234,13 +332,30 @@ class PurchaseInvoiceController extends Controller
     //             'price'      => $item['price'],
     //             'subtotal'   => $item['quantity'] * $item['price'],
     //         ]);
+
+    //         $product = Product::findOrFail($item['product_id']);
+    //         $product->update([
+    //             'stock' => $product->stock + $item['quantity'],
+    //         ]);
     //     }
 
+    //     // ✅ تحديث رصيد المورد
+    //     $supplier = Supplier::findOrFail($request->supplier_id);
 
-    //     $this->updateCashAmount($invoice->id, $total);
+    //     // احسب رصيد المورد من كل فواتيره (المتبقي فقط)
+    //     $totalRemaining = $supplier->purchaseInvoices()->sum('remaining');
+
+    //     $supplier->update([
+    //         'balance' => $totalRemaining,
+    //     ]);
+
+    //     // (اختياري) تحديث حركة الخزنة
+    //     $this->updateCashAmount($invoice->id, $paid);
+
     //     return redirect()->route('dashboard.purchase-invoices.show', $invoice->id)
     //         ->with('success', 'تم تعديل الفاتورة بنجاح');
     // }
+
     public function update(Request $request, $id)
 {
     $request->validate([
@@ -254,7 +369,7 @@ class PurchaseInvoiceController extends Controller
 
     $invoice = PurchaseInvoice::findOrFail($id);
 
-    // ✅ رجّع المخزون قبل ما نحذف العناصر
+    // 1️⃣ إعادة المخزون القديم قبل حذف العناصر
     foreach ($invoice->items as $oldItem) {
         $product = Product::findOrFail($oldItem->product_id);
         $product->update([
@@ -262,20 +377,22 @@ class PurchaseInvoiceController extends Controller
         ]);
     }
 
-    // احذف العناصر القديمة
+    // 2️⃣ حذف العناصر القديمة
     $invoice->items()->delete();
 
-    // احسب الإجمالي والمدفوع
+    // 3️⃣ حساب الإجمالي والمدفوع
     $total = collect($request->items)->sum(fn($item) => $item['quantity'] * $item['price']);
-    $paid = $request->paid ?? $invoice->paid; // لو ما بعث paid خليه زي القديم
+    $paid = $request->paid ?? $invoice->paid;
+
     if ($paid > $total) {
         return redirect()->back()
             ->withInput()
             ->with('error', '⚠️ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!');
     }
+
     $remaining = max($total - $paid, 0);
 
-    // ✅ تحديث الفاتورة
+    // 4️⃣ تحديث الفاتورة الأساسية
     $invoice->update([
         'supplier_id' => $request->supplier_id,
         'total'       => $total,
@@ -283,7 +400,7 @@ class PurchaseInvoiceController extends Controller
         'remaining'   => $remaining,
     ]);
 
-    // إعادة إدخال العناصر + تحديث المخزون
+    // 5️⃣ إعادة إدخال العناصر وتحديث المخزون مع متوسط الشراء
     foreach ($request->items as $item) {
         $invoice->items()->create([
             'product_id' => $item['product_id'],
@@ -293,26 +410,44 @@ class PurchaseInvoiceController extends Controller
         ]);
 
         $product = Product::findOrFail($item['product_id']);
+
+        // البيانات القديمة
+        $oldQuantity = $product->stock;
+        $oldPrice    = $product->purchase_price ?? 0;
+
+        // البيانات الجديدة
+        $newQuantity = $item['quantity'];
+        $newPrice    = $item['price'];
+
+        // إجمالي الكمية
+        $totalQuantity = $oldQuantity + $newQuantity;
+
+        // حساب متوسط السعر الجديد
+        if ($totalQuantity > 0) {
+            $avgPrice = (($oldQuantity * $oldPrice) + ($newQuantity * $newPrice)) / $totalQuantity;
+        } else {
+            $avgPrice = $newPrice;
+        }
+$avgPrice = floor($avgPrice);
+        // تحديث المنتج
         $product->update([
-            'stock' => $product->stock + $item['quantity'],
+            'stock'          => $totalQuantity,
+            'purchase_price' => $avgPrice,
         ]);
     }
 
-    // ✅ تحديث رصيد المورد
-  $supplier = Supplier::findOrFail($request->supplier_id);
+    // 6️⃣ تحديث رصيد المورد
+    $supplier = Supplier::findOrFail($request->supplier_id);
+    $totalRemaining = $supplier->purchaseInvoices()->sum('remaining');
+    $supplier->update([
+        'balance' => $totalRemaining,
+    ]);
 
-// احسب رصيد المورد من كل فواتيره (المتبقي فقط)
-$totalRemaining = $supplier->purchaseInvoices()->sum('remaining');
-
-$supplier->update([
-    'balance' => $totalRemaining,
-]);
-
-    // (اختياري) تحديث حركة الخزنة
+    // 7️⃣ (اختياري) تحديث حركة الخزنة
     $this->updateCashAmount($invoice->id, $paid);
 
     return redirect()->route('dashboard.purchase-invoices.show', $invoice->id)
-        ->with('success', 'تم تعديل الفاتورة بنجاح');
+        ->with('success', 'تم تعديل الفاتورة بنجاح ✅');
 }
 
     protected function updateCashAmount($purchaseInvoiceId, $newAmount)
@@ -331,37 +466,25 @@ $supplier->update([
         return view('dashboard.purchase_invoices.show', compact('purchaseInvoice'));
     }
 
-    // طباعة PDF
-    // public function print(PurchaseInvoice $purchaseInvoice)
-    // {
-    //     $pdf = PDF::loadView('dashboard.purchase_invoices.pdf', compact('purchaseInvoice'));
-    //     return $pdf->download("purchase_invoice_{$purchaseInvoice->id}.pdf");
-    // }
-
-
-
+    
     public function print(PurchaseInvoice $purchaseInvoice)
-    {
-        $html = view('dashboard.purchase_invoices.pdf', compact('purchaseInvoice'))->render();
+{
+    $html = view('dashboard.purchase_invoices.pdf', compact('purchaseInvoice'))->render();
 
-        $defaultConfig = (new ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
+    $mpdf = new \Mpdf\Mpdf([
+        'mode' => 'utf-8',
+        'format' => [80, 80], // العرض والارتفاع بالملم
+        'margin_left' => 2,
+        'margin_right' => 2,
+        'margin_top' => 2,
+        'margin_bottom' => 2,
+        'default_font' => 'tajawal', // أو 'cairo' حسب الخط المثبت
+    ]);
 
-        $defaultFontConfig = (new FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
+    $mpdf->WriteHTML($html);
 
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'margin_left' => 10,
-            'margin_right' => 10,
-            'margin_top' => 10,
-            'margin_bottom' => 10,
-            'default_font' => 'cairo'
-        ]);
+    // 'D' للتحميل مباشرة، يمكنك استخدام 'I' للعرض في المتصفح
+    return $mpdf->Output("purchase_invoice_{$purchaseInvoice->id}.pdf", 'I');
+}
 
-        $mpdf->WriteHTML($html);
-
-        return $mpdf->Output("purchase_invoice_{$purchaseInvoice->id}.pdf", 'D');
-    }
 }

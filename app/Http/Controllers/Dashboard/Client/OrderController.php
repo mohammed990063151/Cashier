@@ -256,6 +256,7 @@ class OrderController extends Controller
             $order->products()->attach($productId, [
                 'quantity' => $data['quantity'],
                 'sale_price' => $data['sale_price'],
+                'cost_price' => $product->purchase_price,
             ]);
 
             $product = Product::findOrFail($productId);
