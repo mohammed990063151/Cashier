@@ -6,12 +6,12 @@
 
         <section class="content-header">
 
-            <h1>@lang('site.categories')</h1>
+            <h1>الأقسام</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.categories.index') }}"> @lang('site.categories')</a></li>
-                <li class="active">@lang('site.edit')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> الرئيسية</a></li>
+                <li><a href="{{ route('dashboard.categories.index') }}"> الأقسام</a></li>
+                <li class="active">تعديل</li>
             </ol>
         </section>
 
@@ -20,8 +20,8 @@
             <div class="box box-primary">
 
                 <div class="box-header">
-                    <h3 class="box-title">@lang('site.edit')</h3>
-                </div><!-- end of box header -->
+                    <h3 class="box-title">تعديل</h3>
+                </div><!-- نهاية ترويسة الصندوق -->
 
                 <div class="box-body">
 
@@ -32,25 +32,28 @@
                         {{ csrf_field() }}
                         {{ method_field('put') }}
 
-                        @foreach (config('translatable.locales') as $locale)
-                            <div class="form-group">
-                                <label>@lang('site.' . $locale . '.name')</label>
-                                <input type="text" name="{{ $locale }}[name]" class="form-control" value="{{ $category->translate($locale)->name }}">
-                            </div>
-                        @endforeach
-
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-edit"></i> @lang('site.edit')</button>
+                            <label>الاسم</label>
+                            <input type="text" name="name" class="form-control" value="{{ $category->name }}">
+                            @error('name')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
                         </div>
 
-                    </form><!-- end of form -->
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-edit"></i> تعديل
+                            </button>
+                        </div>
 
-                </div><!-- end of box body -->
+                    </form><!-- نهاية النموذج -->
 
-            </div><!-- end of box -->
+                </div><!-- نهاية جسم الصندوق -->
 
-        </section><!-- end of content -->
+            </div><!-- نهاية الصندوق -->
 
-    </div><!-- end of content wrapper -->
+        </section><!-- نهاية القسم -->
+
+    </div><!-- نهاية غلاف المحتوى -->
 
 @endsection

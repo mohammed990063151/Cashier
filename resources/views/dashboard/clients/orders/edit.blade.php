@@ -155,7 +155,7 @@
                             <h4>الإجمالي: <span class="total-price" style="color: #046b0a; font-weight: bold;">{{ number_format($order->total_price, 2) }}</span></h4>
 
                             <div class="form-group">
-                                <label for="discount">الخصم</label>
+                                <label for="discount">المدفوع </label>
                                 <input type="number" name="discount" id="discount" class="form-control" min="0" step="1" value="{{ $order->discount }}">
                             </div>
 
@@ -248,7 +248,7 @@
                                                 <strong>الإجمالي:</strong> {{ number_format($order->total_price,2) }} ج.س
                                             </div>
                                             <div class="col-md-3">
-                                                <strong>الخصم:</strong> {{ number_format($order->discount,2) }} ج.س
+                                                <strong>المدفوع :</strong> {{ number_format($order->discount,2) }} ج.س
                                             </div>
                                              <div class="col-md-3">
                                                 <strong>اجمالي المدفوع:</strong> {{ number_format($paid,2) }} ج.س
@@ -285,44 +285,67 @@
 
 </div><!-- نهاية حاوية المحتوى -->
 @push('scripts')
-{{-- <script>
-    $(document).ready(function() {
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.querySelector('form'); // النموذج
+    const totalPriceEl = document.querySelector('.total-price');
+    const discountEl = document.getElementById('discount');
+    const remainingEl = document.getElementById('remaining');
 
-        function calculateTotal() {
-            let total = 0;
+    // تحويل النص إلى رقم
+    function parseNumber(str) {
+        return parseFloat(str.replace(/,/g, '')) || 0;
+    }
 
-            $('.order-list tr').each(function() {
-                let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
-                let price = parseFloat($(this).find('.product-quantity').data('price')) || 0;
-                let productTotal = quantity * price;
+    // تحديث المتبقي عند تغيير المدفوع 
+    function updateRemaining() {
+        const total = parseNumber(totalPriceEl.textContent);
+        const discount = parseNumber(discountEl.value);
+        remainingEl.value = Math.max(total - discount, 0);
 
-                $(this).find('.product-price').text(productTotal.toFixed(2));
-                total += productTotal;
-            });
-
-            $('.total-price').text(total.toFixed(2));
-
-            let discount = parseFloat($('#discount').val()) || 0;
-            let remaining = total - discount;
-
-            $('.remaining-price').text(remaining.toFixed(2));
+        if (discount > total) {
+            remainingEl.style.color = '#d50606';
+            remainingEl.style.fontWeight = 'bold';
+        } else {
+            remainingEl.style.color = '#000';
+            remainingEl.style.fontWeight = 'normal';
         }
+    }
 
-        // تحديث عند تغيير الكمية
-        $(document).on('input', '.product-quantity', function() {
-            calculateTotal();
-        });
+    // حدث عند تغيير المدفوع 
+    discountEl.addEventListener('input', updateRemaining);
 
-        // تحديث عند إدخال الخصم
-        $(document).on('input', '#discount', function() {
-            calculateTotal();
-        });
+    // تحقق قبل إرسال النموذج
+    form.addEventListener('submit', function(e) {
+        const total = parseNumber(totalPriceEl.textContent);
+        const discount = parseNumber(discountEl.value);
 
-        // حساب الإجمالي عند تحميل الصفحة
-        calculateTotal();
+        if (discount > total) {
+            e.preventDefault(); // إيقاف الإرسال
+            alert("المدفوع  لا يمكن أن يكون أكبر من إجمالي الطلب!");
+            discountEl.focus();
+        }
     });
 
-</script> --}}
+    // إذا أردت يمكن تحديث المتبقي عند تغيير أي كمية في المنتجات
+    document.querySelectorAll('.product-quantity, .product-unit-price').forEach(input => {
+        input.addEventListener('input', function() {
+            let total = 0;
+            document.querySelectorAll('.order-list tr').forEach(row => {
+                const qty = parseNumber(row.querySelector('.product-quantity').value);
+                const price = parseNumber(row.querySelector('.product-unit-price').value);
+                total += qty * price;
+                row.querySelector('.product-price').textContent = (qty * price).toFixed(2);
+            });
+            totalPriceEl.textContent = total.toFixed(2);
+            updateRemaining();
+        });
+    });
+
+    // تحديث المتبقي عند تحميل الصفحة
+    updateRemaining();
+});
+</script>
 
 
 

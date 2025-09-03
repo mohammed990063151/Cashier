@@ -30,12 +30,20 @@ class ClientController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required',
-            'phone' => 'required|array|min:1',
-            'phone.0' => 'required',
-            'address' => 'required',
-        ]);
+     $request->validate([
+    'name' => 'required',
+    'phone' => 'required|array|min:1',
+    'phone.0' => 'required',
+    'address' => 'required',
+], [
+    'name.required' => 'اسم العميل مطلوب.',
+    'phone.required' => 'رقم الهاتف مطلوب.',
+    'phone.array' => 'يجب أن يكون رقم الهاتف في شكل قائمة (مصفوفة).',
+    'phone.min' => 'يجب إدخال رقم هاتف واحد على الأقل.',
+    'phone.0.required' => 'الرقم الأول للهاتف مطلوب.',
+    'address.required' => 'العنوان مطلوب.',
+]);
+
 
         $request_data = $request->all();
         $request_data['phone'] = array_filter($request->phone);
@@ -55,12 +63,20 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client)
     {
-        $request->validate([
-            'name' => 'required',
-            'phone' => 'required|array|min:1',
-            'phone.0' => 'required',
-            'address' => 'required',
-        ]);
+      $request->validate([
+    'name' => 'required',
+    'phone' => 'required|array|min:1',
+    'phone.0' => 'required',
+    'address' => 'required',
+], [
+    'name.required' => 'اسم العميل مطلوب.',
+    'phone.required' => 'رقم الهاتف مطلوب.',
+    'phone.array' => 'يجب أن يكون رقم الهاتف في شكل قائمة (مصفوفة).',
+    'phone.min' => 'يجب إدخال رقم هاتف واحد على الأقل.',
+    'phone.0.required' => 'الرقم الأول للهاتف مطلوب.',
+    'address.required' => 'العنوان مطلوب.',
+]);
+
 
         $request_data = $request->all();
         $request_data['phone'] = array_filter($request->phone);

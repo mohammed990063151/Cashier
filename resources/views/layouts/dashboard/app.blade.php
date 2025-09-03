@@ -245,7 +245,7 @@
         @yield('content')
 
         @include('partials._session')
-        @include('partials._errors')
+        {{-- @include('partials._errors') --}}
 
         <footer class="main-footer">
             <div class="pull-right hidden-xs">

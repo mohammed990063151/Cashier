@@ -23,7 +23,16 @@ class Clients extends Component
         'phones.0' => 'required',
         'address' => 'required|string',
     ];
-
+protected $messages = [
+    'name.required' => 'اسم العميل مطلوب.',
+    'name.string' => 'اسم العميل يجب أن يكون نصًا.',
+    'phones.required' => 'رقم الهاتف مطلوب.',
+    'phones.array' => 'رقم الهاتف يجب أن يكون مصفوفة.',
+    'phones.min' => 'يجب إدخال رقم هاتف واحد على الأقل.',
+    'phones.0.required' => 'الرقم الأول للهاتف مطلوب.',
+    'address.required' => 'العنوان مطلوب.',
+    'address.string' => 'العنوان يجب أن يكون نصًا.',
+];
     // إعادة التهيئة عند التغيير
     public function updatingSearch()
     {

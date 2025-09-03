@@ -9,7 +9,7 @@ class CashTransactionController extends Controller
 {
     public function index()
     {
-        $transactions = CashTransaction::latest()->paginate(20);
+        $transactions = CashTransaction::latest()->orderBy('created_at', 'desc')->paginate(20);
 
         $cashIn = CashTransaction::where('type','in')->sum('amount');
         $cashOut = CashTransaction::where('type','out')->sum('amount');

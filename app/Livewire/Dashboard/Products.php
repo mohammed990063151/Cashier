@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\Paginator;
 
 class Products extends Component
 {
@@ -27,16 +28,40 @@ class Products extends Component
 
     protected $paginationTheme = 'bootstrap';
 
+
+
+public function boot()
+{
+    Paginator::useBootstrap();
+}
+
     protected function rules()
     {
         return [
             'category_id'    => 'required',
-            'name'           => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:products,name,' . $this->productId,
             'purchase_price' => 'required|numeric|min:0',
             'sale_price'     => 'required|numeric|min:0',
             'stock'          => 'required|integer|min:0',
         ];
     }
+    protected $messages = [
+    'category_id.required'    => 'حقل القسم مطلوب.',
+     'name.unique'    => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
+    'name.required'           => 'حقل الاسم مطلوب.',
+    'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
+    'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
+    'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
+    'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
+    'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
+    'sale_price.required'     => 'حقل سعر البيع مطلوب.',
+    'sale_price.numeric'      => 'سعر البيع يجب أن يكون رقمًا.',
+    'sale_price.min'          => 'سعر البيع يجب ألا يقل عن 0.',
+    'stock.required'          => 'حقل المخزون مطلوب.',
+    'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
+    'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
+];
+
 
     public function updatingSearch()
     {

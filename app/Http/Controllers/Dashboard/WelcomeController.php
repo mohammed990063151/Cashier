@@ -1,49 +1,136 @@
 <?php
 
 namespace App\Http\Controllers\Dashboard;
-
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use App\Services\ReportsService;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\DB;
+use App\Models\Expense;
+use App\Models\Cash;
+use Carbon\Carbon;
 
+use App\Models\Supplier;
+use App\Models\CashTransaction;
+use Illuminate\Support\Facades\DB;
 class WelcomeController extends Controller
 {
      public function index(Request $request)
-    {
-       $filter = $request->query('filter', 'today'); // today, yesterday, last7days, this_month, last_month
-        $reportsService = new ReportsService($filter);
+   {
+        // إحصائيات عامة
+        $categories_count = Category::count();
+        $products_count   = Product::count();
+        $clients_count    = Client::count();
+        $users_count      = User::whereRoleIs('admin')->count();
 
-        $salesOverview      = $reportsService->salesOverview();
-        $profitsOverview    = $reportsService->profitsOverview();
-        $clientsOverview    = $reportsService->clientsOverview();
-        $suppliersOverview  = $reportsService->suppliersOverview();
-        $purchasesOverview  = $reportsService->purchasesOverview();
-        $expensesOverview   = $reportsService->expensesOverview();
-        $cashOverview       = $reportsService->cashOverview();
+        // مبيعات وأرباح
+        $total_sales = Order::sum('total_price');
+        $total_profit = Order::sum('profit');
 
+        // مصروفات ومشتريات
+        $total_expenses = Expense::sum('amount');
+        $total_purchases = DB::table('purchase_invoices')->sum('total');
 
-          $categories_count = Category::count();
-        $products_count = Product::count();
-        $clients_count = Client::count();
-        $users_count = User::count();
+        // العملاء والموردين
+        $total_due_clients = Order::sum('remaining');
+        $total_due_suppliers = DB::table('suppliers')->sum('balance');
 
-        $sales_data = Order::select(
-            DB::raw('YEAR(created_at) as year'),
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(total_price) as sum')
-        )->groupBy(DB::raw('YEAR(created_at)'), DB::raw('MONTH(created_at)'))->get();
-        return view('dashboard.reports.overview', compact(
-            'salesOverview', 'profitsOverview', 'clientsOverview', 'suppliersOverview',
-            'purchasesOverview', 'expensesOverview', 'cashOverview','categories_count', 'products_count', 'clients_count', 'users_count', 'sales_data'
+        // بيانات مالية
+        $salesOverview = [
+            'total_sales' => $total_sales,
+        ];
+        $profitsOverview = [
+            'total_profit' => $total_profit,
+        ];
+        $expensesOverview = [
+            'total_expenses' => $total_expenses,
+        ];
+        $purchasesOverview = [
+            'total_purchases' => $total_purchases,
+        ];
+        $clientsOverview = [
+            'total_due' => $total_due_clients,
+        ];
+        $suppliersOverview = [
+            'total_due' => $total_due_suppliers,
+        ];
+
+        // الخزينة
+        $cash = Cash::first();
+        $cashOverview = [
+            'balance' => $cash->balance ?? 0
+        ];
+
+        // حركة الخزينة اليومية
+        $transactions = CashTransaction::orderBy('transaction_date', 'desc')->get();
+        $dates = $transactions->pluck('transaction_date')->unique();
+
+        $dailyAdded = [];
+        $dailyDeducted = [];
+
+        foreach ($dates as $date) {
+            $dailyAdded[] = CashTransaction::whereDate('transaction_date', $date)
+                ->where('type', 'add')
+                ->sum('amount');
+
+            $dailyDeducted[] = CashTransaction::whereDate('transaction_date', $date)
+                ->where('type', 'deduct')
+                ->sum('amount');
+        }
+
+        // أفضل المنتجات مبيعًا
+        $topProducts = Product::withCount('orders')
+            ->orderBy('orders_count', 'desc')
+            ->take(5)
+            ->get();
+$startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+
+    $ordersQuery = Order::query();
+
+    if ($startDate && $endDate) {
+        $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
+    }
+
+    $filteredSales = $ordersQuery->sum('total_price');
+    $filteredProfit = $ordersQuery->sum('profit');
+
+    $currentMonth = Carbon::now()->month;
+$lastMonth = Carbon::now()->subMonth()->month;
+
+$currentMonthSales = Order::whereMonth('created_at', $currentMonth)->sum('total_price');
+$lastMonthSales = Order::whereMonth('created_at', $lastMonth)->sum('total_price');
+
+$salesGrowth = $lastMonthSales > 0
+    ? (($currentMonthSales - $lastMonthSales) / $lastMonthSales) * 100
+    : 0;
+
+    return view('dashboard.reports.overview', compact(
+        'filteredSales',
+        'filteredProfit',
+        'startDate',
+        'endDate',
+         'currentMonthSales',
+    'lastMonthSales',
+    'salesGrowth',
+            'categories_count',
+            'products_count',
+            'clients_count',
+            'users_count',
+            'salesOverview',
+            'profitsOverview',
+            'expensesOverview',
+            'purchasesOverview',
+            'clientsOverview',
+            'suppliersOverview',
+            'cashOverview',
+            'transactions',
+            'dates',
+            'dailyAdded',
+            'dailyDeducted',
+            'topProducts'
         ));
-    }//eof index
-
-
-
 }//end of controller
+}

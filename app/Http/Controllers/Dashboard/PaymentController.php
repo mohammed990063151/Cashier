@@ -32,7 +32,7 @@ class PaymentController extends Controller
                 });
         }
 
-        $orders = $query->paginate(15);
+        $orders = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return view('dashboard.payments.index', compact('orders'));
     }
@@ -80,6 +80,7 @@ class PaymentController extends Controller
 
 public function update(Request $request, $paymentId)
 {
+    // dd($request);
     $request->validate([
         'amount' => 'required|numeric|min:0.01',
         'method' => 'required|in:cash,bank',

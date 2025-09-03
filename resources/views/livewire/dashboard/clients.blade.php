@@ -10,100 +10,81 @@
 
     <section class="content">
 
-        <div class="box box-primary">
-
-            <div class="box-header with-border">
-                <h3 class="box-title" style="margin-bottom: 15px">العملاء <small>{{ $clients->total() }}</small></h3>
-
-                {{-- بحث مباشر --}}
-                <div class="row">
-                    <div class="col-md-4">
-                        {{-- <input type="text" wire:model.debounce.300ms="search" class="form-control" placeholder="بحث بالاسم أو الهاتف أو العنوان"> --}}
-                        <input type="text" id="searchInput" wire:model.debounce.500ms="search" placeholder="بحث في كل الأعمدة" class="form-control">
-                    </div>
-
-
-
-                    <div class="col-md-4">
-
-                        @if (auth()->user()->hasPermission('create_clients'))
-                        <a href="{{ route('dashboard.clients.create') }}" class="btn btn-primary"><i class="fa fa-plus"></i> اضافة عميل</a>
-                        @else
-                        <a href="#" class="btn btn-primary disabled"><i class="fa fa-plus"></i> اضافة عميل</a>
-                        @endif
-                    </div>
+        <div class="box box-primary shadow-sm">
+            <div class="box-header with-border d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <h3 class="box-title">العملاء <small class="text-muted">{{ $clients->total() }}</small></h3>
+               
+                <div class="d-flex flex-wrap gap-2">
+                     <br /> <br />
+                    <input type="text" id="searchInput" wire:model.debounce.500ms="search" class="form-control" placeholder="بحث في كل الأعمدة">
+                    <br /><br />
+                    @if(auth()->user()->hasPermission('create_clients'))
+                        <a href="{{ route('dashboard.clients.create') }}" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة عميل</a>
+                    @else
+                        <a href="#" class="btn btn-primary disabled"><i class="fa fa-plus"></i> إضافة عميل</a>
+                    @endif
                 </div>
             </div>
 
-            <div class="box-body">
-
-
-
-                {{-- جدول العملاء --}}
+            <div class="box-body table-responsive">
                 @if($clients->count() > 0)
-                <table id="productsTable" class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>الاسم</th>
-                            <th>الهاتف</th>
-                            <th>العنوان</th>
-                            <th>إضافة طلب</th>
-                            <th>الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($clients as $index => $client)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>{{ $client->name }}</td>
-                            <td>{{ is_array($client->phone) ? implode('-', $client->phone) : $client->phone }}</td>
-                            <td>{{ $client->address }}</td>
-                            <td>
-                                @if(auth()->user()->hasPermission('create_orders'))
-                                <a href="{{ route('dashboard.clients.orders.create', $client->id) }}" class="btn btn-primary btn-sm">إضافة طلب</a>
-                                @else
-                                <a href="#" class="btn btn-primary btn-sm disabled">إضافة طلب</a>
-                                @endif
-                            </td>
-                            <td>
-                                @if (auth()->user()->hasPermission('update_clients'))
-                                <a href="{{ route('dashboard.clients.edit', $client->id) }}" class="btn btn-info btn-sm"><i class="fa fa-edit"></i>تعديل</a>
-                                @else
-                                <a href="#" class="btn btn-info btn-sm disabled"><i class="fa fa-edit"></i>تعديل</a>
-                                @endif
-                                @if (auth()->user()->hasPermission('delete_clients'))
-                                <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $client->id }})">
-                                    <i class="fa fa-trash"></i> حذف
-                                </button>
-                                
-                                @else
-                                <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i>حذف</button>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                    <table class="table table-hover table-striped table-bordered">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>الاسم</th>
+                                <th>الهاتف</th>
+                                <th>العنوان</th>
+                                <th>إضافة طلب</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($clients as $index => $client)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $client->name }}</td>
+                                    <td>{{ is_array($client->phone) ? implode('-', $client->phone) : $client->phone }}</td>
+                                    <td>{{ $client->address }}</td>
+                                    <td>
+                                        @if(auth()->user()->hasPermission('create_orders'))
+                                            <a href="{{ route('dashboard.clients.orders.create', $client->id) }}" class="btn btn-success btn-sm">إضافة طلب</a>
+                                        @else
+                                            <a href="#" class="btn btn-success btn-sm disabled">إضافة طلب</a>
+                                        @endif
+                                    </td>
+                                    <td class="d-flex gap-1 flex-wrap">
+                                        @if(auth()->user()->hasPermission('update_clients'))
+                                            <a href="{{ route('dashboard.clients.edit', $client->id) }}" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> تعديل</a>
+                                        @else
+                                            <a href="#" class="btn btn-info btn-sm disabled"><i class="fa fa-edit"></i> تعديل</a>
+                                        @endif
 
-                {{-- ترقيم الصفحات --}}
-                {{ $clients->links() }}
+                                        @if(auth()->user()->hasPermission('delete_clients'))
+                                            <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
+                                        @else
+                                            <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
 
+                    <div class="mt-3">
+                        {{ $clients->links() }}
+                    </div>
                 @else
-                <h4>لا توجد بيانات</h4>
+                    <h4 class="text-center text-muted mt-3">لا توجد بيانات</h4>
                 @endif
-
             </div>
-
         </div>
 
     </section>
-
 </div>
 
 @push('scripts')
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
     function confirmDelete(clientId) {
         Swal.fire({
@@ -117,44 +98,32 @@
             cancelButtonText: 'إلغاء'
         }).then((result) => {
             if (result.isConfirmed) {
-                // إنشاء form ديناميكي وإرساله
                 let form = document.createElement('form');
-                form.action = '/dashboard/clients/' + clientId; // رابط الحذف
+                form.action = '/dashboard/clients/' + clientId;
                 form.method = 'POST';
-
-                let csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = '{{ csrf_token() }}';
-                form.appendChild(csrfInput);
-
-                let methodInput = document.createElement('input');
-                methodInput.type = 'hidden';
-                methodInput.name = '_method';
-                methodInput.value = 'DELETE';
-                form.appendChild(methodInput);
-
+                form.innerHTML = `
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="DELETE">
+                `;
                 document.body.appendChild(form);
                 form.submit();
             }
         })
     }
-</script>
 
-<script>
     document.addEventListener('DOMContentLoaded', function() {
         const input = document.getElementById('searchInput');
         const table = document.getElementById('productsTable');
-        const rows = table.querySelectorAll('tbody tr');
-        input.addEventListener('keyup', function() {
-            const filter = input.value.toLowerCase();
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(filter) ? '' : 'none';
+        if (table) {
+            const rows = table.querySelectorAll('tbody tr');
+            input.addEventListener('keyup', function() {
+                const filter = input.value.toLowerCase();
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
             });
-        });
+        }
     });
-
 </script>
-
 @endpush

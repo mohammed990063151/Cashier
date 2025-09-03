@@ -44,12 +44,18 @@
                             <td style="color: rgb(86, 157, 23);">{{ number_format($order->payments->sum('amount'),2) }}</td>
                             <td style="color: red;">{{ number_format($order->remaining,2) }}</td>
                             <td class="d-flex flex-wrap">
-                                <button class="btn btn-success btn-sm mr-1 mb-1 add-payment-btn" data-toggle="modal" data-target="#paymentModal" data-order-id="{{ $order->id }}">
-                                    إضافة دفعة
-                                </button>
-                                <button class="btn btn-warning btn-sm edit-payment-btn" data-order-id="{{ $order->id }}" data-toggle="modal" data-target="#editPaymentModal">
-                                    تعديل الدفعات
-                                </button>
+                                <button class="btn btn-success btn-sm mr-1 mb-1 add-payment-btn" 
+        data-toggle="modal" 
+        data-target="#paymentModal" 
+        data-order-id="{{ $order->id }}"
+        data-remaining="{{ $order->remaining }}">
+    إضافة دفعة
+</button>
+
+                                <a href="{{ route('dashboard.payments.edit', $order->id) }}" class="btn btn-warning">
+    <i class="fa fa-edit"></i> تعديل دفعات الطلب
+</a>
+
 
 
                                 <button class="btn btn-info btn-sm mb-1 view-payments-btn" data-toggle="modal" data-target="#viewPaymentsModal" data-order-id="{{ $order->id }}">
@@ -80,6 +86,7 @@
                     <div class="form-group">
                         <label>المبلغ</label>
                         <input type="number" step="0.01" name="amount" class="form-control" required>
+                          <small class="remaining-text">رصيد المتبقي الحالي: 0.00</small>
                     </div>
                     <div class="form-group">
                         <label>طريقة الدفع</label>
@@ -146,10 +153,18 @@
     $(document).ready(function() {
 
         // ضبط زر إضافة الدفعة
+        // $('.add-payment-btn').on('click', function() {
+        //     var orderId = $(this).data('order-id');
+        //     $('#paymentOrderId').val(orderId);
+        // });
         $('.add-payment-btn').on('click', function() {
-            var orderId = $(this).data('order-id');
-            $('#paymentOrderId').val(orderId);
-        });
+    var orderId = $(this).data('order-id');
+    var remaining = $(this).data('remaining'); // المتبقي للطلب
+
+    $('#paymentOrderId').val(orderId);
+    $('#paymentModal').find('small.remaining-text').text('رصيد المورد الحالي: ' + parseFloat(remaining).toFixed(2));
+});
+
 
         // ضبط زر عرض المدفوعات
         $('.view-payments-btn').on('click', function() {

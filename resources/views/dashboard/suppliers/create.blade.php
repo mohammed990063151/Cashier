@@ -20,26 +20,38 @@
             <div class="box-body">
                 <form action="{{ route('dashboard.suppliers.store') }}" method="POST">
                     @csrf
-
                     <div class="form-group">
                         <label for="name">اسم المورد</label>
-                        <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
+                        <input type="text" name="name" class="form-control" value="{{ old('name') }}">
+                        @error('name')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="phone">الهاتف</label>
                         <input type="text" name="phone" class="form-control" value="{{ old('phone') }}">
+                        @error('phone')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="address">العنوان</label>
                         <textarea name="address" class="form-control">{{ old('address') }}</textarea>
+                        @error('address')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="balance">الرصيد الابتدائي</label>
                         <input type="number" name="balance" class="form-control" value="{{ old('balance', 0) }}" step="0.01">
+                        @error('balance')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
+
 
                     <button type="submit" class="btn btn-primary">💾 حفظ المورد</button>
                 </form>

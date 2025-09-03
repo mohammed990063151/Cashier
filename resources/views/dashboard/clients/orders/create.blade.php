@@ -136,7 +136,7 @@
                             <h4>الإجمالي: <span class="total-price" style="color: #01941f; font-weight: bold;">0</span></h4>
 
                             <div class="form-group">
-                                <label>الخصم:</label>
+                                <label>المدفوع :</label>
                                 <input type="number" step="0.01" name="discount" id="discount" class="form-control" value="0">
                             </div>
 
@@ -214,18 +214,18 @@
                                                 </tfoot>
                                             </table>
                                         </div>
-  @php
-                $paid = $order->payments->sum('amount');
-            @endphp
+                                        @php
+                                        $paid = $order->payments->sum('amount');
+                                        @endphp
                                         <!-- معلومات الطلب -->
                                         <div class="row mt-2">
                                             <div class="col-md-3" style="color: #01941f; font-weight: bold;">
                                                 <strong>الإجمالي:</strong> {{ number_format($order->total_price,2) }} ج.س
                                             </div>
                                             <div class="col-md-3">
-                                                <strong>الخصم:</strong> {{ number_format($order->discount,2) }} ج.س
+                                                <strong>المدفوع عند البيع:</strong> {{ number_format($order->discount,2) }} ج.س
                                             </div>
-                                             <div class="col-md-3">
+                                            <div class="col-md-3">
                                                 <strong>اجمالي مدفوع:</strong> {{ number_format($paid,2) }} ج.س
                                             </div>
                                             <div class="col-md-3" style="color: #6a0505; font-weight: bold;">
@@ -259,6 +259,53 @@
 
 
 @push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.querySelector('form'); // النموذج
+        const totalPriceEl = document.querySelector('.total-price');
+        const discountEl = document.getElementById('discount');
+        const remainingEl = document.getElementById('remaining');
+
+        // تحويل النص إلى رقم
+        function parseNumber(str) {
+            return parseFloat(str.replace(/,/g, '')) || 0;
+        }
+
+        // تحديث المتبقي عند تغيير المدفوع 
+        discountEl.addEventListener('input', function() {
+            const total = parseNumber(totalPriceEl.textContent);
+            const discount = parseNumber(this.value);
+
+            remainingEl.value = Math.max(total - discount, 0);
+
+            // إذا المدفوع  أكبر من الإجمالي
+            if (discount > total) {
+                remainingEl.style.color = '#d50606';
+                remainingEl.style.fontWeight = 'bold';
+            } else {
+                remainingEl.style.color = '#000';
+                remainingEl.style.fontWeight = 'normal';
+            }
+        });
+
+        // تحقق قبل إرسال النموذج
+        form.addEventListener('submit', function(e) {
+            const total = parseNumber(totalPriceEl.textContent);
+            const discount = parseNumber(discountEl.value);
+
+            if (discount > total) {
+                e.preventDefault(); // إيقاف الإرسال
+                alert("المدفوع  لا يمكن أن يكون أكبر من إجمالي الطلب!");
+                discountEl.focus();
+            }
+        });
+    });
+
+</script>
+
+
+
+
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         let alertBox = document.getElementById('error-alert');

@@ -44,8 +44,9 @@ public function show($id)
     $orders = Order::whereHas('client', function ($q) use ($search) {
         $q->where('name', 'like', '%' . $search . '%');
     })
-    ->orWhere('order_number', 'like', '%' . $search . '%') // البحث برقم الطلب
-    ->paginate(5);
+    ->orWhere('order_number', 'like', '%' . $search . '%')
+     ->orderBy('created_at', 'desc')
+    ->paginate(10);
 
         return view('dashboard.orders.index', compact('orders'));
 
@@ -57,44 +58,26 @@ public function show($id)
         return view('dashboard.orders._products', compact('order', 'products'));
 
     }//end of products
-
-
-
-// public function generatePdf($orderId)
-// {
-//     $order = Order::with('products')->findOrFail($orderId);
-//     $products = $order->products;
-
-//     $pdf = Pdf::loadView('pdf.order-invoice', compact('order', 'products'))
-//         ->setPaper('a4', 'portrait')
-//         ->setOptions([
-//             'defaultFont' => 'dejavusans',
-//             'isHtml5ParserEnabled' => true,
-//             'isRemoteEnabled' => true,
-//         ]);
-
-//     return $pdf->stream('invoice-' . $order->id . '.pdf');
-// }
 public function generatePdf($orderId)
 {
     $order = Order::with('products')->findOrFail($orderId);
     $products = $order->products;
 
-    $mpdf = new Mpdf([
+    $mpdf = new \Mpdf\Mpdf([
         'mode' => 'utf-8',
-        'format' => 'A4',
-        'default_font' => 'dejavusans', // خط يدعم العربية
-        'margin_left' => 10,
-        'margin_right' => 10,
+        'format' => [80, 80], // مقاس الورق 80mm * 80mm
+        'default_font' => 'dejavusans',
+        'margin_left' => 2,
+        'margin_right' => 2,
+        'margin_top' => 2,
+        'margin_bottom' => 2,
     ]);
 
     $html = view('pdf.order-invoice', compact('order', 'products'))->render();
 
     $mpdf->WriteHTML($html);
-    // return $mpdf->Output("invoice-{$order->id}.pdf", 'I'); // عرض في المتصفح
-     return $mpdf->Output("invoice-{$order->id}.pdf", 'D');
+    return $mpdf->Output("receipt-{$order->id}.pdf", 'I'); // عرض مباشرة
 }
-
 
   public function destroy(Order $order , CashService $cashService)
 {

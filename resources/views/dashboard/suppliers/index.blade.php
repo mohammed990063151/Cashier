@@ -67,17 +67,19 @@
                                 <td>
                                     <a href="{{ route('dashboard.suppliers.edit', $supplier->id) }}" class="btn btn-warning btn-sm"><i class="fa fa-pencil"></i> تعديل</a>
                                     <!-- زر فتح مودال إضافة دفعة -->
-                                    <button class="btn btn-success btn-sm add-supplier-payment-btn" data-toggle="modal" data-target="#supplierPaymentModal" data-supplier-id="{{ $supplier->id }}" data-remaining="{{ $supplier->balance }}">
+                                    <a href="{{ route('dashboard.supplier-payments.create', $supplier->id) }}" class="btn btn-success btn-sm">
                                         إضافة دفعة
-                                    </button>
+                                    </a>
 
 
 
 
 
-                                    <button type="button" class="btn btn-info btn-sm" data-toggle="modal" data-target="#paymentsModal{{ $supplier->id }}">
-                                        💰 الدفعات
-                                    </button>
+
+                                   <a href="{{ route('dashboard.suppliers.payments', $supplier->id) }}" class="btn btn-info btn-sm">
+    💰 الدفعات
+</a>
+
 
                                     <form action="{{ route('dashboard.suppliers.destroy', $supplier->id) }}" method="post" style="display: inline-block;">
                                         @csrf
@@ -118,39 +120,47 @@
 
 
 <!-- المودال -->
-<div class="modal fade" id="supplierPaymentModal" tabindex="-1" role="dialog">
+{{-- <div class="modal fade" id="supplierPaymentModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <form id="supplierPaymentForm" method="POST" action="{{ route('dashboard.supplier-payments.store') }}">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">إضافة دفعة للمورد</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="supplier_id" id="supplierPaymentSupplierId">
-                    <div class="form-group">
-                        <label>المبلغ</label>
-                        <input type="number" step="0.01" name="amount" id="supplierPaymentAmount" class="form-control" required>
-                        <small id="supplierRemainingText" class="text-muted"></small>
-                    </div>
-                    <div class="form-group">
-                        <label>تاريخ الدفع</label>
-                        <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>ملاحظات</label>
-                        <textarea name="note" class="form-control"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-                </div>
-            </form>
-        </div>
+@csrf
+<div class="modal-header">
+    <h5 class="modal-title">إضافة دفعة للمورد</h5>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+</div>
+<div class="modal-body">
+    <input type="hidden" name="supplier_id" id="supplierPaymentSupplierId">
+    <div class="form-group">
+        <label>المبلغ</label>
+        <input type="number" step="0.01" name="amount" id="supplierPaymentAmount" class="form-control" required>
+        <small id="supplierRemainingText" class="text-muted"></small>
+    </div>
+    <div class="form-group">
+        <label>اختر الفاتورة (اختياري)</label>
+        <select name="purchase_invoice_id" id="supplierInvoiceSelect" class="form-control">
+            <option value="">-- لا شيء --</option>
+        </select>
+        <small class="text-muted" id="invoiceMessage"></small>
+    </div>
+
+    <div class="form-group">
+        <label>تاريخ الدفع</label>
+        <input type="date" name="payment_date" class="form-control" value="{{ date('Y-m-d') }}" required>
+    </div>
+    <div class="form-group">
+        <label>ملاحظات</label>
+        <textarea name="note" class="form-control"></textarea>
     </div>
 </div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+</div>
+</form>
+</div>
+</div>
+</div> --}}
 
 
 
@@ -178,17 +188,10 @@
                             <td>{{ $payment->payment_date }}</td>
                             <td>{{ number_format($payment->amount, 2) }}</td>
                             <td>{{ $payment->note }}</td>
-                            <td><button class="btn btn-warning btn-sm edit-supplier-payment-btn"
-        data-toggle="modal"
-        data-target="#editSupplierPaymentModal"
-        data-payment-id="{{ $payment->id }}"
-        data-amount="{{ $payment->amount }}"
-        data-payment-date="{{ $payment->payment_date }}"
-        data-note="{{ $payment->note }}"
-        data-supplier-id="{{ $payment->supplier_id }}">
-    تعديل
-</button>
-</td>
+                            <td><button class="btn btn-warning btn-sm edit-supplier-payment-btn" data-toggle="modal" data-target="#editSupplierPaymentModal" data-payment-id="{{ $payment->id }}" data-amount="{{ $payment->amount }}" data-payment-date="{{ $payment->payment_date }}" data-note="{{ $payment->note }}" data-supplier-id="{{ $payment->supplier_id }}">
+                                    تعديل
+                                </button>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -243,39 +246,86 @@
 
 
 <!-- مودال الدفع -->
-<div class="modal fade" id="supplierPaymentModal" tabindex="-1" role="dialog">
+{{-- <div class="modal fade" id="supplierPaymentModal" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <form id="supplierPaymentForm" method="POST" action="{{ route('dashboard.supplier-payments.store') }}">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">إضافة دفعة للمورد</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" name="supplier_id" id="supplierPaymentSupplierId">
-                    <div class="form-group">
-                        <label>المبلغ</label>
-                        <input type="number" step="0.01" name="amount" id="supplierPaymentAmount" class="form-control" required>
-                        <small id="supplierRemainingText" class="text-muted"></small>
-                    </div>
-                    <div class="form-group">
-                        <label>تاريخ الدفع</label>
-                        <input type="date" name="payment_date" class="form-control" required value="{{ date('Y-m-d') }}">
-                    </div>
-                    <div class="form-group">
-                        <label>ملاحظات</label>
-                        <textarea name="note" class="form-control"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
-                </div>
-            </form>
-        </div>
+            {{-- <form id="supplierPaymentForm" method="POST" action="{{ route('dashboard.supplier-payments.store') }}">
+@csrf
+<div class="modal-header">
+    <h5 class="modal-title">إضافة دفعة للمورد</h5>
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+</div>
+<div class="modal-body">
+    <input type="hidden" name="supplier_id" id="supplierPaymentSupplierId">
+    <div class="form-group">
+        <label>المبلغ</label>
+        <input type="number" name="amount" id="supplierPaymentAmount" class="form-control" required>
+        <small id="supplierRemainingText" class="text-muted"></small>
+    </div>
+    <div class="form-group">
+        <label>تاريخ الدفع</label>
+        <input type="date" name="payment_date" class="form-control" required value="{{ date('Y-m-d') }}">
+    </div>
+    <div class="form-group">
+        <label>ملاحظات</label>
+        <textarea name="note" class="form-control"></textarea>
     </div>
 </div>
+<div class="modal-footer">
+    <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+</div>
+</form> --}
+<form id="supplierPaymentForm" method="POST" action="{{ route('dashboard.supplier-payments.store') }}">
+    @csrf
+    <div class="modal-header">
+        <h5 class="modal-title">إضافة دفعة للمورد</h5>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+    </div>
+    <div class="modal-body">
+        <input type="hidden" name="supplier_id" id="supplierPaymentSupplierId">
+
+        <!-- حقل اختيار الفاتورة -->
+        <div class="form-group">
+            <label>اختر الفاتورة (اختياري)</label>
+            <select name="purchase_invoice_id" id="supplierInvoiceSelect" class="form-control">
+                <option value="">-- لا شيء --</option>
+            </select>
+            <small class="text-danger" id="invoiceError"></small>
+        </div>
+
+
+        <div class="form-group">
+            <label>المبلغ</label>
+            <input type="number" step="0.01" name="amount" id="supplierPaymentAmount" class="form-control" required value="{{ old('amount') }}">
+            <small id="supplierRemainingText" class="text-muted"></small>
+            @error('amount')
+            <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label>تاريخ الدفع</label>
+            <input type="date" name="payment_date" class="form-control" required value="{{ old('payment_date', date('Y-m-d')) }}">
+            @error('payment_date')
+            <small class="text-danger">{{ $message }}</small>
+            @enderror
+        </div>
+
+        <div class="form-group">
+            <label>ملاحظات</label>
+            <textarea name="note" class="form-control">{{ old('note') }}</textarea>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">حفظ الدفعة</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+    </div>
+</form>
+
+</div>
+</div>
+</div> --}}
 
 @push('scripts')
 {{-- <script>
@@ -305,7 +355,7 @@
     });
 
 </script> --}}
-<script>
+{{-- <script>
     $(document).ready(function() {
         $('.add-supplier-payment-btn').on('click', function() {
             var supplierId = $(this).data('supplier-id');
@@ -327,29 +377,73 @@
         });
     });
 
-</script>
+</script> --}}
+{{-- <script>
+    $(document).ready(function() {
+        $('.add-supplier-payment-btn').on('click', function() {
+            var supplierId = $(this).data('supplier-id');
+            var remaining = parseFloat($(this).data('remaining'));
 
+            // إعداد المودال
+            $('#supplierPaymentSupplierId').val(supplierId);
+            $('#supplierPaymentAmount').attr('max', remaining).val('');
+            $('#supplierRemainingText').text('رصيد المورد الحالي: ' + remaining.toFixed(2));
 
-<script>
-$(document).ready(function() {
-    $('.edit-supplier-payment-btn').on('click', function() {
-        var paymentId   = $(this).data('payment-id');
-        var supplierId  = $(this).data('supplier-id');
-        var amount      = parseFloat($(this).data('amount'));
-        var date        = $(this).data('payment-date');
-        var note        = $(this).data('note');
+            // مسح الفواتير القديمة
+            $('#supplierInvoiceSelect').empty().append('<option value="">-- لا شيء --</option>');
+            $('#invoiceMessage').text('');
 
-        $('#editPaymentId').val(paymentId);
-        $('#editSupplierId').val(supplierId);
-        $('#editPaymentAmount').val(amount.toFixed(2));
-        $('#editPaymentDate').val(date);
-        $('#editPaymentNote').val(note);
+            // جلب الفواتير عبر AJAX
+            $.get(`/dashboard/suppliers/${supplierId}/invoices`, function(data) {
+                if (data.length === 0) {
+                    $('#invoiceMessage').text('لا توجد فواتير مفتوحة لهذا المورد');
+                } else {
+                    data.forEach(function(invoice) {
+                        $('#supplierInvoiceSelect').append(
+                            `<option value="${invoice.id}">${invoice.invoice_number} - المبلغ المتبقي: ${invoice.remaining_amount}</option>`
+                        );
+                    });
+                }
+            }).fail(function() {
+                $('#invoiceMessage').text('⚠️ حدث خطأ أثناء جلب الفواتير');
+            });
+        });
 
-        // اضبط action الفورم ديناميكيًا
-        $('#editSupplierPaymentForm').attr('action', '/dashboard/supplier-payments/' + paymentId);
+        // تحقق من المبلغ قبل الإرسال
+        $('#supplierPaymentForm').on('submit', function(e) {
+            var max = parseFloat($('#supplierPaymentAmount').attr('max'));
+            var amount = parseFloat($('#supplierPaymentAmount').val());
+
+            if (amount > max) {
+                alert('⚠️ المبلغ أكبر من رصيد المورد!');
+                e.preventDefault();
+            }
+        });
     });
-});
-</script>
+
+</script> --}}
+
+{{-- <script>
+    $(document).ready(function() {
+        $('.edit-supplier-payment-btn').on('click', function() {
+            var paymentId = $(this).data('payment-id');
+            var supplierId = $(this).data('supplier-id');
+            var amount = parseFloat($(this).data('amount'));
+            var date = $(this).data('payment-date');
+            var note = $(this).data('note');
+
+            $('#editPaymentId').val(paymentId);
+            $('#editSupplierId').val(supplierId);
+            $('#editPaymentAmount').val(amount.toFixed(2));
+            $('#editPaymentDate').val(date);
+            $('#editPaymentNote').val(note);
+
+            // اضبط action الفورم ديناميكيًا
+            $('#editSupplierPaymentForm').attr('action', '/dashboard/supplier-payments/' + paymentId);
+        });
+    });
+
+</script> --}}
 
 @endpush
 @endsection

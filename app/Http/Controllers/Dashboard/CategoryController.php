@@ -14,61 +14,73 @@ class CategoryController extends Controller
         $categories = Category::when($request->search, function ($q) use ($request) {
 
             return $q->whereTranslationLike('name', '%' . $request->search . '%');
-
         })->latest()->paginate(5);
 
         return view('dashboard.categories.index', compact('categories'));
-
-    }//end of index
+    } //end of index
 
     public function create()
     {
         return view('dashboard.categories.create');
-
-    }//end of create
+    } //end of create
 
     public function store(Request $request)
-    {
-        $rules = [];
+{
+    $rules = [
+        'name' => ['required', 'unique:categories,name'],
+    ];
 
-        $request->validate($rules);
+    $messages = [
+        'name.required' => 'حقل الاسم مطلوب',
+        'name.unique'   => 'الاسم مستخدم مسبقاً',
+    ];
 
-        Category::create($request->all());
-        session()->flash('success', __('تم الإضافة بنجاح'));
-        return redirect()->route('dashboard.categories.index');
+    $request->validate($rules, $messages);
 
-    }//end of store
+    Category::create($request->all());
+
+    session()->flash('success', 'تمت الإضافة بنجاح');
+    return redirect()->route('dashboard.categories.index');
+}
+
+    // end of store
 
     public function edit(Category $category)
     {
         return view('dashboard.categories.edit', compact('category'));
+    } //end of edit
 
-    }//end of edit
+   
 
-    public function update(Request $request, Category $category)
-    {
-        $rules = [];
+public function update(Request $request, Category $category)
+{
+    $rules = [
+        'name' => [
+            'required',
+            Rule::unique('categories', 'name')->ignore($category->id),
+        ],
+    ];
 
-        foreach (config('translatable.locales') as $locale) {
+    $messages = [
+        'name.required' => 'حقل الاسم مطلوب',
+        'name.unique'   => 'الاسم مستخدم مسبقاً',
+    ];
 
-            $rules += [$locale . '.name' => ['required', Rule::unique('category_translations', 'name')->ignore($category->id, 'category_id')]];
+    $request->validate($rules, $messages);
 
-        }//end of for each
+    $category->update($request->all());
 
-        $request->validate($rules);
+    session()->flash('success', 'تم التعديل بنجاح');
+    return redirect()->route('dashboard.categories.index');
+}
 
-        $category->update($request->all());
-        session()->flash('success', __('تم التعديل بنجاح'));
-        return redirect()->route('dashboard.categories.index');
-
-    }//end of update
+    //end of update
 
     public function destroy(Category $category)
     {
         $category->delete();
         session()->flash('success', __('تم الحذف بنجاح'));
         return redirect()->route('dashboard.categories.index');
-
-    }//end of destroy
+    } //end of destroy
 
 }//end of controller

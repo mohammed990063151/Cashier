@@ -21,26 +21,38 @@
                 <form action="{{ route('dashboard.suppliers.update', $supplier->id) }}" method="POST">
                     @csrf
                     @method('PUT')
-
                     <div class="form-group">
                         <label for="name">اسم المورد</label>
-                        <input type="text" name="name" class="form-control" value="{{ old('name', $supplier->name) }}" required>
+                        <input type="text" name="name" class="form-control" value="{{ old('name', $supplier->name) }}" >
+                        @error('name')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="phone">الهاتف</label>
                         <input type="text" name="phone" class="form-control" value="{{ old('phone', $supplier->phone) }}">
+                        @error('phone')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="address">العنوان</label>
                         <textarea name="address" class="form-control">{{ old('address', $supplier->address) }}</textarea>
+                        @error('address')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
 
                     <div class="form-group">
                         <label for="balance">الرصيد</label>
                         <input type="number" name="balance" class="form-control" value="{{ old('balance', $supplier->balance) }}" step="0.01">
+                        @error('balance')
+                        <small class="text-danger">{{ $message }}</small>
+                        @enderror
                     </div>
+
 
                     <button type="submit" class="btn btn-primary">💾 تحديث المورد</button>
                 </form>

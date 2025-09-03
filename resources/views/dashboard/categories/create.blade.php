@@ -30,9 +30,15 @@
                         {{ method_field('post') }}
 
                         <div class="form-group">
-                            <label>الاسم</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}">
-                        </div>
+    <label>الاسم</label>
+    <input type="text" name="name" class="form-control" value="{{ old('name') }}">
+
+   @error('name')
+    <span class="text-danger">{{ $message }}</span>
+@enderror
+
+</div>
+
 
                         <div class="form-group">
                             <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة</button>

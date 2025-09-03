@@ -68,7 +68,7 @@
                                 <th>رقم الطلب</th>
                                 <th>اسم العميل</th>
                                 <th>اجمالي طلب</th>
-                                <th>الخصم</th>
+                                <th>المدفوع منه</th>
                                 <th>المتبقي عليه</th>
                                 <th>تاريخ الإنشاء</th>
                                 <th>الإجراءات</th>
@@ -169,7 +169,7 @@
 </div><!-- end of content wrapper -->
 
 
-<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+{{-- <div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -188,11 +188,61 @@
             </div>
         </div>
     </div>
-</div>
+</div> --}}
 
+<div class="modal fade" id="orderModal" tabindex="-1" role="dialog" aria-labelledby="orderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-content rounded-3 shadow-lg border-0">
+
+            <!-- الهيدر -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="orderModalLabel">تفاصيل الطلب</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="إغلاق">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- البودي -->
+            <div class="modal-body" id="orderModalContent">
+                <div class="d-flex justify-content-center align-items-center" style="min-height:150px;">
+                    <p class="text-muted">جارٍ تحميل البيانات...</p>
+                </div>
+            </div>
+
+            <!-- الفوتر -->
+            <div class="modal-footer d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-primary"  onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">طباعة الطلب</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@push('scripts')
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success'))
+<script>
+    let orderId = "{{ session('order_id') }}"; // رقم الطلب الجديد
+    Swal.fire({
+        title: 'تم إضافة الطلب بنجاح!',
+        text: "هل تريد طباعة الفاتورة الآن؟",
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'نعم، اطبع الفاتورة',
+        cancelButtonText: 'لا، لاحقاً'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // إعادة التوجيه لصفحة PDF للطباعة بالمسار الصحيح
+            window.location.href = '/dashboard/orders/' + orderId + '/pdf';
+        }
+    });
+</script>
+
+@endif
+@endpush
 
 <script>
     $(document).ready(function() {

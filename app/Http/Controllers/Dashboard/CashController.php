@@ -13,7 +13,7 @@ class CashController extends Controller
     public function index()
     {
         $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
-        $transactions = CashTransaction::latest()->paginate(10);
+        $transactions = CashTransaction::latest()->orderBy('created_at', 'desc')->paginate(10);
         return view('dashboard.cash.index', compact('cash', 'transactions'));
     }
 

@@ -73,7 +73,7 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
     // web.php
-    Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payments.update');
+    Route::put('payments/{payment}/update', [PaymentController::class, 'update'])->name('payment.update');
 
 
     Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
@@ -156,9 +156,21 @@ Route::post('/inventory-report/data', [App\Http\Controllers\Dashboard\InventoryR
 
     // Suppliers
     Route::resource('suppliers', SupplierController::class);
-    Route::post('supplier-payments/store', [SupplierController::class, 'storepayme'])->name('supplier-payments.store');
+    // Route::post('supplier-payments/store', [SupplierController::class, 'storepayme'])->name('supplier-payments.store');
     Route::put('supplier-payments/{payment}', [SupplierController::class, 'updatepayme'])
         ->name('dashboard.supplier-payments.update');
+Route::get('suppliers/{supplier}/payments/create', [SupplierController::class, 'createPayment'])
+    ->name('supplier-payments.create');
+Route::post('suppliers/{supplier}/payments', [SupplierController::class, 'storePayment'])
+    ->name('supplier-payments.store');
+
+     Route::get('{supplier}/payments', [SupplierController::class, 'show_payments'])->name('suppliers.payments');
+    // Route::get('{supplier}/payments/create', [SupplierPaymentController::class, 'create'])->name('dashboard.suppliers.payments.create');
+    // Route::post('{supplier}/payments', [SupplierPaymentController::class, 'store'])->name('dashboard.suppliers.payments.store');
+    Route::get('payments/{payment}/edit', [SupplierController::class, 'edit_payment'])->name('suppliers.payments.edit');
+    Route::put('payments/{payment}', [SupplierController::class, 'update'])->name('dashboard.suppliers.payments.update');
+    // Route::delete('payments/{payment}', [SupplierPaymentController::class, 'destroy'])->name('dashboard.suppliers.payments.destroy');
+
 
 
     // Cash Controller

@@ -24,15 +24,11 @@ class DashboardController extends Controller
         $clients_count    = Client::count();
         $users_count      = User::whereRoleIs('admin')->count();
 
-        // المبيعات
-        $sales_data = Order::select(
-            DB::raw('YEAR(created_at) as year'),
-            DB::raw('MONTH(created_at) as month'),
-            DB::raw('SUM(total_price) as sum')
-        )->groupBy('year','month')->get();
-
+        // مبيعات وأرباح
         $total_sales = Order::sum('total_price');
-        $total_profit = Order::sum(DB::raw('total_price - total_cost')); // مثال، حسب جدولك
+        $total_profit = Order::sum('profit');
+
+        // مصروفات ومشتريات
         $total_expenses = Expense::sum('amount');
         $total_purchases = DB::table('purchase_invoices')->sum('total');
 
@@ -40,48 +36,72 @@ class DashboardController extends Controller
         $total_due_clients = Client::sum('balance_due');
         $total_due_suppliers = DB::table('suppliers')->sum('balance_due');
 
+        // بيانات مالية
+        $salesOverview = [
+            'total_sales' => $total_sales,
+        ];
+        $profitsOverview = [
+            'total_profit' => $total_profit,
+        ];
+        $expensesOverview = [
+            'total_expenses' => $total_expenses,
+        ];
+        $purchasesOverview = [
+            'total_purchases' => $total_purchases,
+        ];
+        $clientsOverview = [
+            'total_due' => $total_due_clients,
+        ];
+        $suppliersOverview = [
+            'total_due' => $total_due_suppliers,
+        ];
+
         // الخزينة
         $cash = Cash::first();
-        $cash_balance = $cash->balance ?? 0;
+        $cashOverview = [
+            'balance' => $cash->balance ?? 0
+        ];
 
-        // حركة الخزينة يوميًا
-        $transactions = CashTransaction::orderBy('transaction_date','desc')->get();
+        // حركة الخزينة اليومية
+        $transactions = CashTransaction::orderBy('transaction_date', 'desc')->get();
         $dates = $transactions->pluck('transaction_date')->unique();
+
         $dailyAdded = [];
         $dailyDeducted = [];
-        foreach($dates as $date){
+
+        foreach ($dates as $date) {
             $dailyAdded[] = CashTransaction::whereDate('transaction_date', $date)
-                ->where('type','add')
+                ->where('type', 'add')
                 ->sum('amount');
+
             $dailyDeducted[] = CashTransaction::whereDate('transaction_date', $date)
-                ->where('type','deduct')
+                ->where('type', 'deduct')
                 ->sum('amount');
         }
 
         // أفضل المنتجات مبيعًا
-        // $topProducts = Product::withCount('orders')->orderBy('orders_count','desc')->take(5)->get();
-$topProducts = Product::withCount('orders') // أو أي علاقة تحصي المبيعات
-    ->orderBy('orders_count', 'desc')
-    ->take(5)
-    ->get();
-        return view('dashboard.reports.overview', [
-            'categories_count'    => $categories_count,
-            'products_count'      => $products_count,
-            'clients_count'       => $clients_count,
-            'users_count'         => $users_count,
-            'sales_data'          => $sales_data,
-            'salesOverview'       => ['total_sales'=>$total_sales],
-            'profitsOverview'     => ['total_profit'=>$total_profit],
-            'expensesOverview'    => ['total_expenses'=>$total_expenses],
-            'purchasesOverview'   => ['total_purchases'=>$total_purchases],
-            'clientsOverview'     => ['total_due'=>$total_due_clients],
-            'suppliersOverview'   => ['total_due'=>$total_due_suppliers],
-            'cashOverview'        => ['balance'=>$cash_balance],
-            'transactions'        => $transactions,
-            'dates'               => $dates,
-            'dailyAdded'          => $dailyAdded,
-            'dailyDeducted'       => $dailyDeducted,
-            'topProducts'         => $topProducts,
-        ]);
+        $topProducts = Product::withCount('orders')
+            ->orderBy('orders_count', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('dashboard.reports.overview', compact(
+            'categories_count',
+            'products_count',
+            'clients_count',
+            'users_count',
+            'salesOverview',
+            'profitsOverview',
+            'expensesOverview',
+            'purchasesOverview',
+            'clientsOverview',
+            'suppliersOverview',
+            'cashOverview',
+            'transactions',
+            'dates',
+            'dailyAdded',
+            'dailyDeducted',
+            'topProducts'
+        ));
     }
 }
