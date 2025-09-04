@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
@@ -10,7 +11,7 @@ class ProfitReportController extends Controller
     // تقرير أرباح مفصل
     public function detailed()
     {
-        $orders = Order::with('client','products')->get();
+        $orders = Order::with('client', 'products')->get();
 
         return view('reports.profit.profit_detailed', compact('orders'));
     }
@@ -23,16 +24,16 @@ class ProfitReportController extends Controller
         $totalSales = 0;
         $totalCost  = 0;
 
-        foreach($orders as $order){
-            foreach($order->products as $product){
+        foreach ($orders as $order) {
+            foreach ($order->products as $product) {
                 $totalSales += $product->pivot->sale_price * $product->pivot->quantity;
-                $totalCost  += $product->purchase_price;
+                $totalCost  += $product->pivot->cost_price * $product->pivot->quantity;
             }
         }
 
         $totalProfit = $totalSales - $totalCost;
 
-        return view('reports.profit.profit_summary', compact('totalSales','totalCost','totalProfit'));
+        return view('reports.profit.profit_summary', compact('totalSales', 'totalCost', 'totalProfit'));
     }
 
     // نسبة أرباح المنتجات
@@ -42,25 +43,24 @@ class ProfitReportController extends Controller
 
         $productProfits = [];
 
-        foreach($products as $product){
-            $totalSales = $product->orders->sum(function($order) use ($product){
+        foreach ($products as $product) {
+            $totalSales = $product->orders->sum(function ($order) use ($product) {
                 return $order->products->find($product->id)->pivot->sale_price *
-                       $order->products->find($product->id)->pivot->quantity;
+                    $order->products->find($product->id)->pivot->quantity;
             });
 
-            $totalCost = $product->orders->sum(function($order) use ($product){
-             return   $order->products->find($product->id)->purchase_price *
-                       $order->products->find($product->id)->pivot->quantity;
-                      
+            $totalCost = $product->orders->sum(function ($order) use ($product) {
+                return   $order->products->find($product->id)->pivot->cost_price *
+                    $order->products->find($product->id)->pivot->quantity;
             });
-//  return    $totalSales;
+            //  return    $totalSales;
             $profit = $totalSales - $totalCost;
             $ratio = $totalSales ? ($profit  * 100 / $totalCost) : 0;
 
             $productProfits[] = [
                 'product' => $product->name,
                 'profit' => $profit,
-                'ratio'  => round($ratio,2)
+                'ratio'  => round($ratio, 2)
             ];
         }
 

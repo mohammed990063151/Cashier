@@ -3,7 +3,7 @@
 @section('content')
 <div class="content-wrapper">
     <section class="content-header">
-        <h1>تقرير الأرباح المفصل</h1>
+        <h1>تقرير الأرباح المفصل الطلبات</h1>
     </section>
     <section class="content">
         <div class="box box-primary">
@@ -34,20 +34,35 @@
                         </tr>
                     </thead>
                     <tbody>
+                         @php
+                $grandTotalProfit = 0;
+            @endphp
                         @foreach($orders as $order)
                             @foreach($order->products as $product)
+                               @php
+                        $profit = ($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity;
+                        $grandTotalProfit += $profit;
+                    @endphp
                                 <tr>
                                     <td>{{ $order->id }}</td>
                                     <td>{{ $order->client->name ?? '-' }}</td>
                                     <td>{{ $product->name }}</td>
                                     <td>{{ $product->pivot->quantity }}</td>
                                     <td>{{ number_format($product->pivot->sale_price,2) }} ج.س</td>
-                                    <td>{{ number_format($product->purchase_price,2) }} ج.س</td>
-                                    <td>{{ number_format(($order->profit) * $product->pivot->quantity,2) }} ج.س</td>
+                                    <td>{{ number_format($product->pivot->cost_price,2) }} ج.س</td>
+                                    <td>{{ number_format(($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity,2) }} ج.س</td>
+
                                 </tr>
                             @endforeach
                         @endforeach
+
                     </tbody>
+                     <tfoot>
+            <tr>
+                <th colspan="6" style="text-align: right;">إجمالي الربح الكلي:</th>
+                <th style="color: #01941f; font-weight: bold;">{{ number_format($grandTotalProfit,2) }} ج.س</th>
+            </tr>
+        </tfoot>
                 </table>
             </div>
         </div>

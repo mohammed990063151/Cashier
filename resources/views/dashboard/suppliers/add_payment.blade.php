@@ -15,6 +15,14 @@
             <div class="box-header">
                 <h3 class="box-title">إضافة دفعة جديدة</h3>
             </div>
+            @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+            @endif
+
+
             <div class="box-body">
                 <form action="{{ route('dashboard.supplier-payments.store', $supplier->id) }}" method="POST">
                     @csrf
@@ -33,9 +41,9 @@
                         <select name="purchase_invoice_id" class="form-control">
                             <option value="">-- لا شيء --</option>
                             @foreach($invoices as $invoice)
-                                <option value="{{ $invoice->id }}">
-                                    {{ $invoice->invoice_number }} - المبلغ المتبقي: {{ $invoice->remaining }}
-                                </option>
+                            <option value="{{ $invoice->id }}">
+                                {{ $invoice->invoice_number }} - المبلغ المتبقي: {{ $invoice->remaining }}
+                            </option>
                             @endforeach
                         </select>
                         @error('purchase_invoice_id')

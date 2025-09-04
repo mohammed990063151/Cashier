@@ -30,10 +30,10 @@ class Products extends Component
 
 
 
-public function boot()
-{
-    Paginator::useBootstrap();
-}
+    public function boot()
+    {
+        Paginator::useBootstrap();
+    }
 
     protected function rules()
     {
@@ -46,21 +46,21 @@ public function boot()
         ];
     }
     protected $messages = [
-    'category_id.required'    => 'حقل القسم مطلوب.',
-     'name.unique'    => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
-    'name.required'           => 'حقل الاسم مطلوب.',
-    'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
-    'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
-    'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
-    'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
-    'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
-    'sale_price.required'     => 'حقل سعر البيع مطلوب.',
-    'sale_price.numeric'      => 'سعر البيع يجب أن يكون رقمًا.',
-    'sale_price.min'          => 'سعر البيع يجب ألا يقل عن 0.',
-    'stock.required'          => 'حقل المخزون مطلوب.',
-    'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
-    'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
-];
+        'category_id.required'    => 'حقل القسم مطلوب.',
+        'name.unique'    => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
+        'name.required'           => 'حقل الاسم مطلوب.',
+        'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
+        'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
+        'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
+        'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
+        'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
+        'sale_price.required'     => 'حقل سعر البيع مطلوب.',
+        'sale_price.numeric'      => 'سعر البيع يجب أن يكون رقمًا.',
+        'sale_price.min'          => 'سعر البيع يجب ألا يقل عن 0.',
+        'stock.required'          => 'حقل المخزون مطلوب.',
+        'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
+        'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
+    ];
 
 
     public function updatingSearch()
@@ -98,15 +98,15 @@ public function boot()
         $products = Product::when($this->search, function ($q) {
             $q->where(function ($q2) {
                 $q2->where('name', 'like', '%' . $this->search . '%')
-                   ->orWhere('description', 'like', '%' . $this->search . '%')
-                   ->orWhere('purchase_price', 'like', '%' . $this->search . '%')
-                   ->orWhere('sale_price', 'like', '%' . $this->search . '%')
-                   ->orWhere('stock', 'like', '%' . $this->search . '%');
+                    ->orWhere('description', 'like', '%' . $this->search . '%')
+                    ->orWhere('purchase_price', 'like', '%' . $this->search . '%')
+                    ->orWhere('sale_price', 'like', '%' . $this->search . '%')
+                    ->orWhere('stock', 'like', '%' . $this->search . '%');
             });
         })
-        ->when($this->category_id, fn($q) => $q->where('category_id', $this->category_id))
-        ->latest()
-        ->paginate(5);
+            ->when($this->category_id, fn($q) => $q->where('category_id', $this->category_id))
+            ->latest()
+            ->paginate(5);
 
         return view('livewire.dashboard.products', [
             'products' => $products,
@@ -193,6 +193,15 @@ public function boot()
 
         try {
             $product = Product::findOrFail($this->productId);
+            if ($this->purchase_price != $product->purchase_price) {
+                \App\Models\PriceHistory::create([
+                    'product_id' => $product->id,
+                    'old_price'  => $product->purchase_price,
+                    'new_price'  => $this->purchase_price,
+                    'type'       => 'Product', // نوع التغيير
+                ]);
+            }
+
 
             $data = [
                 'category_id'    => $this->category_id,
@@ -221,7 +230,6 @@ public function boot()
             session()->flash('success', 'تم التعديل بنجاح');
             $this->resetForm();
             $this->dispatch('closeModal');
-
         } catch (\Exception $e) {
             Log::error('Error updating product: ' . $e->getMessage());
             $this->addError('update_error', 'حدث خطأ أثناء التعديل: ' . $e->getMessage());
@@ -232,7 +240,7 @@ public function boot()
     {
         $product = Product::findOrFail($id);
 
-        if ($product->image && $product->image !== 'default.png') {
+        if ($product->image && $product->image !== 'logo.png') {
             Storage::disk('public')->delete('uploads/product_images/' . $product->image);
         }
 

@@ -1,5 +1,68 @@
 @extends('layouts.dashboard.app')
+@push('styles')
 
+<style>
+    /* تحسين تجاوب الصفحة */
+    @media (max-width: 767px) {
+        .content-wrapper .row {
+            flex-direction: column;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+    }
+
+    .shadow-sm {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0069d9;
+        border-color: #0062cc;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+        color: #fff;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        color: #fff;
+    }
+
+</style>
+@endpush
 @section('content')
 
 <div class="content-wrapper">
@@ -32,6 +95,9 @@
                         @if(session('success'))
                         <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
+                        @if(session('error'))
+                        <div class="alert alert-error">{{ session('error') }}</div>
+                        @endif
 
                         <form action="{{ route('dashboard.purchase-invoices.store') }}" method="POST">
                             @csrf
@@ -50,6 +116,11 @@
                             <!-- المنتجات -->
                             <h5 class="mt-3">المنتجات</h5>
                             <div class="table-responsive">
+                                <!-- مكان عرض رسالة الخطأ -->
+                                <div id="paidAlert" class="alert alert-danger" style="display:none;">
+                                    ⚠️ المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!
+                                </div>
+
                                 <table class="table table-bordered table-striped" id="itemsTable">
                                     <thead class="thead-light">
                                         <tr>
@@ -63,15 +134,27 @@
                                     <tbody>
                                         <tr>
                                             <td>
-                                                <select name="items[0][product_id]" class="form-control" required>
+                                                <select name="items[0][product_id]" class="form-control product-select" required data-old-price="0">
                                                     <option value="">اختر المنتج</option>
                                                     @foreach($products as $product)
-                                                    <option value="{{ $product->id }}">{{ $product->name }}</option>
+                                                    <option value="{{ $product->id }}" data-old-price="{{ $product->purchase_price ?? 0 }}">
+                                                        {{ $product->name }}
+                                                    </option>
                                                     @endforeach
                                                 </select>
+
                                             </td>
                                             <td><input type="number" name="items[0][quantity]" class="form-control quantity" value="1" min="1" required></td>
-                                            <td><input type="number" name="items[0][price]" class="form-control price" value="0" min="0" step="0.01" required></td>
+                                            <td>
+                                                <input type="number" name="items[0][price]" class="form-control price" value="0" min="0" step="1" required>
+                                                @foreach($products as $product)
+                                                 <small class="text-warning">
+        ⚠️ تأكد من إدخال السعر بعناية، سيستخدم آخر سعر شراء {{ $product->purchase_price ?? 0 }} كمرجع
+    </small>
+
+                                                </option>
+                                                @endforeach
+                                            </td>
                                             <td class="row-total">0</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
                                         </tr>
@@ -91,7 +174,7 @@
                             <!-- المدفوع -->
                             <div class="form-group">
                                 <label for="paid">المدفوع:</label>
-                                <input type="number" step="0.01" name="paid" id="paid" class="form-control" value="0">
+                                <input type="number" step="1" name="paid" id="paid" class="form-control" value="0">
                             </div>
 
                             <!-- المتبقي -->
@@ -162,30 +245,50 @@
 
 </div><!-- end content-wrapper -->
 
-<script>
-    let rowIndex = 1;
+@push('scripts')
 
-    // إضافة صف جديد
-    document.getElementById('addRow').addEventListener('click', function() {
-        let tableBody = document.querySelector('#itemsTable tbody');
-        let newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>
-                <select name="items[${rowIndex}][product_id]" class="form-control" required>
-                    <option value="">اختر المنتج</option>
-                    @foreach($products as $product)
-                        <option value="{{ $product->id }}">{{ $product->name }}</option>
-                    @endforeach
-                </select>
-            </td>
-            <td><input type="number" name="items[${rowIndex}][quantity]" class="form-control quantity" value="1" min="1" required></td>
-            <td><input type="number" name="items[${rowIndex}][price]" class="form-control price" value="0" min="0" step="0.01" required></td>
-            <td class="row-total">0</td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
-        `;
-        tableBody.appendChild(newRow);
-        rowIndex++;
+
+<script>
+   let rowIndex = 1;
+
+// إضافة صف جديد
+document.getElementById('addRow').addEventListener('click', function() {
+    let tableBody = document.querySelector('#itemsTable tbody');
+    let newRow = document.createElement('tr');
+    newRow.innerHTML = `
+        <td>
+            <select name="items[${rowIndex}][product_id]" class="form-control product-select" required>
+                <option value="">اختر المنتج</option>
+                @foreach($products as $product)
+                    <option value="{{ $product->id }}" data-old-price="{{ $product->purchase_price ?? 0 }}">
+                        {{ $product->name }}
+                    </option>
+                @endforeach
+            </select>
+        </td>
+        <td><input type="number" name="items[${rowIndex}][quantity]" class="form-control quantity" value="1" min="1" required></td>
+        <td>
+            <input type="number" name="items[${rowIndex}][price]" class="form-control price" value="0" min="0" step="1" required>
+            <small class="text-info old-price-text">
+                السعر القديم: 0
+            </small>
+        </td>
+        <td class="row-total">0</td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+    `;
+    tableBody.appendChild(newRow);
+    rowIndex++;
+
+    // عند اختيار المنتج، تحديث السعر القديم
+    let select = newRow.querySelector('.product-select');
+    let priceText = newRow.querySelector('.old-price-text');
+
+    select.addEventListener('change', function() {
+        let oldPrice = parseFloat(select.selectedOptions[0].dataset.oldPrice) || 0;
+        priceText.innerText = "السعر القديم: " + oldPrice;
     });
+});
+
 
     // تحديث الإجمالي والمتبقي
     document.addEventListener('input', function(e) {
@@ -201,6 +304,22 @@
         if (e.target.id === 'paid') {
             updateRemaining();
         }
+        if (e.target.classList.contains('price')) {
+            let row = e.target.closest('tr');
+            let productSelect = row.querySelector('.product-select');
+            let oldPrice = parseFloat(productSelect.selectedOptions[0].dataset.oldPrice) || 0;
+            let newPrice = parseFloat(e.target.value) || 0;
+
+            let alertBox = row.querySelector('.price-alert');
+
+            // إذا فرق السعر > 20% يظهر التحذير
+            if (oldPrice > 0 && Math.abs(newPrice - oldPrice) / oldPrice > 0.2) {
+                alertBox.style.display = 'block';
+            } else {
+                alertBox.style.display = 'none';
+            }
+        }
+
     });
 
     document.addEventListener('click', function(e) {
@@ -219,40 +338,35 @@
         updateRemaining();
     }
 
+
+
     function updateRemaining() {
         let total = parseFloat(document.getElementById('totalInput').value) || 0;
-        let paid = parseFloat(document.getElementById('paid').value) || 0;
-        let remaining = total - paid;
+        let paidInput = document.getElementById('paid');
+        let paid = parseFloat(paidInput.value) || 0;
+
+        // عنصر الرسالة
+        let alertBox = document.getElementById('paidAlert');
+
+        if (paid > total) {
+            alertBox.style.display = 'block'; // إظهار الرسالة
+            paidInput.value = total.toFixed(2); // نرجع المدفوع = الإجمالي
+            paid = total;
+        } else {
+            alertBox.style.display = 'none'; // نخفي الرسالة إذا كان المبلغ صحيح
+        }
+
+        let remaining = Math.max(total - paid, 0);
         document.getElementById('remaining').value = remaining.toFixed(2);
     }
 
+
+
+
     // أول تحميل: حساب المتبقي
     updateRemaining();
+
 </script>
 
-<style>
-    /* تحسين تجاوب الصفحة */
-    @media (max-width: 767px) {
-        .content-wrapper .row {
-            flex-direction: column;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-    }
-
-    .shadow-sm {
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-
-    .btn-primary { background-color: #007bff; border-color: #007bff; }
-    .btn-primary:hover { background-color: #0069d9; border-color: #0062cc; }
-    .btn-success { background-color: #28a745; border-color: #28a745; }
-    .btn-success:hover { background-color: #218838; border-color: #1e7e34; }
-    .btn-secondary { background-color: #6c757d; border-color: #6c757d; color: #fff; }
-    .btn-secondary:hover { background-color: #5a6268; border-color: #545b62; color: #fff; }
-    .btn-danger { background-color: #dc3545; border-color: #dc3545; color: #fff; }
-    .btn-danger:hover { background-color: #c82333; border-color: #bd2130; color: #fff; }
-</style>
-
+@endpush
 @endsection

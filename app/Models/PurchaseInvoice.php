@@ -14,7 +14,7 @@ class PurchaseInvoice extends Model
     // }
    public function items()
 {
-    return $this->hasMany(PurchaseInvoiceItem::class);
+    return $this->hasMany(PurchaseInvoiceItem::class , 'purchase_invoice_id');
 }
 
 

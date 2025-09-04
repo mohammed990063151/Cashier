@@ -48,55 +48,70 @@
             <div class="box-body">
 
                 @if ($purchaseInvoices->count() > 0)
-                    <div class="table-responsive">
-                        <table id="purchaseInvoicesTable" class="table table-hover table-bordered text-center">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>المورد</th>
-                                    <th>التاريخ</th>
-                                    <th>الإجمالي</th>
-                                    <th>المدفوع</th>
-                                    <th>المتبقي</th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($purchaseInvoices as $index => $invoice)
-                                    <tr>
-                                        <td>{{ $index + 1 }}</td>
-                                        <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
-                                        <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
-                                        <td>{{ number_format($invoice->total, 2) }}</td>
-                                        <td>{{ number_format($invoice->paid, 2) }}</td>
-                                        <td>{{ number_format($invoice->remaining, 2) }}</td>
-                                        <td>
-                                            <div class="btn-group" role="group" style="flex-wrap: wrap;">
-                                                <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
-                                                    <i class="fa fa-eye"></i> عرض
-                                                </a>
-                                                <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary btn-sm">
-                                                    <i class="fa fa-edit"></i> تعديل
-                                                </a>
-                                                <form action="{{ route('dashboard.purchase-invoices.destroy', $invoice->id) }}" method="post" style="display:inline-block">
-                                                    @csrf
-                                                    @method('delete')
-                                                    <button type="submit" class="btn btn-danger btn-sm delete">
-                                                        <i class="fa fa-trash"></i> حذف
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="table-responsive">
+                    <table id="purchaseInvoicesTable" class="table table-hover table-bordered text-center">
+                        <thead>
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>المورد</th>
+                                <th>اسماء المنتجات</th>
+                                <th>السعر <br />الكمية</th>
+                                <th>الإجمالي</th>
+                                <th>المدفوع</th>
+                                <th>المتبقي</th>
+                                <th>التاريخ</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($purchaseInvoices as $invoice)
+                            <tr>
+                                <td>{{ $invoice->invoice_number  }}</td>
+                                <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
+                                <td>
+                                    @foreach ($invoice->items as $item)
+                                    {{ $item->product->name }}<br>
+                                    @endforeach
+                                </td>
 
-                    {{ $purchaseInvoices->appends(request()->query())->links() }}
+                                <td>
+                                    @foreach ($invoice->items as $item)
+                                    {{ number_format($item->price, 2) }} × {{ number_format($item->quantity, 2) }}<br>
+                                    @endforeach
+                                </td>
+
+
+                                <td>{{ number_format($invoice->total, 2) }}</td>
+                                <td>{{ number_format($invoice->paid, 2) }}</td>
+                                <td>{{ number_format($invoice->remaining, 2) }}</td>
+                                <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
+                                <td>
+                                    <div class="btn-group" role="group" style="flex-wrap: wrap;">
+                                        <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
+                                            <i class="fa fa-eye"></i> عرض
+                                        </a>
+                                        <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary btn-sm">
+                                            <i class="fa fa-edit"></i> تعديل
+                                        </a>
+                                        {{-- <form action="{{ route('dashboard.purchase-invoices.destroy', $invoice->id) }}" method="post" style="display:inline-block">
+                                            @csrf
+                                            @method('delete')
+                                            <button type="submit" class="btn btn-danger btn-sm delete">
+                                                <i class="fa fa-trash"></i> حذف
+                                            </button>
+                                        </form> --}}
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{ $purchaseInvoices->appends(request()->query())->links() }}
 
                 @else
-                    <h4>لا توجد فواتير.</h4>
+                <h4>لا توجد فواتير.</h4>
                 @endif
 
             </div><!-- /.box-body -->
@@ -126,46 +141,69 @@
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
 <script>
-$(document).ready(function() {
-    var table = $('#purchaseInvoicesTable').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-            {
-                extend: 'copy',
-                exportOptions: { columns: [0,1,2,3,4,5] } // استبعاد عمود الإجراءات
-            },
-            {
-                extend: 'excel',
-                exportOptions: { columns: [0,1,2,3,4,5] }
-            },
-            {
-                extend: 'csv',
-                exportOptions: { columns: [0,1,2,3,4,5] }
-            },
-            {
-                extend: 'pdf',
-                exportOptions: { columns: [0,1,2,3,4,5] },
-                orientation: 'landscape',
-                pageSize: 'A4'
-            },
-            {
-                extend: 'print',
-                exportOptions: { columns: [0,1,2,3,4,5] }
+    $(document).ready(function() {
+        var table = $('#purchaseInvoicesTable').DataTable({
+            dom: 'Bfrtip'
+            , buttons: [{
+                    extend: 'copy'
+                    , exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    } // استبعاد عمود الإجراءات
+                }
+                , {
+                    extend: 'excel'
+                    , exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    }
+                }
+                , {
+                    extend: 'csv'
+                    , exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    }
+                }
+                , {
+                    extend: 'pdf'
+                    , exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    }
+                    , orientation: 'landscape'
+                    , pageSize: 'A4'
+                }
+                , {
+                    extend: 'print'
+                    , exportOptions: {
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    }
+                }
+            ]
+            , order: [
+                [0, 'desc']
+            ]
+            , pageLength: 50
+            , language: {
+                search: "بحث:"
+                , lengthMenu: "عرض _MENU_ سجل"
+                , info: "عرض _START_ إلى _END_ من _TOTAL_ سجل"
+                , infoEmpty: "لا توجد سجلات متاحة"
+                , zeroRecords: "لا توجد سجلات مطابقة"
+                , paginate: {
+                    first: "الأول"
+                    , last: "الأخير"
+                    , next: "التالي"
+                    , previous: "السابق"
+                }
+                , buttons: {
+                    copy: "نسخ"
+                    , excel: "تصدير Excel"
+                    , csv: "تصدير CSV"
+                    , pdf: "تصدير PDF"
+                    , print: "طباعة"
+                }
             }
-        ],
-        order: [[0, 'desc']],
-        pageLength: 50,
-        language: {
-            search: "بحث:",
-            lengthMenu: "عرض _MENU_ سجل",
-            info: "عرض _START_ إلى _END_ من _TOTAL_ سجل",
-            infoEmpty: "لا توجد سجلات متاحة",
-            zeroRecords: "لا توجد سجلات مطابقة",
-            paginate: { first: "الأول", last: "الأخير", next: "التالي", previous: "السابق" },
-            buttons: { copy: "نسخ", excel: "تصدير Excel", csv: "تصدير CSV", pdf: "تصدير PDF", print: "طباعة" }
-        },
-        responsive: true
+            , responsive: true
+        });
     });
-});
+
 </script>
 @endpush

@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>AdminLTE 2 | Blank Page</title>
+    <title>{{ $setting->name ?? '' }}</title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
 
     {{--<!-- Bootstrap 3.3.7 -->--}}
@@ -106,16 +106,16 @@
         <header class="main-header">
 
             {{--<!-- Logo -->--}}
-            <a href="{{ asset('dashboard') }}/index2.html" class="logo">
+            <a href="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="logo">
                 {{--<!-- mini logo for sidebar mini 50x50 pixels -->--}}
-                <span class="logo-mini"><b>A</b>LT</span>
-                <span class="logo-lg"><b>Admin</b>LTE</span>
+                <span class="logo-mini"><b></b></span>
+                <span class="logo-lg"><b>{{ $setting->name ?? '' }}</b></span>
             </a>
 
             <nav class="navbar navbar-static-top">
                 <!-- Sidebar toggle button-->
                 <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-                    <span class="sr-only">Toggle navigation</span>
+                    {{-- <span class="sr-only">Toggle navigation</span> --}}
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
@@ -131,15 +131,15 @@
                                 <span class="label label-success">4</span>
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="header">You have 4 messages</li>
-                                <li>
+                                {{-- <li class="header">You have 4 messages</li> --}}
+                                {{-- <li>
                                     <!-- inner menu: contains the actual data -->
                                     <ul class="menu">
                                         <li>
                                             <!-- start message -->
                                             <a href="#">
                                                 <div class="pull-left">
-                                                    {{-- <img src="{{ asset('dashboard_files/img/user2-160x160.jpg') }}" class="img-circle" alt="User Image"> --}}
+                                                    {{-- <img src="{{ asset('dashboard_files/img/user2-160x160.jpg') }}" class="img-circle" alt="User Image"> --}
                                                 </div>
                                                 <h4>
                                                     Support Team
@@ -151,9 +151,9 @@
                                             </a>
                                         </li>
                                     </ul>
-                                </li>
+                                </li> --}}
                                 <li class="footer">
-                                    <a href="#">See All Messages</a>
+                                    {{-- <a href="#">See All Messages</a> --}}
                                 </li>
                             </ul>
                         </li>
@@ -162,22 +162,22 @@
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-bell-o"></i>
-                                <span class="label label-warning">10</span>
+                                {{-- <span class="label label-warning">10</span> --}}
                             </a>
                             <ul class="dropdown-menu">
-                                <li class="header">You have 10 notifications</li>
+                                {{-- <li class="header">You have 10 notifications</li> --}}
                                 <li>
                                     {{--<!-- inner menu: contains the actual data -->--}}
                                     <ul class="menu">
                                         <li>
                                             <a href="#">
-                                                <i class="fa fa-users text-aqua"></i> 5 new members joined today
+                                                {{-- <i class="fa fa-users text-aqua"></i> 5 new members joined today --}}
                                             </a>
                                         </li>
                                     </ul>
                                 </li>
                                 <li class="footer">
-                                    <a href="#">View all</a>
+                                    {{-- <a href="#">View all</a> --}}
                                 </li>
                             </ul>
                         </li>
@@ -205,18 +205,18 @@
                     <li class="dropdown user user-menu">
 
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            {{-- <img src="{{ asset('dashboard_files/img/user2-160x160.jpg') }}" class="user-image" alt="User Image"> --}}
+                            <img src="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="user-image" alt="User Image">
                             <span class="hidden-xs">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
                         </a>
                         <ul class="dropdown-menu">
 
                             {{--<!-- User image -->--}}
                             <li class="user-header">
-                                {{-- <img src="{{ asset('dashboard_files/img/user2-160x160.jpg') }}" class="img-circle" alt="User Image"> --}}
+                                <img src="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="img-circle" alt="User Image">
 
                                 <p>
                                     {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
-                                    <small>Member since 2 days</small>
+                                    {{-- <small>Member since 2 days</small> --}}
                                 </p>
                             </li>
 
@@ -248,8 +248,8 @@
         {{-- @include('partials._errors') --}}
 
         <footer class="main-footer">
-            
-            <strong>جميع الحقوق محفوظة  &copy; 
+
+            <strong>جميع الحقوق محفوظة  &copy;
                 <a href="{{ $setting->facebook }}">{{ $setting->name ?? '' }}</a></strong>
           {{ date('Y') }}
         </footer>

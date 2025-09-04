@@ -271,7 +271,7 @@
             return parseFloat(str.replace(/,/g, '')) || 0;
         }
 
-        // تحديث المتبقي عند تغيير المدفوع 
+        // تحديث المتبقي عند تغيير المدفوع
         discountEl.addEventListener('input', function() {
             const total = parseNumber(totalPriceEl.textContent);
             const discount = parseNumber(this.value);
@@ -319,17 +319,6 @@
     });
 
 </script>
-{{-- <script>
-    $('body').on('keyup change', '.product-quantity, .product-unit-price', function() {
-        var row = $(this).closest('tr');
-        var quantity = Number(row.find('.product-quantity').val());
-        var unitPrice = parseFloat(row.find('.product-unit-price').val()) || 0;
-        var total = quantity * unitPrice;
-        row.find('.product-price').text($.number(total, 2));
-        row.find('input[name$="[total_price]"]').val(total);
-        calculateTotal();
-    });
 
-</script> --}}
 @endpush
 @endsection

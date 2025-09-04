@@ -13,7 +13,7 @@
         <div class="box box-primary shadow-sm">
             <div class="box-header with-border d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <h3 class="box-title">العملاء <small class="text-muted">{{ $clients->total() }}</small></h3>
-               
+
                 <div class="d-flex flex-wrap gap-2">
                      <br /> <br />
                     <input type="text" id="searchInput" wire:model.debounce.500ms="search" class="form-control" placeholder="بحث في كل الأعمدة">
@@ -60,11 +60,11 @@
                                             <a href="#" class="btn btn-info btn-sm disabled"><i class="fa fa-edit"></i> تعديل</a>
                                         @endif
 
-                                        @if(auth()->user()->hasPermission('delete_clients'))
+                                        {{-- @if(auth()->user()->hasPermission('delete_clients'))
                                             <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
-                                        @else
+                                        @else --}}
                                             <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
-                                        @endif
+                                        {{-- @endif --}}
                                     </td>
                                 </tr>
                             @endforeach

@@ -60,7 +60,9 @@
                     </div><!-- end of box header -->
 
                     @if ($orders->count() > 0)
-
+ @if(session('error'))
+                        <div class="alert alert-error">{{ session('error') }}</div>
+                        @endif
                     <div class="box-body table-responsive">
 
                         <table class="table table-hover">
@@ -192,14 +194,16 @@
             <!-- الفوتر -->
             <div class="modal-footer d-flex justify-content-between">
                 <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">إغلاق</button>
-                <button type="button" class="btn btn-primary"  onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">طباعة الطلب</button>
-            </div>
+                {{-- @if ($orders) --}}
+                      <button type="button" class="btn btn-primary"  onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">طباعة الطلب</button>
+           
+                {{-- @endif --}}
+               </div>
         </div>
     </div>
 </div>
 
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 @push('scripts')
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -222,7 +226,7 @@
 </script>
 
 @endif
-@endpush
+
 
 <script>
     $(document).ready(function() {

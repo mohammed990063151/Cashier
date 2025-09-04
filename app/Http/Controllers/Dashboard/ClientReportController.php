@@ -13,19 +13,43 @@ class ClientReportController extends Controller
     // قائمة العملاء مع المتبقي (index)
     public function index(Request $request)
     {
+        // return 0;
         // يمكن تطبيق بحث على الاسم أو الهاتف
-        $query = Client::query();
+        // $query = Client::query();
 
-        if ($request->filled('q')) {
-            $q = $request->q;
-            $query->where('name', 'like', "%{$q}%")
-                  ->orWhereJsonContains('phone', $q);
-        }
+        // if ($request->filled('q')) {
+        //     $q = $request->q;
+        //     $query->where('name', 'like', "%{$q}%")
+        //           ->orWhereJsonContains('phone', $q);
+        // }
 
-        // جلب العملاء مع الحسابات المسبقة لتقليل الاستعلامات
-        $clients = $query->with(['orders.products','orders.payments'])->get();
+        // // جلب العملاء مع الحسابات المسبقة لتقليل الاستعلامات
+        // $clients = $query->with(['orders.products','orders.payments'])->distinct()->get();
 
-        return view('reports.clients.index', compact('clients'));
+        // return view('reports.clients.index', compact('clients'));
+
+           $query = Client::query()
+        ->leftJoin('orders', 'orders.client_id', '=', 'clients.id')
+        ->select(
+            'clients.id',
+            'clients.name',
+            'clients.phone',
+            DB::raw('COUNT(orders.id) as orders_count'),
+            DB::raw('SUM(orders.remaining) as remaining_balance')
+        )
+        ->groupBy('clients.id', 'clients.name', 'clients.phone');
+
+    // بحث
+    if ($request->filled('q')) {
+        $q = $request->q;
+        $query->where(function($sub) use ($q) {
+            $sub->where('clients.name', 'like', "%{$q}%")
+                ->orWhereJsonContains('clients.phone', $q);
+        });
+    }
+
+    $clients = $query->distinct()->get();
+     return view('reports.clients.index', compact('clients'));
     }
 
     // صفحة تفاصيل العميل: فواتيره - المنتجات المباعة - كشف الحساب

@@ -49,14 +49,14 @@
             <tbody>
                 @foreach($order->products as $index => $product)
                     @php
-                        $totalProductPurchase = $product->purchase_price * $product->pivot->quantity;
+                        $totalProductPurchase = $product->pivot->cost_price * $product->pivot->quantity;
                         $totalProductSale = $product->pivot->sale_price * $product->pivot->quantity;
                         $productProfit = $totalProductSale - $totalProductPurchase;
                     @endphp
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $product->name }}</td>
-                        <td>{{ number_format($product->purchase_price, 2) }}</td>
+                        <td>{{ number_format($product->pivot->cost_price, 2) }}</td>
                         <td>{{ number_format($product->pivot->sale_price, 2) }}</td>
                         <td>{{ $product->pivot->quantity }}</td>
                         <td>{{ number_format($totalProductSale, 2) }}</td>

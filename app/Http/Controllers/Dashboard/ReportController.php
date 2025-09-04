@@ -37,12 +37,30 @@ class ReportController extends Controller
         return view('reports.profit_loss', compact('revenues', 'expenses', 'profit', 'cashBalance'));
     }
 
-    public function salesReport()
-    {
-        $orders = Order::latest()->paginate(50);
-        $totalSales = $orders->sum('total_price');
-        return view('reports.sales', compact('orders', 'totalSales'));
-    }
+    public function salesReport(Request $request)
+{
+    $search = $request->search;
+
+    $orders = Order::with('client')
+        ->when($search, function ($q) use ($search) {
+            $q->whereHas('client', function ($qq) use ($search) {
+                $qq->where('name', 'like', "%$search%");
+            });
+        })
+        ->latest()
+        ->paginate(50);
+
+    $totalSales = $orders->sum('total_price');
+
+    // تجميع المبيعات حسب العميل (للكارت + الرسم البياني)
+    $salesByClient = Order::with('client')
+        ->selectRaw('client_id, SUM(total_price) as total')
+        ->groupBy('client_id')
+        ->get();
+
+    return view('reports.sales', compact('orders', 'totalSales', 'salesByClient'));
+}
+
 
    public function summary()
     {
@@ -93,6 +111,7 @@ class ReportController extends Controller
     public function unpaid()
     {
         $unpaidOrders = Order::with('client', 'payments')
+        ->where('remaining', '>', 0)
             ->withSum('payments', 'amount') // تحسب مجموع المدفوعات لكل طلب
             ->get()
             ->filter(fn($order) => $order->payments_sum_amount < $order->total_price);

@@ -42,9 +42,9 @@
                                     <option value="all">جميع الحركات</option>
                                     <option value="order">فواتير المبيعات</option>
                                     <option value="returns">فواتير المرتجعات</option>
-                                    <option value="purchases">فواتير المشتريات</option>
-                                    <option value="clients">سندات العملاء</option>
-                                    <option value="suppliers">سندات الموردين</option>
+                                    <option value="purchase">فواتير المشتريات</option>
+                                    <option value="discount">سندات العملاء</option>
+                                    <option value="supplier_payment">سندات الموردين</option>
                                     <option value="operational">المصروفات</option>
                                     <option value="direct">إضافة/سحب نقد مباشر</option>
                                 </select>
@@ -67,7 +67,7 @@
                                 @foreach($transactions as $trx)
                                 <tr>
                                     <td>{{ $trx->transaction_date }}</td>
-                                    <td>{{ $trx->description }}</td>
+                                    <td>{{ $trx->description ?? 'تمت اضافة مباشرة من الخزينة' }}</td>
                                     <td class="text-success">{{ $trx->type == 'add' ? number_format($trx->amount, 2) : '-' }}</td>
                                     <td class="text-danger">{{ $trx->type == 'deduct' ? number_format($trx->amount, 2) : '-' }}</td>
                                 </tr>
@@ -75,12 +75,12 @@
                                 <tr style="background:#f1f3f5; font-weight:bold;">
                                     <td colspan="2" class="text-right">الإجمالي مضاف:</td>
                                     <td class="text-success">{{number_format($totalAdded, 2) }}</td></tr>
-                                    
+
                                     <td colspan="2" class="text-right">الإجمالي الخصم:</td>
 <td></td>
                                     <td class="text-danger">{{ number_format($totalDeducted, 2)  }}</td></tr>
                                 <tr style="background:#f1f3f5; font-weight:bold;">
-                                    
+
                                     <td colspan="2" class="text-right">الإجمالي الحالي:</td>
                                     <td class="text-success">{{ $totalAmount >= 0 ? number_format($totalAmount, 2) : '-' }}</td>
                                     <td class="text-danger">{{ $totalAmount < 0 ? number_format(abs($totalAmount), 2) : '-' }}</td>

@@ -1,5 +1,5 @@
 <?php
-namespace Database\Seeders; 
+namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         $this->call(CategoriesTableSeeder::class);
         $this->call(ProductsTableSeeder::class);
         $this->call(ClientsTableSeeder::class);
+         $this->call(SettingSeeder::class);
 
     }//end of run
 

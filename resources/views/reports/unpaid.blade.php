@@ -52,11 +52,11 @@
                                     <tr>
                                         <td>{{ $order->id }}</td>
                                         <td>{{ $order->client->name ?? '-' }}</td>
-                                        <td>{{ number_format($order->total_price,2) }} ج.س</td>
+                                        <td style="color: green">{{ number_format($order->total_price,2) }} ج.س</td>
                                         {{-- <td>{{ number_format($order->discount + sum($order->payments->amount)  ,2) }} ج.س</td> --}}
                                         <td>{{ number_format($order->discount + $order->payments->sum('amount'), 2) }} ج.س</td>
 
-                                        <td>{{ number_format($order->remaining,2) }} ج.س</td>
+                                        <td style="color: red">{{ number_format($order->remaining,2) }} ج.س</td>
                                         <td>{{ $order->created_at->format('Y-m-d H:i') }}</td>
                                     </tr>
                                 @endforeach

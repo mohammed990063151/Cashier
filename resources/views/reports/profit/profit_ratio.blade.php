@@ -3,7 +3,7 @@
 @section('content')
 <div class="content-wrapper">
     <section class="content-header">
-        <h1>نسبة أرباح المنتجات</h1>
+        <h1>نسبة أرباح المنتجات  المبيعات</h1>
     </section>
     <section class="content">
         <div class="box box-primary">
@@ -28,6 +28,10 @@
                         @endforeach
                     </tbody>
                 </table>
+                <div class="mt-4 text-center">
+        <canvas id="productRatioChart" height="250"></canvas>
+    </div>
+</div>
             </div>
         </div>
     </section>
@@ -59,4 +63,46 @@ $(document).ready(function(){
     });
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('productRatioChart').getContext('2d');
+    const productRatioChart = new Chart(ctx, {
+        type: 'bar', // يمكن تغييره إلى 'pie' إذا أحببت
+        data: {
+            labels: @json(array_column($productProfits, 'product')),
+            datasets: [{
+                label: 'نسبة الربح %',
+                data: @json(array_column($productProfits, 'ratio')),
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false, // يسمح بتعديل الحجم
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'نسبة الربح %'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'المنتج'
+                    }
+                }
+            }
+        }
+    });
+</script>
+
 @endpush

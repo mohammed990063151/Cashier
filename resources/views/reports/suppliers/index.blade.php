@@ -69,7 +69,7 @@
 
                     <tr>
                         <td>{{ $supplier->name }}</td>
-                        <td>{{ $invoice->id }}</td>
+                        <td>{{ $invoice->invoice_number  }}</td>
                         <td>{{ number_format($invoice->total, 2) }}</td>
                         <td>{{ number_format($totalPaid, 2) }}</td>
                         <td>{{ number_format($invoice->total - $totalPaid, 2) }}</td>
@@ -121,12 +121,12 @@
                             <thead>
                                 <tr>
                                     <th>المورد</th>
-                                    <th>المبلغ</th>
+                                    <th>الدفعيات</th>
                                     <th>التاريخ</th>
                                 </tr>
                             </thead>
                             <tbody>
-                          
+
                                 @foreach($suppliers as $supplier)
                                     @foreach($supplier->payments as $payment)
                                         <tr>

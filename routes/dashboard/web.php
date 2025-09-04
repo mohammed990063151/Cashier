@@ -26,6 +26,7 @@ use App\Http\Controllers\Dashboard\ExpenseReportController;
 use App\Http\Controllers\Dashboard\ClientReportController;
 use App\Http\Controllers\Dashboard\CashReportController;
 use App\Http\Controllers\Dashboard\SettingController;
+use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
 // Redirect root to dashboard
@@ -43,6 +44,14 @@ Route::get('/home', function () {
 
 // Dashboard routes group
 Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->group(function () {
+
+    // routes/web.php
+// Route::get('/backup-database', [App\Http\Controllers\DatabaseBackupController::class, 'backup'])
+//     ->name('database.backup');
+ Route::get('/backup/index', [DatabaseBackupController::class, 'index'])->name('database.backup');
+    Route::get('/backup/create', [DatabaseBackupController::class, 'backup'])->name('backup.create');
+    Route::get('/backup/download/{fileName}', [DatabaseBackupController::class, 'download'])->name('backup.download');
+    Route::delete('/backup/delete/{fileName}', [DatabaseBackupController::class, 'delete'])->name('backup.delete');
 
     // Dashboard welcome
     Route::get('/', [WelcomeController::class, 'index'])->name('welcome');

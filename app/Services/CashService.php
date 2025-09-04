@@ -20,37 +20,7 @@ class CashService
      * @return CashTransaction
      * @throws Exception
      */
-    // public function record(string $type, float $amount, ?string $description = null, ?string $category = null, $date = null ,$orderId = null ,$paymentId = null ,$purchaseInvoiceId=null): CashTransaction
-    // {
-    //     $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
 
-    //     // تحويل النوع لقيم الجدول
-    //     $dbType = in_array($type, ['add', 'in']) ? 'add' : 'deduct';
-
-    //     // تعديل الرصيد
-    //     if ($dbType === 'add') {
-    //         $cash->balance += $amount;
-    //     } elseif ($dbType === 'deduct') {
-    //         if ($cash->balance < $amount) {
-    //             throw new Exception("الرصيد غير كافٍ في الصندوق.");
-    //         }
-    //         $cash->balance -= $amount;
-    //     }
-
-    //     $cash->save();
-
-    //     return CashTransaction::create([
-    //         'type'             => $dbType,
-    //         'amount'           => $amount,
-    //         'description'      => $description,
-    //         'transaction_date' => $date ?? Carbon::now(),
-    //         'category'         => $category,
-    //         'order_id'         => $orderId,
-    //         'payment_id'       => $paymentId, // هنا
-    //         'purchase_invoice_id'   => $purchaseInvoiceId,
-
-    //     ]);
-    // }
     public function record(string $type, float $amount, ?string $description = null, ?string $category = null, $date = null ,$orderId = null ,$paymentId = null ,$purchaseInvoiceId=null ,$ExpenseId = NULL): CashTransaction
 {
     // الحصول على الرصيد الكلي الموجود في الخزينة
@@ -160,4 +130,16 @@ class CashService
         $cash->save();
         $transaction->delete();
     }
+
+    /**
+ * الحصول على رصيد الخزينة الحالي
+ *
+ * @return float
+ */
+public function getBalance(): float
+{
+    $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
+    return $cash->balance;
+}
+
 }

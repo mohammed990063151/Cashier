@@ -3,7 +3,7 @@
 @section('content')
 <div class="content-wrapper">
     <section class="content-header">
-        <h1>تقرير الأرباح المجمل</h1>
+        <h1>تقرير الأرباح المجمل الطلبات</h1>
     </section>
     <section class="content">
         <div class="box box-primary">

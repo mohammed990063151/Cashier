@@ -65,7 +65,7 @@
                                     @endphp
                                     <tr>
                                         <td>{{ $invoice->supplier->name ?? '—' }}</td>
-                                        <td>{{ $invoice->id }}</td>
+                                        <td>{{ $invoice->invoice_number  }}</td>
                                         <td>{{ number_format($invoice->total,2) }}</td>
                                         <td>{{ number_format($totalPaid,2) }}</td>
                                         <td>{{ number_format($invoice->remaining,2) }}</td>

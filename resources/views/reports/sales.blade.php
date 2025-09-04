@@ -17,6 +17,7 @@
 
         <div class="row">
 
+            {{-- جدول الطلبات --}}
             <div class="col-md-8">
 
                 <div class="box box-primary">
@@ -80,6 +81,7 @@
 
             </div><!-- end col-md-8 -->
 
+            {{-- ملخص عام --}}
             <div class="col-md-4">
                 <div class="box box-primary">
                     <div class="box-header">
@@ -88,7 +90,38 @@
                     <div class="box-body text-center">
                         <p><strong>إجمالي المبيعات:</strong> {{ number_format($totalSales,2) }} ر.س</p>
                         <p><strong>عدد الطلبات:</strong> {{ $orders->total() }}</p>
-                        {{-- يمكن إضافة المزيد من الملخصات هنا --}}
+                    </div>
+                </div>
+            </div><!-- end col-md-4 -->
+
+            {{-- ملخص العملاء + رسم بياني --}}
+            <div class="col-md-4">
+                <div class="box box-primary">
+                    <div class="box-header">
+                        <h3 class="box-title">ملخص العملاء</h3>
+                    </div>
+                    <div class="box-body">
+                        <table class="table table-bordered table-striped text-center">
+                            <thead>
+                                <tr>
+                                    <th>العميل</th>
+                                    <th>إجمالي المبيعات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($salesByClient as $row)
+                                    <tr>
+                                        <td>{{ $row->client->name ?? '-' }}</td>
+                                        <td>{{ number_format($row->total,2) }} ر.س</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- 📊 الرسم البياني --}}
+                    <div class="box-footer">
+                        <canvas id="salesChart" height="200"></canvas>
                     </div>
                 </div>
             </div><!-- end col-md-4 -->
@@ -98,4 +131,36 @@
     </section>
 
 </div>
+
+
+@push('scripts')
+{{-- تحميل مكتبة Chart.js --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'bar', // ممكن تخليه 'pie' لو تحب
+        data: {
+            labels: @json($salesByClient->pluck('client.name')),
+            datasets: [{
+                label: 'إجمالي المبيعات (ج.س)',
+                data: @json($salesByClient->pluck('total')),
+                backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+@endpush
 @endsection

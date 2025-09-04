@@ -34,9 +34,9 @@ public $totalAdded = 0;
     public $categories = [
         'order' => 'فواتير المبيعات',
         'returns' => 'فواتير المرتجعات',
-        'purchases' => 'فواتير المشتريات',
-        'clients' => 'سندات العملاء',
-        'suppliers' => 'سندات الموردين',
+        'purchase' => 'فواتير المشتريات',
+        'discount' => 'سندات العملاء',
+        'supplier_payment' => 'سندات الموردين',
         'operational' => 'المصروفات',
         'direct' => 'إضافة/سحب نقد مباشر',
     ];
@@ -124,7 +124,7 @@ $this->totalAmount = $this->totalAdded - $this->totalDeducted;               // 
             'amount' => $this->amount,
             'description' => $this->description,
             'transaction_date' => $this->transaction_date,
-            'category' => $this->category,
+            'category' => "direct",
         ]);
 
         $this->resetInput();

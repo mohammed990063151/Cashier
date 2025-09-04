@@ -144,7 +144,11 @@
                     <i class="fa fa-cogs"></i> <span>اعدادات</span>
                 </a>
             </li>
-
+            <li>
+<a href="{{ route('dashboard.database.backup') }}" >
+   <span> 📦 تحميل نسخة احتياطية </span>
+</a>
+            </li>
         </ul>
     </section>
 </aside>

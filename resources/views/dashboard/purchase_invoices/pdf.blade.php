@@ -61,10 +61,11 @@
     <!-- رأس الفاتورة -->
     <table class="header-table">
         <tr>
-            <td colspan="2"><img src="{{ public_path('dashboard_files/img/logoatabi.jpg') }}" class="header-logo" alt="الشعار"></td>
+            <td colspan="2"> <img src="{{ $setting && $setting->logo ? public_path('storage/'.$setting->logo) : public_path('logo.png') }}" class="header-logo" alt="الشعار">
+</td>
         </tr>
         <tr>
-            <td colspan="2" class="header-title">أبو الطاهر</td>
+            <td colspan="2" class="header-title"> {{ $setting->name }}</td>
         </tr>
         <tr>
             <td colspan="2" class="header-subtitle">فاتورة شراء</td>
@@ -102,7 +103,7 @@
         @endforeach
         <tr class="total-row">
             <th colspan="3">الإجمالي</th>
-            <td colspan="2">{{ number_format($purchaseInvoice->total, 2) }} ج.س</td>
+            <td colspan="2" style="color:green">{{ number_format($purchaseInvoice->total, 2) }} ج.س</td>
         </tr>
         <tr class="total-row">
             <th colspan="3">المدفوع</th>
@@ -110,7 +111,7 @@
         </tr>
         <tr class="total-row">
             <th colspan="3">المتبقي</th>
-            <td colspan="2">{{ number_format($purchaseInvoice->remaining, 2) }} ج.س</td>
+            <td colspan="2" style="color: red">{{ number_format($purchaseInvoice->remaining, 2) }} ج.س</td>
         </tr>
         </tbody>
     </table>

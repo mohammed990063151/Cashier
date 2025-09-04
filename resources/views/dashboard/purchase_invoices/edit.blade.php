@@ -1,4 +1,67 @@
 @extends('layouts.dashboard.app')
+@push('styles')
+<style>
+    /* تحسين تجاوب الصفحة */
+    @media (max-width: 767px) {
+        .content-wrapper .row {
+            flex-direction: column;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+    }
+
+    .shadow-sm {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0069d9;
+        border-color: #0062cc;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+        color: #fff;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        color: #fff;
+    }
+
+</style>
+@endpush
 
 @section('content')
 
@@ -32,6 +95,9 @@
                         @if(session('success'))
                         <div class="alert alert-success">{{ session('success') }}</div>
                         @endif
+                        @if(session('error'))
+                        <div class="alert alert-error">{{ session('error') }}</div>
+                        @endif
 
                         <form action="{{ route('dashboard.purchase-invoices.update', $invoice->id) }}" method="POST">
                             @csrf
@@ -53,6 +119,11 @@
                             <!-- المنتجات -->
                             <h5 class="mt-3">المنتجات</h5>
                             <div class="table-responsive">
+                                <!-- مكان عرض رسالة الخطأ -->
+                                <div id="paidAlert" class="alert alert-danger" style="display:none;">
+                                    ⚠️ المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة!
+                                </div>
+
                                 <table class="table table-bordered table-striped" id="itemsTable">
                                     <thead class="thead-light">
                                         <tr>
@@ -77,7 +148,7 @@
                                                 </select>
                                             </td>
                                             <td><input type="number" name="items[{{ $index }}][quantity]" class="form-control quantity" value="{{ $item->quantity }}" min="1" required></td>
-                                            <td><input type="number" name="items[{{ $index }}][price]" class="form-control price" value="{{ $item->price }}" min="0" step="0.01" required></td>
+                                            <td><input type="number" name="items[{{ $index }}][price]" class="form-control price" value="{{ $item->price }}" min="0" step="1" required></td>
                                             <td class="row-total">{{ $item->subtotal }}</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
                                         </tr>
@@ -97,7 +168,10 @@
                             <!-- المدفوع -->
                             <div class="form-group">
                                 <label for="paid">المبلغ المدفوع:</label>
-                                <input type="number" name="paid" id="paid" class="form-control" value="{{ $invoice->paid }}" min="0" step="0.01">
+                                <input type="number" name="paid" id="paid" class="form-control" value="{{ $invoice->paid }}" min="0" step="1">
+                                <small id="paidError" class="text-danger" style="display:none;">
+                                    ⚠️ المبلغ المدفوع لا يمكن أن يكون أكبر من إجمالي الفاتورة
+                                </small>
                             </div>
 
                             <!-- المتبقي -->
@@ -171,9 +245,116 @@
 
 </div><!-- end content-wrapper -->
 
+
+@push('scripts')
+<script>
+    // rowIndex يبدأ بعدد العناصر الموجودة مسبقًا
+let rowIndex = {{ isset($invoice) ? count($invoice->items) : 0 }};
+
+// إضافة صف جديد
+document.getElementById('addRow').addEventListener('click', function() {
+    let tableBody = document.querySelector('#itemsTable tbody');
+    let newRow = document.createElement('tr');
+
+    newRow.innerHTML = `
+        <td>
+            <select name="items[${rowIndex}][product_id]" class="form-control product-select" required>
+                <option value="">اختر المنتج</option>
+                @foreach($products as $product)
+                    <option value="{{ $product->id }}" data-old-price="{{ $product->purchase_price ?? 0 }}">
+                        {{ $product->name }}
+                    </option>
+                @endforeach
+            </select>
+        </td>
+        <td><input type="number" name="items[${rowIndex}][quantity]" class="form-control quantity" value="1" min="1" required></td>
+        <td>
+            <input type="number" name="items[${rowIndex}][price]" class="form-control price" value="0" min="0" step="0.01" required>
+            <small class="text-info old-price-text">السعر القديم: 0</small>
+        </td>
+        <td class="row-total">0</td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
+    `;
+    tableBody.appendChild(newRow);
+
+    // تحديث السعر القديم عند اختيار المنتج
+    let select = newRow.querySelector('.product-select');
+    let oldPriceText = newRow.querySelector('.old-price-text');
+
+    select.addEventListener('change', function() {
+        let oldPrice = parseFloat(select.selectedOptions[0].dataset.oldPrice) || 0;
+        oldPriceText.innerText = "السعر القديم: " + oldPrice;
+    });
+
+    rowIndex++; // زيادة المؤشر للصف التالي
+});
+
+
+    // تحديث الإجمالي والمتبقي
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('quantity') || e.target.classList.contains('price')) {
+            let row = e.target.closest('tr');
+            let qty = parseFloat(row.querySelector('.quantity').value) || 0;
+            let price = parseFloat(row.querySelector('.price').value) || 0;
+            let total = qty * price;
+            row.querySelector('.row-total').innerText = total.toFixed(2);
+            updateInvoiceTotal();
+        }
+        if (e.target.id === 'paid') {
+            updateRemaining();
+        }
+    });
+
+    // حذف صف
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-row')) {
+            e.target.closest('tr').remove();
+            updateInvoiceTotal();
+        }
+    });
+
+    function updateInvoiceTotal() {
+        let totals = document.querySelectorAll('.row-total');
+        let sum = 0;
+        totals.forEach(td => sum += parseFloat(td.innerText) || 0);
+        document.getElementById('invoiceTotal').innerText = sum.toFixed(2);
+        updateRemaining();
+    }
+
+    function updateRemaining() {
+        let total = parseFloat(document.getElementById('invoiceTotal').innerText) || 0;
+        let paidInput = document.getElementById('paid');
+        let paid = parseFloat(paidInput.value) || 0;
+
+        let errorMsg = document.getElementById('paidError');
+
+        if (paid > total) {
+            errorMsg.style.display = 'block'; // إظهار الرسالة
+            paidInput.value = total.toFixed(2); // تعديل المبلغ للحد الأقصى
+            paid = total;
+        } else {
+            errorMsg.style.display = 'none'; // إخفاء الرسالة إذا كان صحيح
+        }
+
+        let remaining = Math.max(total - paid, 0);
+        document.getElementById('remaining').innerText = remaining.toFixed(2);
+
+    }
+
+
+
+    // أول تحميل: حساب المتبقي من القيم القديمة
+    updateRemaining();
+
+</script>
+@endpush
 <!-- Script لإضافة الصفوف وحساب الإجمالي -->
 <script>
-    let rowIndex = {{ count($invoice->items) }};
+    let rowIndex = {
+        {
+            count($invoice - > items)
+        }
+    };
 
     // إضافة صف جديد
     document.getElementById('addRow').addEventListener('click', function() {
@@ -230,69 +411,31 @@
 
     function updateRemaining() {
         let total = parseFloat(document.getElementById('invoiceTotal').innerText) || 0;
-        let paid = parseFloat(document.getElementById('paid').value) || 0;
+        let paidInput = document.getElementById('paid');
+        let paid = parseFloat(paidInput.value) || 0;
+
+        let errorMsg = document.getElementById('paidError');
+
+        if (paid > total) {
+            errorMsg.style.display = 'block'; // إظهار الرسالة
+            paidInput.value = total.toFixed(2); // تعديل المبلغ للحد الأقصى
+            paid = total;
+        } else {
+            errorMsg.style.display = 'none'; // إخفاء الرسالة إذا كان صحيح
+        }
+
         let remaining = Math.max(total - paid, 0);
         document.getElementById('remaining').innerText = remaining.toFixed(2);
+
     }
+
+
 
     // أول تحميل: حساب المتبقي من القيم القديمة
     updateRemaining();
+
 </script>
 
-<style>
-    /* تحسين تجاوب الصفحة */
-    @media (max-width: 767px) {
-        .content-wrapper .row {
-            flex-direction: column;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-    }
 
-    .shadow-sm {
-        box-shadow: 0 0 10px rgba(0,0,0,0.05);
-    }
-
-    .btn-primary {
-        background-color: #007bff;
-        border-color: #007bff;
-    }
-    .btn-primary:hover {
-        background-color: #0069d9;
-        border-color: #0062cc;
-    }
-
-    .btn-success {
-        background-color: #28a745;
-        border-color: #28a745;
-    }
-    .btn-success:hover {
-        background-color: #218838;
-        border-color: #1e7e34;
-    }
-
-    .btn-secondary {
-        background-color: #6c757d;
-        border-color: #6c757d;
-        color: #fff;
-    }
-    .btn-secondary:hover {
-        background-color: #5a6268;
-        border-color: #545b62;
-        color: #fff;
-    }
-
-    .btn-danger {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        color: #fff;
-    }
-    .btn-danger:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
-        color: #fff;
-    }
-</style>
 
 @endsection

@@ -37,8 +37,8 @@
                     </thead>
                     <tbody>
                         @php
-                            $totalAdded = 0;
-                            $totalDeducted = 0;
+                        $totalAdded = 0;
+                        $totalDeducted = 0;
                         @endphp
                         @foreach($transactions as $index => $t)
                         <tr>
@@ -47,18 +47,18 @@
                             <td>{{ $t->description ?? '-' }}</td>
                             <td>
                                 @if($t->type === 'add')
-                                    {{ number_format($t->amount,2) }}
-                                    @php $totalAdded += $t->amount; @endphp
+                                {{ number_format($t->amount,2) }}
+                                @php $totalAdded += $t->amount; @endphp
                                 @else
-                                    -
+                                -
                                 @endif
                             </td>
                             <td>
                                 @if($t->type === 'deduct')
-                                    {{ number_format($t->amount,2) }}
-                                    @php $totalDeducted += $t->amount; @endphp
+                                {{ number_format($t->amount,2) }}
+                                @php $totalDeducted += $t->amount; @endphp
                                 @else
-                                    -
+                                -
                                 @endif
                             </td>
                         </tr>
@@ -67,8 +67,12 @@
                     <tfoot>
                         <tr>
                             <th colspan="3" class="text-right">الإجمالي الحالي:</th>
-                            <th>{{ number_format($totalAdded,2) }}</th>
-                            <th>{{ number_format($totalDeducted,2) }}</th>
+                            <th style="color: green">{{ number_format($totalAdded,2) }}</th>
+                            <th style="color: red">{{ number_format($totalDeducted,2) }}</th>
+                        </tr>
+                        <tr>
+                            <th colspan="3" class="text-right">صافي الرصيد:</th>
+                            <th colspan="2" style="color: orangered">{{ number_format($totalAdded - $totalDeducted,2) }}</th>
                         </tr>
                     </tfoot>
                 </table>
@@ -94,14 +98,17 @@
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
 <script>
-$(document).ready(function() {
-    $('.datatable').DataTable({
-        dom: 'Bfrtip',
-        buttons: ['copy','excel','pdf','print'],
-        "language": {"url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/ar.json"},
-        "pageLength": 10,
-        "ordering": true
+    $(document).ready(function() {
+        $('.datatable').DataTable({
+            dom: 'Bfrtip'
+            , buttons: ['copy', 'excel', 'pdf', 'print']
+            , "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/ar.json"
+            }
+            , "pageLength": 10
+            , "ordering": true
+        });
     });
-});
+
 </script>
 @endpush

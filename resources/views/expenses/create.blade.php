@@ -37,6 +37,7 @@
                                 </ul>
                             </div>
                         @endif
+                        
 
                         <form action="{{ route('dashboard.expenses.store') }}" method="POST">
                             @csrf

@@ -6,13 +6,18 @@
     <section class="content-header mb-3 d-flex justify-content-between align-items-center flex-wrap">
         <h1>دفعات الطلب: #{{ $order->id }}</h1>
         <div class="mt-2 mt-md-0">
-           
+
             <a href="{{ route('dashboard.payments.index') }}" class="btn btn-default mb-1">
                 <i class="fa fa-arrow-left"></i> العودة للطلبات
             </a>
         </div>
     </section>
-
+  @if(session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                        @endif
+                        @if(session('error'))
+                        <div class="alert alert-error">{{ session('error') }}</div>
+                        @endif
     <section class="content">
         <div class="box box-primary">
             <div class="box-header with-border">
