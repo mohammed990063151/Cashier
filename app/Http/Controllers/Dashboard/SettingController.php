@@ -37,7 +37,12 @@ class SettingController extends Controller
             if ($setting && $setting->logo) {
                 Storage::delete($setting->logo);
             }
-            $data['logo'] = $request->file('logo')->store('logos');
+         $data['logo'] = $request->file('logo')->storeAs(
+    'dashboard_files/img/logos',
+    time() . '.' . $request->file('logo')->getClientOriginalExtension(),
+    'public_uploads'
+);
+
         }
 
         if ($setting) {

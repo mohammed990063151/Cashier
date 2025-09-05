@@ -195,8 +195,13 @@
             <div class="modal-footer d-flex justify-content-between">
                 <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">إغلاق</button>
                 {{-- @if ($orders) --}}
-                      <button type="button" class="btn btn-primary"  onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">طباعة الطلب</button>
-           
+                  @if(isset($order) && $order)
+    <button type="button" class="btn btn-primary"
+        onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">
+        طباعة الطلب
+    </button>
+@endif
+
                 {{-- @endif --}}
                </div>
         </div>

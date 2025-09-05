@@ -37,6 +37,13 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        
+         'public_uploads' => [
+        'driver' => 'local',
+        'root' => public_path(),
+        'url' => env('APP_URL'),
+        'visibility' => 'public',
+    ],
 
         'public' => [
             'driver' => 'local',

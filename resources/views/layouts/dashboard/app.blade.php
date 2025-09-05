@@ -106,9 +106,9 @@
         <header class="main-header">
 
             {{--<!-- Logo -->--}}
-            <a href="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="logo">
+            <a href="{{ asset($setting->logo) }}" class="logo">
                 {{--<!-- mini logo for sidebar mini 50x50 pixels -->--}}
-                <span class="logo-mini"><b></b></span>
+                <span class="logo-mini">A<b>T</b>B</span>
                 <span class="logo-lg"><b>{{ $setting->name ?? '' }}</b></span>
             </a>
 
@@ -205,7 +205,7 @@
                     <li class="dropdown user user-menu">
 
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <img src="{{ asset('dashboard_files/img/' . $setting->logo) }}" class="user-image" alt="User Image">
+                            <img src="{{ asset($setting->logo) }}" class="user-image" alt="User Image">
                              {{-- <img src="{{ asset('dashboard_files/img/' . $setting->logo) }}" alt="POS Image"> --}}
                             <span class="hidden-xs">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
                         </a>
@@ -213,7 +213,7 @@
 
                             {{--<!-- User image -->--}}
                             <li class="user-header">
-                                <img src="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="img-circle" alt="User Image">
+                                <img src="{{ asset($setting->logo) }}" class="img-circle" alt="User Image">
 
                                 <p>
                                     {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
