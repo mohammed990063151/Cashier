@@ -49,7 +49,7 @@ protected $messages = [
             ->latest()
             ->paginate(5);
 
-        return view('livewire.Dashboard.clients', compact('clients'));
+        return view('livewire.dashboard.clients', compact('clients'));
     }
 
     public function resetInput()
