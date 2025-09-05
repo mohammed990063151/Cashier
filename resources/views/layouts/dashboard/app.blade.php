@@ -205,7 +205,8 @@
                     <li class="dropdown user user-menu">
 
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <img src="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="user-image" alt="User Image">
+                          <img src="{{ asset('dashboard_files/img/' . $setting->logo) }}" alt="POS Image">
+
                             <span class="hidden-xs">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
                         </a>
                         <ul class="dropdown-menu">

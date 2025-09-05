@@ -109,7 +109,8 @@
     <div class="login-left">
         <h2>مرحباً بك! {{ $setting->name }}</h2>
         <p>قم بتسجيل الدخول للوصول إلى لوحة التحكم الخاصة بك.</p>
-      <img src="{{ asset('storage/' . $setting->logo) }}" alt="POS Image">
+   <img src="{{ asset('dashboard_files/img/' . $setting->logo) }}" alt="POS Image">
+
 
     </div>
 
