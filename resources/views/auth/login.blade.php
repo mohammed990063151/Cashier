@@ -109,14 +109,7 @@
     <div class="login-left">
         <h2>مرحباً بك! {{ $setting->name }}</h2>
         <p>قم بتسجيل الدخول للوصول إلى لوحة التحكم الخاصة بك.</p>
-      <img
-    src="{{ $setting && $setting->logo && file_exists(storage_path('app/public/'.$setting->logo))
-            ? asset('storage/'.$setting->logo)
-            : asset('default-logo.png') }}"
-    alt="POS Image"
-    onerror="this.src='{{ asset('default-logo.png') }}';"
-/>
-
+      <img src="{{ asset('storage/' . $setting->logo) }}" alt="POS Image">
 
     </div>
 
