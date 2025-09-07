@@ -77,7 +77,13 @@
                                 <td>{!! $product->description ?? "-" !!}</td>
                                 <td>{{ $product->category->name }}</td>
                                 <td>
-                                    <img src="{{ $product->image_path }}" style="width: 80px" class="img-thumbnail" alt="صورة المنتج">
+                                    {{-- <img src="{{ asset('storage/product_images/' . $product->image) }}" style="width: 80px" class="img-thumbnail" alt="صورة المنتج"> --}}
+                                    @if($product->image)
+    <img src="{{ asset('storage/product_images/' . $product->image) }}" style="width: 80px" class="img-thumbnail" alt="صورة المنتج">
+@else
+    <img src="{{ asset('dashboard_files/img/logo.png') }}" style="width: 80px" class="img-thumbnail" alt="صورة المنتج">
+@endif
+
                                 </td>
                                 <td>{{ $product->purchase_price }}</td>
                                 <td>{{ $product->sale_price }}</td>

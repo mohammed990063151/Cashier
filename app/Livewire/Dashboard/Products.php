@@ -150,12 +150,17 @@ class Products extends Component
 
         if ($this->image) {
             $imageName = Str::random(10) . '.' . $this->image->getClientOriginalExtension();
-            $img = Image::make($this->image->getRealPath())->resize(300, null, function ($constraint) {
-                $constraint->aspectRatio();
-            });
-            $img->save(public_path('uploads/product_images/' . $imageName));
+
+            // تعديل حجم الصورة وحفظها مباشرة في storage/app/public/product_images
+            $img = Image::make($this->image->getRealPath())
+                ->resize(300, null, function ($constraint) {
+                    $constraint->aspectRatio();
+                })
+                ->save(storage_path('app/public/product_images/' . $imageName));
+
             $data['image'] = $imageName;
         }
+
 
         Product::create($data);
 
@@ -214,23 +219,27 @@ class Products extends Component
 
             if ($this->image) {
                 if ($product->image && $product->image !== 'logo.png') {
-                    Storage::disk('public')->delete('uploads/product_images/' . $product->image);
+                    Storage::disk('public')->delete('product_images/' . $product->image);
                 }
 
                 $imageName = Str::random(10) . '.' . $this->image->getClientOriginalExtension();
-                $img = Image::make($this->image->getRealPath())->resize(300, null, function ($constraint) {
-                    $constraint->aspectRatio();
-                });
-                $img->save(public_path('uploads/product_images/' . $imageName));
+
+                $img = Image::make($this->image->getRealPath())
+                    ->resize(300, null, function ($constraint) {
+                        $constraint->aspectRatio();
+                    })
+                    ->save(storage_path('app/public/product_images/' . $imageName));
+
                 $data['image'] = $imageName;
             }
+
 
             $product->update($data);
 
             session()->flash('success', 'تم التعديل بنجاح');
             $this->resetForm();
             $this->dispatch('closeModal');
-              return redirect(request()->header('Referer'));
+            return redirect(request()->header('Referer'));
         } catch (\Exception $e) {
             Log::error('Error updating product: ' . $e->getMessage());
             $this->addError('update_error', 'حدث خطأ أثناء التعديل: ' . $e->getMessage());
