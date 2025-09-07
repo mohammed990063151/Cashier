@@ -14,20 +14,9 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // $categories = Category::all();
 
-        // $products = Product::when($request->search, function ($q) use ($request) {
-
-        //     return $q->whereTranslationLike('name', '%' . $request->search . '%');
-
-        // })->when($request->category_id, function ($q) use ($request) {
-
-        //     return $q->where('category_id', $request->category_id);
-
-        // })->latest()->paginate(5);
 
         return view('dashboard.products.index');
-        // , compact('categories', 'products')
 
     }//end of index
 

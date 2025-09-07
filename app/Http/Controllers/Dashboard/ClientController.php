@@ -10,14 +10,7 @@ class ClientController extends Controller
 {
     public function index(Request $request)
     {
-        // $clients = Client::when($request->search, function($q) use ($request){
 
-        //     return $q->where('name', 'like', '%' . $request->search . '%')
-        //         ->orWhere('phone', 'like', '%' . $request->search . '%')
-        //         ->orWhere('address', 'like', '%' . $request->search . '%');
-
-        // })->latest()->paginate(5);  , compact('clients')
-// return 0;
         return view('dashboard.clients.index');
 
     }//end of index
@@ -94,5 +87,25 @@ class ClientController extends Controller
         return redirect()->route('dashboard.clients.index');
 
     }//end of destroy
+    public function restoreClient($id)
+{
+    $client = Client::withTrashed()->findOrFail($id);
+    $client->restore();
+
+    // إذا تريد استرجاع الطلبات المرتبطة (اختياري)
+    foreach ($client->orders()->withTrashed()->get() as $order) {
+        $order->restore();
+        // إذا لديك تعديل على المنتجات كما في مثالك، ضعه هنا
+        foreach ($order->products as $product) {
+            $product->update([
+                'stock' => $product->stock - $product->pivot->quantity
+            ]);
+        }
+    }
+
+    session()->flash('success', "تم استرجاع العميل: #{$client->id}");
+    return redirect()->back();
+}
+
 
 }//end of controller

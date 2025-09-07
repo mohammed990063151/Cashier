@@ -45,9 +45,9 @@ Route::get('/home', function () {
 // Dashboard routes group
 Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->group(function () {
 
-    // routes/web.php
-// Route::get('/backup-database', [App\Http\Controllers\DatabaseBackupController::class, 'backup'])
-//     ->name('database.backup');
+ Route::get('/admin/trash', [WelcomeController::class, 'trash'])->name('admin.trash');
+Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])->name('admin.restore');
+
  Route::get('/backup/index', [DatabaseBackupController::class, 'index'])->name('database.backup');
     Route::get('/backup/create', [DatabaseBackupController::class, 'backup'])->name('backup.create');
     Route::get('/backup/download/{fileName}', [DatabaseBackupController::class, 'download'])->name('backup.download');
@@ -65,6 +65,18 @@ Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->gro
     // Client routes
     Route::resource('clients', ClientController::class)->except(['show']);
     // Route::get('clients', \App\Livewire\Dashboard\Clients::class)->name('clients.index');
+
+// استرجاع تصنيف
+Route::get('/categories/restore/{id}', [CategoryController::class, 'restoreCategory'])
+    ->name('categories.restore');
+
+// استرجاع عميل
+Route::get('/clients/restore/{id}', [ClientController::class, 'restoreClient'])
+    ->name('clients.restore');
+
+// استرجاع مصروف
+Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreExpense'])
+    ->name('expenses.restore');
 
     Route::resource('clients.orders', ClientOrderController::class)->except(['show']);
 

@@ -60,11 +60,11 @@
                                             <a href="#" class="btn btn-info btn-sm disabled"><i class="fa fa-edit"></i> تعديل</a>
                                         @endif
 
-                                        {{-- @if(auth()->user()->hasPermission('delete_clients'))
+                                        @if(auth()->user()->hasPermission('delete_clients'))
                                             <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
-                                        @else --}}
+                                        @else
                                             <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
-                                        {{-- @endif --}}
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

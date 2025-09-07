@@ -115,4 +115,13 @@ class ExpenseController extends Controller
         return redirect()->route('dashboard.expenses.index')
             ->with('success', 'تم حذف المصروف واسترجاع أثره المالي 🗑️💵');
     }
+    public function restoreExpense($id)
+{
+    $expense = Expense::withTrashed()->findOrFail($id);
+    $expense->restore();
+
+    session()->flash('success', "تم استرجاع المصروف: #{$expense->id}");
+    return redirect()->back();
+}
+
 }

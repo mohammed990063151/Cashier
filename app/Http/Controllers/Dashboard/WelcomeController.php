@@ -133,4 +133,36 @@ $salesGrowth = $lastMonthSales > 0
             'topProducts'
         ));
 }//end of controller
+
+
+public function trash()
+{
+    $categories = Category::onlyTrashed()->get();
+    $clients = Client::onlyTrashed()->get();
+    $expenses = Expense::onlyTrashed()->get();
+
+    return view('dashboard.admin.trash', compact('categories', 'clients', 'expenses'));
+}
+
+public function restore($type, $id)
+{
+    switch ($type) {
+        case 'categories':
+            $model = Category::withTrashed()->findOrFail($id);
+            break;
+        case 'clients':
+            $model = Client::withTrashed()->findOrFail($id);
+            break;
+        case 'expenses':
+            $model = Expense::withTrashed()->findOrFail($id);
+            break;
+        default:
+            abort(404);
+    }
+
+    $model->restore();
+
+    return back()->with('success', "تم استرجاع $type بنجاح");
+}
+
 }

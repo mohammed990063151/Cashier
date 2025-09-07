@@ -50,7 +50,7 @@ class CategoryController extends Controller
         return view('dashboard.categories.edit', compact('category'));
     } //end of edit
 
-   
+
 
 public function update(Request $request, Category $category)
 {
@@ -72,6 +72,15 @@ public function update(Request $request, Category $category)
 
     session()->flash('success', 'تم التعديل بنجاح');
     return redirect()->route('dashboard.categories.index');
+}
+
+public function restoreCategory($id)
+{
+    $category = Category::withTrashed()->findOrFail($id);
+    $category->restore();
+
+    session()->flash('success', "تم استرجاع التصنيف: #{$category->id}");
+    return redirect()->back();
 }
 
     //end of update

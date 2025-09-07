@@ -149,6 +149,12 @@
    <span> 📦 تحميل نسخة احتياطية </span>
 </a>
             </li>
+               <li>
+    <a href="{{ route('dashboard.admin.trash') }}">
+        <span> 🗑️ سلة المحذوفات</span>
+    </a>
+  </li>
+
         </ul>
     </section>
 </aside>

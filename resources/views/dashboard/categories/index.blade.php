@@ -80,7 +80,7 @@
                                         </a>
                                     @endif
 
-                                    {{-- @if (auth()->user()->hasPermission('delete_categories'))
+                                    @if (auth()->user()->hasPermission('delete_categories'))
                                         <form action="{{ route('dashboard.categories.destroy', $category->id) }}" method="post" style="display: inline-block">
                                             {{ csrf_field() }}
                                             {{ method_field('delete') }}
@@ -88,7 +88,7 @@
                                         </form>
                                     @else
                                         <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
-                                    @endif --}}
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
