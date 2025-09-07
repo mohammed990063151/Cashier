@@ -39,7 +39,7 @@ class Products extends Component
     {
         return [
             'category_id'    => 'required',
-            'name' => 'required|string|max:255|unique:products,name,' . $this->productId,
+            'name' => 'required|string|max:255',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price'     => 'required|numeric|min:0',
             'stock'          => 'required|integer|min:0',
@@ -230,6 +230,7 @@ class Products extends Component
             session()->flash('success', 'تم التعديل بنجاح');
             $this->resetForm();
             $this->dispatch('closeModal');
+              return redirect(request()->header('Referer'));
         } catch (\Exception $e) {
             Log::error('Error updating product: ' . $e->getMessage());
             $this->addError('update_error', 'حدث خطأ أثناء التعديل: ' . $e->getMessage());
