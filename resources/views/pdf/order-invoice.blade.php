@@ -168,7 +168,7 @@
         <table class="header-table">
             <tr>
                 <td colspan="2">
-                    <img src="{{ $setting->logo ? public_path($setting->logo) : public_path('logo.png') }}" class="header-logo" alt="الشعار">
+                    <img src="{{ $setting->logo}}" class="header-logo" alt="الشعار">
 
                 </td>
             </tr>
@@ -229,6 +229,10 @@
                 <tr class="total-row">
                     <th colspan="2" style="text-align:right;"> المبلغ المخصوم</th>
                     <td colspan="2" style="color: rgb(106, 94, 2)">{{ number_format($order->tax_amount, 2) }} ج.س</td>
+                </tr>
+                   <tr class="total-row">
+                    <th colspan="2" style="text-align:right;">  اجمالي بعد الخصم</th>
+                    <td colspan="2" style="color: rgb(106, 94, 2)">{{ number_format($order->total_after_discount, 2) }} ج.س</td>
                 </tr>
                 <tr class="total-row">
                     <th colspan="2" style="text-align:right;">المدفوع منه</th>

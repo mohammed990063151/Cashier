@@ -158,7 +158,11 @@
     <input type="number" name="tax_amount" id="invoice_discount" class="form-control" min="0" step="0"
            value="{{ $order->tax_amount ?? 0 }}">
 </div>
-
+<h4>الإجمالي بعد الخصم:
+    <span id="discounted-total" style="color:#007bff; font-weight:bold;">
+        {{ number_format($order->total_price - ($order->tax_amount ?? 0), 2) }}
+    </span>
+</h4>
                             <div class="form-group">
                                 <label for="discount">المدفوع </label>
                                 <input type="number" name="discount" id="discount" class="form-control" min="0" step="1" value="{{ $order->discount }}">
@@ -330,41 +334,8 @@ document.addEventListener("DOMContentLoaded", function() {
         return parseFloat((v || "0").toString().replace(/,/g, '')) || 0;
     }
 
-    // function calculateTotal() {
-    //     let total = 0;
 
-    //     // حساب إجمالي المنتجات
-    //     document.querySelectorAll('.order-list tr').forEach(row => {
-    //         const qty = parseNumber(row.querySelector('.product-quantity')?.value);
-    //         const price = parseNumber(row.querySelector('.product-unit-price')?.value);
-    //         const productTotal = qty * price;
-
-    //         row.querySelector('.product-price').textContent = productTotal.toFixed(2);
-    //         row.querySelector('input[name$="[total_price]"]').value = productTotal;
-
-    //         total += productTotal;
-    //     });
-
-    //     totalPriceEl.textContent = total.toFixed(2);
-
-    //     // الخصم (مخزن في tax_amount)
-    //     const invoiceDiscount = parseNumber(invoiceDiscountEl?.value);
-
-    //     // المدفوع
-    //     const paid = parseNumber(discountEl?.value);
-
-    //     // الإجمالي بعد الخصم
-    //     let discountedTotal = total - invoiceDiscount;
-    //     if (discountedTotal < 0) discountedTotal = 0;
-
-    //     // المتبقي
-    //     let remaining = discountedTotal - paid;
-    //     if (remaining < 0) remaining = 0;
-
-    //     remainingEl.value = remaining.toFixed(2);
-    // }
-
-    function calculateTotal() {
+ function calculateTotal() {
     let total = 0;
 
     document.querySelectorAll('.order-list tr').forEach(row => {
@@ -380,16 +351,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     totalPriceEl.textContent = total.toFixed(2);
 
-    // هنا فقط تحديث المتبقي بعد الخصم والمدفوع
     const invoiceDiscount = parseNumber(invoiceDiscountEl?.value);
     const paid = parseNumber(discountEl?.value);
-    let remaining = total - invoiceDiscount - paid;
+
+    // ✅ الإجمالي بعد الخصم
+    let discountedTotal = total - invoiceDiscount;
+    if (discountedTotal < 0) discountedTotal = 0;
+    document.getElementById('discounted-total').textContent = discountedTotal.toFixed(2);
+
+    // ✅ المتبقي
+    let remaining = discountedTotal - paid;
     if (remaining < 0) remaining = 0;
     remainingEl.value = remaining.toFixed(2);
 
-    // ✅ تحديث input مخفي للإجمالي الأصلي (بدون خصم)
+    // hidden input عشان يتخزن في الباك
     document.getElementById('total_price').value = total.toFixed(2);
 }
+
 
     // تشغيل عند أي تغيير
     $(document).on('input', '.product-quantity, .product-unit-price, #invoice_discount, #discount', function() {

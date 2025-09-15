@@ -81,8 +81,13 @@
             <tbody>
                 @php
                     $paid = $order->payments->sum('amount');
-                    $remaining = $totalSale - $paid;
+                    $discountAmount = $order->tax_amount ?? 0;
+                    $totalAfterDiscount = max($totalSale - $discountAmount, 0);
+                    $profitAfterDiscount = $totalAfterDiscount - $totalPurchase;
+                    $discountPercentage = $totalSale > 0 ? ($discountAmount / $totalSale) * 100 : 0;
+                    $remaining = max($totalAfterDiscount - $paid - $order->discount, 0);
                 @endphp
+
                 @forelse($order->payments as $payment)
                     <tr>
                         <td>{{ $payment->created_at->format('Y-m-d') }}</td>
@@ -94,24 +99,39 @@
                         <td colspan="3" class="text-center text-muted">لا توجد مدفوعات مسجلة</td>
                     </tr>
                 @endforelse
+
+                <tr class="bg-light">
+                    <th>إجمالي المبيعات</th>
+                    <td colspan="2">{{ number_format($totalSale, 2) }} ج.س</td>
+                </tr>
+
+                @if($discountAmount > 0)
+                <tr class="bg-danger text-white">
+                    <th>الخصم</th>
+                    <td colspan="2">- {{ number_format($discountAmount, 2) }} ج.س ({{ number_format($discountPercentage, 2) }}%)</td>
+                </tr>
+                @endif
+
+                <tr class="bg-success text-white">
+                    <th>الإجمالي بعد الخصم</th>
+                    <td colspan="2">{{ number_format($totalAfterDiscount, 2) }} ج.س</td>
+                </tr>
+
                 <tr class="bg-light">
                     <th>إجمالي المدفوع</th>
-                    <td colspan="2">{{ number_format($paid, 2) }} ج.س</td>
-                </tr>
-                <tr class="bg-light">
-                    <th>المدفوع عند البيع</th>
                     <td colspan="2">{{ number_format($order->discount, 2) }} ج.س</td>
                 </tr>
-                <tr class="bg-light">
-                    <th>اجمالي المبلغ</th>
-                    <td colspan="2">{{ number_format($order->total_price, 2) }} ج.س</td>
+
+                <tr class="bg-info text-white">
+                    <th>الربح بعد الخصم</th>
+                    <td colspan="2">{{ number_format($profitAfterDiscount, 2) }} ج.س</td>
                 </tr>
+
                 <tr class="bg-warning">
                     <th>المتبقي</th>
-                    <td colspan="2">{{ number_format($order->remaining, 2) }} ج.س</td>
+                    <td colspan="2">{{ number_format($remaining, 2) }} ج.س</td>
                 </tr>
             </tbody>
         </table>
     </div>
 </div>
-

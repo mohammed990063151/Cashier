@@ -107,29 +107,36 @@ $(document).ready(function() {
 
 
 
+
 // function calculateTotal() {
 //     let total = 0;
 
 //     $('.order-list tr').each(function() {
 //         let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
 //         let unitPrice = parseFloat($(this).find('.product-unit-price').val()) || 0;
-//         let productTotal = quantity * unitPrice;
 
+//         let productTotal = quantity * unitPrice;
 //         $(this).find('.product-price').text(productTotal.toFixed(2));
 //         $(this).find('input[name$="[total_price]"]').val(productTotal);
 
 //         total += productTotal;
 //     });
 
-//     // تحديث الإجمالي
+//     // إجمالي قبل الخصم
 //     $('.total-price').text(total.toFixed(2));
 
-//     // حساب الخصم والمتبقي
-//     let discount = parseFloat($('#discount').val()) || 0;
-//     let remaining = total - discount;
+//     // حساب الخصم
+//     let invoiceDiscount = parseFloat($('#invoice_discount').val()) || 0;
+//     let discountedTotal = total - invoiceDiscount;
+//     if (discountedTotal < 0) discountedTotal = 0;
+
+//     // المدفوع العام
+//     let paid = parseFloat($('#discount').val()) || 0;
+
+//     // المتبقي
+//     let remaining = discountedTotal - paid;
 //     if (remaining < 0) remaining = 0;
 
-//     // تحديث حقل المتبقي الصحيح
 //     $('#remaining').val(remaining.toFixed(2));
 // }
 
@@ -155,6 +162,9 @@ function calculateTotal() {
     let discountedTotal = total - invoiceDiscount;
     if (discountedTotal < 0) discountedTotal = 0;
 
+    // ✅ تحديث "الإجمالي بعد الخصم"
+    $('#discounted-total').text(discountedTotal.toFixed(2));
+
     // المدفوع العام
     let paid = parseFloat($('#discount').val()) || 0;
 
@@ -164,7 +174,6 @@ function calculateTotal() {
 
     $('#remaining').val(remaining.toFixed(2));
 }
-
 
 // تحديث عند تغيير الكمية أو السعر
 // $(document).on('input', '.product-quantity, .product-unit-price', function() {

@@ -182,13 +182,15 @@ public function update(Request $request, Client $client, Order $order, CashServi
     }
 
     $remaining = max($total_after_discount - $discount, 0);
-
+$total_after_discount = max($total_price - $invoiceDiscount, 0);
+ $total_profit =  $total_profit - $invoiceDiscount ;
     // ✅ تحديث الطلب
     $order->update([
         'discount'    => $discount,
          'tax_amount'  => $invoiceDiscount,
         'total_price' => $total_price,
         'remaining'   => $remaining,
+          'total_after_discount'=> $total_after_discount,
         'profit'      => floor($total_profit),
     ]);
 
@@ -294,13 +296,15 @@ public function update(Request $request, Client $client, Order $order, CashServi
             $total_price += $unitPrice * $quantity;
             $total_profit += ($unitPrice - $product->purchase_price) * $quantity;
 
-            $total_profit = floor($total_profit);
+            // $total_profit = floor($total_profit);
         }
     $tax_amount = isset($request->tax_amount) ? max(0, $request->tax_amount) : 0;
+$total_after_discount = max($total_price - $tax_amount, 0);
     $total_prices = $total_price - $tax_amount ;
         // تحقق من أن الخصم لا يجعل المتبقي سالب
         $remaining = max($total_prices - $discount, 0);
-
+ $total_profit =  $total_profit - $tax_amount ;
+  $total_profit = floor($total_profit);
         // إنشاء الطلب
         $order = $client->orders()->create([
             'order_number' => $orderNumber ?? $this->generateUniqueOrderNumber(),
@@ -308,6 +312,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
             'total_price'  => $total_price,
             'remaining'    => $remaining,
             'profit'       => $total_profit,
+              'total_after_discount'=> $total_after_discount,
             'client_id'   => $client->id,
             'tax_amount'   => $tax_amount,
         ]);

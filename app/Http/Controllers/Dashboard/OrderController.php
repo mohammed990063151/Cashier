@@ -22,32 +22,72 @@ class OrderController extends Controller
     }
 
 
-    public function show($id)
-    {
-        $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
+    // public function show($id)
+    // {
+    //     $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
 
-        // حساب إجمالي الشراء: كمية كل منتج × سعر الشراء من جدول products
-        $totalPurchase = $order->products->sum(function ($product) {
-            return $product->pivot->quantity * $product->pivot->cost_price;
-        });
+    //     // حساب إجمالي الشراء: كمية كل منتج × سعر الشراء من جدول products
+    //     $totalPurchase = $order->products->sum(function ($product) {
+    //         return $product->pivot->quantity * $product->pivot->cost_price;
+    //     });
 
-        // حساب إجمالي البيع: كمية كل منتج × سعر البيع من جدول products
-        $totalSale = $order->products->sum(function ($product) {
-            return $product->pivot->quantity * $product->pivot->sale_price;
-        });
+    //     // حساب إجمالي البيع: كمية كل منتج × سعر البيع من جدول products
+    //     $totalSale = $order->products->sum(function ($product) {
+    //         return $product->pivot->quantity * $product->pivot->sale_price;
+    //     });
 
-        // حساب الربح والمكسب بالنسبة المئوية
-        $profit = $totalSale - $totalPurchase;
-        $profitPercentage = $totalPurchase > 0 ? ($profit / $totalPurchase) * 100 : 0;
+    //     // حساب الربح والمكسب بالنسبة المئوية
+    //     $profit = $totalSale - $totalPurchase;
+    //     $profitPercentage = $totalPurchase > 0 ? ($profit / $totalPurchase) * 100 : 0;
 
-        return view('dashboard.orders.order_details', compact(
-            'order',
-            'totalPurchase',
-            'totalSale',
-            'profit',
-            'profitPercentage'
-        ));
-    }
+    //     return view('dashboard.orders.order_details', compact(
+    //         'order',
+    //         'totalPurchase',
+    //         'totalSale',
+    //         'profit',
+    //         'profitPercentage'
+    //     ));
+    // }
+public function show($id)
+{
+    $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
+
+    // إجمالي الشراء
+    $totalPurchase = $order->products->sum(function ($product) {
+        return $product->pivot->quantity * $product->pivot->cost_price;
+    });
+
+    // إجمالي البيع
+    $totalSale = $order->products->sum(function ($product) {
+        return $product->pivot->quantity * $product->pivot->sale_price;
+    });
+
+    // الخصم من الطلب
+    $discount = $order->tax_amount ?? 0;
+
+    // الإجمالي بعد الخصم
+    $totalAfterDiscount = max($totalSale - $discount, 0);
+
+    // الربح قبل الخصم
+    $profit = $totalSale - $totalPurchase;
+
+    // الربح بعد الخصم
+    $profitAfterDiscount = $totalAfterDiscount - $totalPurchase;
+
+    // نسبة الربح (على الشراء)
+    $profitPercentage = $totalPurchase > 0 ? ($profitAfterDiscount / $totalPurchase) * 100 : 0;
+
+    return view('dashboard.orders.order_details', compact(
+        'order',
+        'totalPurchase',
+        'totalSale',
+        'discount',
+        'totalAfterDiscount',
+        'profit',
+        'profitAfterDiscount',
+        'profitPercentage'
+    ));
+}
 
     public function index(Request $request)
     {

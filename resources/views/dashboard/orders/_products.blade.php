@@ -223,6 +223,10 @@
                     <th colspan="2" style="text-align:right;"> المبلغ المخصوم</th>
                     <td colspan="2" style="color: rgb(123, 123, 0)">{{ number_format($order->tax_amount, 2) }} ج.س</td>
                 </tr>
+                 <tr class="total-row">
+                    <th colspan="2" style="text-align:right;">اجمالي بعد الخصم</th>
+                    <td colspan="2" style="color: rgb(25, 0, 123)">{{ number_format($order->total_after_discount, 2) }} ج.س</td>
+                </tr>
                 <tr class="total-row">
                     <th colspan="2" style="text-align:right;">المدفوع منه</th>
                     <td colspan="2">{{ number_format($order->discount, 2) }} ج.س</td>
