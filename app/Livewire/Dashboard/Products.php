@@ -7,14 +7,15 @@ use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\Paginator;
-
+use Intervention\Image\Facades\Image;
+use Illuminate\Database\Eloquent\SoftDeletes;
 class Products extends Component
 {
+    use SoftDeletes;
     use WithPagination, WithFileUploads;
 
     public $search = '';
@@ -28,8 +29,6 @@ class Products extends Component
 
     protected $paginationTheme = 'bootstrap';
 
-
-
     public function boot()
     {
         Paginator::useBootstrap();
@@ -39,18 +38,19 @@ class Products extends Component
     {
         return [
             'category_id'    => 'required',
-            'name' => 'required|string|max:255',
+            'name'           => 'required|string|max:255',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price'     => 'required|numeric|min:0',
             'stock'          => 'required|integer|min:0',
         ];
     }
+
     protected $messages = [
-        'category_id.required'    => 'حقل القسم مطلوب.',
-        'name.unique'    => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
-        'name.required'           => 'حقل الاسم مطلوب.',
-        'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
-        'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
+        'category_id.required' => 'حقل القسم مطلوب.',
+        'name.unique'          => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
+        'name.required'        => 'حقل الاسم مطلوب.',
+        'name.string'          => 'حقل الاسم يجب أن يكون نصًا.',
+        'name.max'             => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
         'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
         'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
         'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
@@ -61,7 +61,6 @@ class Products extends Component
         'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
         'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
     ];
-
 
     public function updatingSearch()
     {
@@ -133,7 +132,6 @@ class Products extends Component
     {
         $this->validate();
 
-        // تحقق مخصص: سعر البيع >= سعر الشراء
         if ($this->sale_price < $this->purchase_price) {
             $this->addError('sale_price', 'سعر البيع لا يمكن أن يكون أقل من سعر الشراء');
             return;
@@ -151,16 +149,19 @@ class Products extends Component
         if ($this->image) {
             $imageName = Str::random(10) . '.' . $this->image->getClientOriginalExtension();
 
-            // تعديل حجم الصورة وحفظها مباشرة في storage/app/public/product_images
-            $img = Image::make($this->image->getRealPath())
+            $path = public_path('uploads/product_images/');
+            if (!File::exists($path)) {
+                File::makeDirectory($path, 0755, true);
+            }
+
+            Image::make($this->image->getRealPath())
                 ->resize(300, null, function ($constraint) {
                     $constraint->aspectRatio();
                 })
-                ->save(storage_path('app/public/product_images/' . $imageName));
+                ->save($path . $imageName);
 
             $data['image'] = $imageName;
         }
-
 
         Product::create($data);
 
@@ -190,7 +191,6 @@ class Products extends Component
     {
         $this->validate();
 
-        // تحقق مخصص: سعر البيع >= سعر الشراء
         if ($this->sale_price < $this->purchase_price) {
             $this->addError('sale_price', 'سعر البيع لا يمكن أن يكون أقل من سعر الشراء');
             return;
@@ -198,15 +198,15 @@ class Products extends Component
 
         try {
             $product = Product::findOrFail($this->productId);
+
             if ($this->purchase_price != $product->purchase_price) {
                 \App\Models\PriceHistory::create([
                     'product_id' => $product->id,
                     'old_price'  => $product->purchase_price,
                     'new_price'  => $this->purchase_price,
-                    'type'       => 'Product', // نوع التغيير
+                    'type'       => 'Product',
                 ]);
             }
-
 
             $data = [
                 'category_id'    => $this->category_id,
@@ -218,21 +218,28 @@ class Products extends Component
             ];
 
             if ($this->image) {
-                if ($product->image && $product->image !== 'logo.png') {
-                    Storage::disk('public')->delete('product_images/' . $product->image);
+                if ($product->image) {
+                    $oldPath = public_path('uploads/product_images/' . $product->image);
+                    if (File::exists($oldPath)) {
+                        File::delete($oldPath);
+                    }
                 }
 
                 $imageName = Str::random(10) . '.' . $this->image->getClientOriginalExtension();
 
-                $img = Image::make($this->image->getRealPath())
-                    ->resize(300, null, function ($constraint) {
-                        $constraint->aspectRatio();
-                    })
-                    ->save(storage_path('app/public/product_images/' . $imageName));
+                $path = public_path('uploads/product_images/');
+                if (!File::exists($path)) {
+                    File::makeDirectory($path, 0755, true);
+                }
+
+                Image::make($this->image->getRealPath())
+    ->resize(300, null, function ($constraint) {
+        $constraint->aspectRatio();
+    })
+    ->save($path . $imageName);
 
                 $data['image'] = $imageName;
             }
-
 
             $product->update($data);
 
@@ -251,7 +258,10 @@ class Products extends Component
         $product = Product::findOrFail($id);
 
         if ($product->image && $product->image !== 'logo.png') {
-            Storage::disk('public')->delete('uploads/product_images/' . $product->image);
+            $oldPath = public_path('uploads/product_images/' . $product->image);
+            if (File::exists($oldPath)) {
+                File::delete($oldPath);
+            }
         }
 
         $product->delete();

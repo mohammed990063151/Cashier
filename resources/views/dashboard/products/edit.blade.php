@@ -4,12 +4,12 @@
 
     <div class="content-wrapper">
         <section class="content-header">
-            <h1>@lang('site.products')</h1>
+            <h1>المنتجات</h1>
 
             <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> @lang('site.dashboard')</a></li>
-                <li><a href="{{ route('dashboard.products.index') }}"> @lang('site.products')</a></li>
-                <li class="active">@lang('site.edit')</li>
+                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+                <li><a href="{{ route('dashboard.products.index') }}">المنتجات</a></li>
+                <li class="active">تعديل</li>
             </ol>
         </section>
 
@@ -18,7 +18,7 @@
             <div class="box box-primary">
 
                 <div class="box-header">
-                    <h3 class="box-title">@lang('site.edit')</h3>
+                    <h3 class="box-title">تعديل المنتج</h3>
                 </div><!-- end of box header -->
                 <div class="box-body">
 
@@ -30,54 +30,51 @@
                         {{ method_field('put') }}
 
                         <div class="form-group">
-                            <label>@lang('site.categories')</label>
+                            <label>القسم</label>
                             <select name="category_id" class="form-control">
-                                <option value="">@lang('site.all_categories')</option>
+                                <option value="">كل الأقسام</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
 
-                        @foreach (config('translatable.locales') as $locale)
-                            <div class="form-group">
-                                <label>@lang('site.' . $locale . '.name')</label>
-                                <input type="text" name="{{ $locale }}[name]" class="form-control" value="{{ $product->name }}">
-                            </div>
-
-                            <div class="form-group">
-                                <label>@lang('site.' . $locale . '.description')</label>
-                                <textarea name="{{ $locale }}[description]" class="form-control ckeditor">{{ $product->description }}</textarea>
-                            </div>
-
-                        @endforeach
+                        <div class="form-group">
+                            <label>الاسم</label>
+                            <input type="text" name="name" class="form-control" value="{{ $product->name }}">
+                        </div>
 
                         <div class="form-group">
-                            <label>@lang('site.image')</label>
+                            <label>الوصف</label>
+                            <textarea name="description" class="form-control ckeditor">{{ $product->description }}</textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>الصورة</label>
                             <input type="file" name="image" class="form-control image">
                         </div>
 
                         <div class="form-group">
-                            <img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail image-preview" alt="">
+                            <img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail image-preview" alt="صورة المنتج">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.purchase_price')</label>
+                            <label>سعر الشراء</label>
                             <input type="number" name="purchase_price" step="0.01" class="form-control" value="{{ $product->purchase_price }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.sale_price')</label>
+                            <label>سعر البيع</label>
                             <input type="number" name="sale_price" step="0.01" class="form-control" value="{{ $product->sale_price }}">
                         </div>
 
                         <div class="form-group">
-                            <label>@lang('site.stock')</label>
-                            <input type="number" name="stock" class="form-control" value="{{ $product->stock}}">
+                            <label>المخزون</label>
+                            <input type="number" name="stock" class="form-control" value="{{ $product->stock }}">
                         </div>
 
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> @lang('site.edit')</button>
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-edit"></i> تعديل</button>
                         </div>
 
                     </form><!-- end of form -->

@@ -140,8 +140,9 @@ public function trash()
     $categories = Category::onlyTrashed()->get();
     $clients = Client::onlyTrashed()->get();
     $expenses = Expense::onlyTrashed()->get();
+     $products   = Product::onlyTrashed()->get();
 
-    return view('dashboard.admin.trash', compact('categories', 'clients', 'expenses'));
+    return view('dashboard.admin.trash', compact('categories', 'clients', 'expenses', 'products'));
 }
 
 public function restore($type, $id)
@@ -155,6 +156,9 @@ public function restore($type, $id)
             break;
         case 'expenses':
             $model = Expense::withTrashed()->findOrFail($id);
+            break;
+             case 'products': // إضافة المنتجات
+            $model = Product::withTrashed()->findOrFail($id);
             break;
         default:
             abort(404);

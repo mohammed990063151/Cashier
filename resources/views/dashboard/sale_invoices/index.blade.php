@@ -44,6 +44,7 @@
                                     <th>رقم الطلب</th>
                                     <th>اسم العميل</th>
                                     <th>إجمالي الطلب</th>
+                                    <th>خصومات الطلب</th>
                                     <th>المدفوع</th>
                                     <th>المتبقي</th>
                                     <th>تاريخ الإنشاء</th>
@@ -57,6 +58,9 @@
                                         <td>{{ $order->client->name }}</td>
                                         <td style="color: #01941f; font-weight: bold;">
                                             {{ number_format($order->total_amount, 2) }}
+                                        </td>
+                                        <td style="color: rgb(192, 152, 9); font-weight: bold;">
+                                            {{ number_format($order->tax_amount, 2) }}
                                         </td>
                                         <td>{{ number_format($order->paid_amount, 2) }}</td>
                                         <td style="color: #e74c3c; font-weight: bold;">

@@ -182,20 +182,14 @@
                         @error('stock') <span class="text-danger">{{ $message }}</span> @enderror
                     </div>
 
-                    <div class="form-group col-12">
-                        <label>الصورة</label>
-                        <input wire:model="image" type="file" class="form-control">
-                        @error('image') <span class="text-danger">{{ $message }}</span> @enderror
+                   <div class="form-group col-md-4">
+                            <label>@lang('site.image')</label>
+                            <input type="file" name="image" class="form-control image">
+                        </div>
 
-                        @if ($image instanceof \Livewire\TemporaryUploadedFile)
-                        <img src="{{ $image->temporaryUrl() }}" width="100" class="img-thumbnail mt-2">
-                        @elseif($editMode && $productId)
-                        @php $oldImage = \App\Models\Product::find($productId)->image ?? null; @endphp
-                        @if($oldImage)
-                        <img src="{{ asset('uploads/product_images/' . $oldImage) }}" width="100" class="img-thumbnail mt-2">
-                        @endif
-                        @endif
-                    </div>
+                        <div class="form-group">
+                            <img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail image-preview" alt="">
+                        </div>
                 </div>
 
                 <div class="modal-footer">

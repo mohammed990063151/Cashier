@@ -102,133 +102,11 @@ class OrderController extends Controller
             ->with('success', __('تم الإضافة بنجاح'))
             ->with('order_id', $order->id);
     }
-    // public function update(Request $request, Client $client, Order $order, CashService $cashService)
-    // {
-    //     $request->validate([
-    //         'products' => 'required|array',
-    //         'products.*.quantity' => 'required|integer|min:1',
-    //         'products.*.sale_price' => 'required|numeric|min:0',
-    //         'discount' => 'nullable|numeric|min:0',
-    //     ]);
 
-    //     $discount = $request->discount ?? 0;
-    //     $oldTransaction = CashTransaction::where('order_id', $order->id)->first();
-    //     $oldDiscount = $oldTransaction?->amount ?? 0;
-
-    //     $difference = $discount - $oldDiscount; // الفرق
-    //     $currentBalance = $cashService->getBalance(); // الرصيد الحالي للخزينة
-
-    //     if ($difference > 0) {
-    //         // يعني العميل دفع أكثر، لازم نتأكد الخزينة فيها فلوس كافية تغطي الفرق
-    //         if ($currentBalance < $difference) {
-    //             return redirect()->back()
-    //                 ->withInput()
-    //                 ->with('error', "⚠️ الرصيد في الصندوق غير كافٍ! الحالي: {$currentBalance} المطلوب: {$difference}");
-    //         }
-    //     } elseif ($difference < 0) {
-    //         // يعني رجعنا فلوس للعميل (المدفوع الجديد أقل)
-    //         $refundAmount = abs($difference);
-    //         if ($currentBalance < $refundAmount) {
-    //             return redirect()->back()
-    //                 ->withInput()
-    //                 ->with('error', "⚠️ الرصيد في الصندوق غير كافٍ لإرجاع المبلغ {$refundAmount}، الرصيد الحالي: {$currentBalance}");
-    //         }
-    //     }
-
-
-    //     $total_price = 0;
-    //     $total_profit = 0;
-    //     $productData = [];
-
-    //     foreach ($request->products as $productId => $data) {
-    //         $quantity = max(0, $data['quantity']);
-    //         $unitPrice = max(0, $data['sale_price']);
-    //         $product = Product::findOrFail($productId);
-    //         $oldCostPrice = $order->products->find($productId)?->pivot->cost_price ?? $product->purchase_price;
-    //         $oldQuantity = $order->products->find($productId)?->pivot->quantity ?? 0;
-    //         $available_stock = $product->stock + $oldQuantity;
-
-    //         if ($quantity > $available_stock) {
-    //             return redirect()->back()
-    //                 ->withInput()
-    //                 ->with('error', __("الكمية المطلوبة للمنتج '{$product->name}' أكبر من المخزون المتاح ({$available_stock})"));
-    //         }
-
-    //         $productData[$productId] = [
-    //             'quantity' => $quantity,
-    //             'sale_price' => $unitPrice,
-    //             'cost_price' => $oldCostPrice,
-    //         ];
-    //         // return $product->pivot->cost_price;
-    //         $total_price += $unitPrice * $quantity;
-    //         $total_profit += ($unitPrice - $oldCostPrice) * $quantity;
-
-    //         $total_profit = floor($total_profit);
-    //     }
-    //     // return $product->purchase_price;
-    //     $discount = $request->discount ?? 0;
-    //     if ($discount > $total_price) {
-    //         return redirect()->back()
-    //             ->withInput()
-    //             ->with('error', __("الخصم ($discount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
-    //     }
-
-    //     $remaining = max($total_price - $discount, 0);
-
-    //     // تحديث بيانات الطلب
-    //     $order->update([
-    //         'discount' => $discount,
-    //         'total_price' => $total_price,
-    //         'remaining' => $remaining,
-    //         'profit' => $total_profit,
-    //     ]);
-
-    //     // تحديث المنتجات والمخزون
-    //     foreach ($productData as $productId => $data) {
-    //         $product = Product::findOrFail($productId);
-    //         $oldQuantity = $order->products->find($productId)?->pivot->quantity ?? 0;
-    //         $product->stock += $oldQuantity;
-    //         $product->stock -= $data['quantity'];
-    //         $product->save();
-    //     }
-
-    //     $order->products()->sync($productData);
-
-    //     // تسجيل الخصم في الخزينة أو تحديثه إذا كان موجودًا
-    //     if ($discount > 0) {
-    //         // البحث عن سجل خصم موجود لهذا الطلب
-    //         $existingDiscountTransaction = CashTransaction::where('order_id', $order->id)
-    //             ->first();
-
-    //         if ($existingDiscountTransaction) {
-    //             // تحديث السجل الموجود
-    //             $cashService->updateTransaction(
-    //                 $existingDiscountTransaction,
-    //                 $discount,
-    //                 "تحديث الدفعيات على الطلب رقم #{$order->order_number} من العميل {$client->name}",
-    //                 'discount',
-    //                 now()
-    //             );
-    //         } else {
-    //             // إنشاء سجل جديد
-    //             $cashService->record(
-    //                 'add',
-    //                 $discount,
-    //                 "خصم على الطلب رقم #{$order->order_number}",
-    //                 'discount',
-    //                 now(),
-    //                 $order->id
-    //             );
-    //         }
-    //     }
-
-    //     return redirect()->route('dashboard.orders.index')
-    //         ->with('success', __('تم تعديل الطلب بنجاح'))
-    //         ->with('order_id', $order->id);
-    // }
 
 public function update(Request $request, Client $client, Order $order, CashService $cashService)
 {
+    // return  $request;
     $request->validate([
         'products' => 'required|array',
         'products.*.quantity' => 'required|integer|min:1',
@@ -237,7 +115,8 @@ public function update(Request $request, Client $client, Order $order, CashServi
     ]);
 
     // 📌 استخراج المبلغ الجديد والمدفوع القديم
-    $discount = $request->discount ?? 0; 
+    $discount = $request->discount ?? 0;
+    $invoiceDiscount = $request->tax_amount ?? 0;
     $oldTransaction = CashTransaction::where('order_id', $order->id)->first();
     $oldDiscount = $oldTransaction?->amount ?? 0;
 
@@ -289,19 +168,25 @@ public function update(Request $request, Client $client, Order $order, CashServi
         $total_price  += $unitPrice * $quantity;
         $total_profit += ($unitPrice - $product->purchase_price) * $quantity;
     }
-
+     if ($invoiceDiscount > $total_price) {
+        return redirect()->back()
+            ->withInput()
+            ->with('error', __("الخصم ($invoiceDiscount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
+    }
+ $total_after_discount = max($total_price - $invoiceDiscount, 0);
     $discount = $request->discount ?? 0;
-    if ($discount > $total_price) {
+    if ($discount > $total_after_discount) {
         return redirect()->back()
             ->withInput()
             ->with('error', __("الخصم ($discount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
     }
 
-    $remaining = max($total_price - $discount, 0);
+    $remaining = max($total_after_discount - $discount, 0);
 
     // ✅ تحديث الطلب
     $order->update([
         'discount'    => $discount,
+         'tax_amount'  => $invoiceDiscount,
         'total_price' => $total_price,
         'remaining'   => $remaining,
         'profit'      => floor($total_profit),
@@ -411,9 +296,10 @@ public function update(Request $request, Client $client, Order $order, CashServi
 
             $total_profit = floor($total_profit);
         }
-
+    $tax_amount = isset($request->tax_amount) ? max(0, $request->tax_amount) : 0;
+    $total_prices = $total_price - $tax_amount ;
         // تحقق من أن الخصم لا يجعل المتبقي سالب
-        $remaining = max($total_price - $discount, 0);
+        $remaining = max($total_prices - $discount, 0);
 
         // إنشاء الطلب
         $order = $client->orders()->create([
@@ -423,6 +309,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
             'remaining'    => $remaining,
             'profit'       => $total_profit,
             'client_id'   => $client->id,
+            'tax_amount'   => $tax_amount,
         ]);
 
         // ربط المنتجات وتحديث المخزون

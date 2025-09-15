@@ -134,6 +134,10 @@
                             </table><!-- end of table -->
 
                             <h4>الإجمالي: <span class="total-price" style="color: #01941f; font-weight: bold;">0</span></h4>
+<div class="form-group">
+    <label>الخصم :</label>
+    <input type="number" step="0.01" name="tax_amount" id="invoice_discount" class="form-control" value="0">
+</div>
 
                             <div class="form-group">
                                 <label>المدفوع :</label>

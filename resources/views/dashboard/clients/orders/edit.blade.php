@@ -153,6 +153,11 @@
                             </table><!-- نهاية الجدول -->
 
                             <h4>الإجمالي: <span class="total-price" style="color: #046b0a; font-weight: bold;">{{ number_format($order->total_price, 2) }}</span></h4>
+<div class="form-group">
+    <label for="invoice_discount">الخصم</label>
+    <input type="number" name="tax_amount" id="invoice_discount" class="form-control" min="0" step="0"
+           value="{{ $order->tax_amount ?? 0 }}">
+</div>
 
                             <div class="form-group">
                                 <label for="discount">المدفوع </label>
@@ -286,33 +291,133 @@
 </div><!-- نهاية حاوية المحتوى -->
 @push('scripts')
 <script>
+// document.addEventListener("DOMContentLoaded", function() {
+//     const form = document.querySelector('form'); // النموذج
+//     const totalPriceEl = document.querySelector('.total-price');
+//     const discountEl = document.getElementById('discount');
+//     const remainingEl = document.getElementById('remaining');
+
+//     // تحويل النص إلى رقم
+//     function parseNumber(str) {
+//         return parseFloat(str.replace(/,/g, '')) || 0;
+//     }
+
+//     // تحديث المتبقي عند تغيير المدفوع
+//    function updateRemaining() {
+//     const total = parseNumber(totalPriceEl.textContent);
+//     const tax = parseNumber(document.getElementById('invoice_discount').value);
+//     const discount = parseNumber(discountEl.value);
+
+//     const totalWithTax = total + tax;
+//     remainingEl.value = Math.max(totalWithTax - discount, 0);
+
+//     if (discount > totalWithTax) {
+//         remainingEl.style.color = '#d50606';
+//         remainingEl.style.fontWeight = 'bold';
+//     } else {
+//         remainingEl.style.color = '#000';
+//         remainingEl.style.fontWeight = 'normal';
+//     }
+// }
 document.addEventListener("DOMContentLoaded", function() {
-    const form = document.querySelector('form'); // النموذج
+    const form = document.querySelector('form');
     const totalPriceEl = document.querySelector('.total-price');
-    const discountEl = document.getElementById('discount');
+    const discountEl = document.getElementById('discount'); // المدفوع
     const remainingEl = document.getElementById('remaining');
+    const invoiceDiscountEl = document.getElementById('invoice_discount'); // هذا هو tax_amount لكن كخصم
 
-    // تحويل النص إلى رقم
-    function parseNumber(str) {
-        return parseFloat(str.replace(/,/g, '')) || 0;
+    function parseNumber(v) {
+        return parseFloat((v || "0").toString().replace(/,/g, '')) || 0;
     }
 
-    // تحديث المتبقي عند تغيير المدفوع 
-    function updateRemaining() {
+    // function calculateTotal() {
+    //     let total = 0;
+
+    //     // حساب إجمالي المنتجات
+    //     document.querySelectorAll('.order-list tr').forEach(row => {
+    //         const qty = parseNumber(row.querySelector('.product-quantity')?.value);
+    //         const price = parseNumber(row.querySelector('.product-unit-price')?.value);
+    //         const productTotal = qty * price;
+
+    //         row.querySelector('.product-price').textContent = productTotal.toFixed(2);
+    //         row.querySelector('input[name$="[total_price]"]').value = productTotal;
+
+    //         total += productTotal;
+    //     });
+
+    //     totalPriceEl.textContent = total.toFixed(2);
+
+    //     // الخصم (مخزن في tax_amount)
+    //     const invoiceDiscount = parseNumber(invoiceDiscountEl?.value);
+
+    //     // المدفوع
+    //     const paid = parseNumber(discountEl?.value);
+
+    //     // الإجمالي بعد الخصم
+    //     let discountedTotal = total - invoiceDiscount;
+    //     if (discountedTotal < 0) discountedTotal = 0;
+
+    //     // المتبقي
+    //     let remaining = discountedTotal - paid;
+    //     if (remaining < 0) remaining = 0;
+
+    //     remainingEl.value = remaining.toFixed(2);
+    // }
+
+    function calculateTotal() {
+    let total = 0;
+
+    document.querySelectorAll('.order-list tr').forEach(row => {
+        const qty = parseNumber(row.querySelector('.product-quantity')?.value);
+        const price = parseNumber(row.querySelector('.product-unit-price')?.value);
+        const productTotal = qty * price;
+
+        row.querySelector('.product-price').textContent = productTotal.toFixed(2);
+        row.querySelector('input[name$="[total_price]"]').value = productTotal;
+
+        total += productTotal;
+    });
+
+    totalPriceEl.textContent = total.toFixed(2);
+
+    // هنا فقط تحديث المتبقي بعد الخصم والمدفوع
+    const invoiceDiscount = parseNumber(invoiceDiscountEl?.value);
+    const paid = parseNumber(discountEl?.value);
+    let remaining = total - invoiceDiscount - paid;
+    if (remaining < 0) remaining = 0;
+    remainingEl.value = remaining.toFixed(2);
+
+    // ✅ تحديث input مخفي للإجمالي الأصلي (بدون خصم)
+    document.getElementById('total_price').value = total.toFixed(2);
+}
+
+    // تشغيل عند أي تغيير
+    $(document).on('input', '.product-quantity, .product-unit-price, #invoice_discount, #discount', function() {
+        calculateTotal();
+    });
+
+    // تحقق قبل الإرسال
+    form.addEventListener('submit', function(e) {
+        calculateTotal();
         const total = parseNumber(totalPriceEl.textContent);
-        const discount = parseNumber(discountEl.value);
-        remainingEl.value = Math.max(total - discount, 0);
+        const invoiceDiscount = parseNumber(invoiceDiscountEl.value);
+        const paid = parseNumber(discountEl.value);
 
-        if (discount > total) {
-            remainingEl.style.color = '#d50606';
-            remainingEl.style.fontWeight = 'bold';
-        } else {
-            remainingEl.style.color = '#000';
-            remainingEl.style.fontWeight = 'normal';
+        if (paid > (total - invoiceDiscount)) {
+            e.preventDefault();
+            alert("المدفوع لا يمكن أن يكون أكبر من إجمالي الطلب بعد الخصم!");
+            discountEl.focus();
         }
-    }
+    });
 
-    // حدث عند تغيير المدفوع 
+    // أول تحديث عند التحميل
+    calculateTotal();
+});
+
+
+document.getElementById('invoice_discount').addEventListener('input', updateRemaining);
+
+    // حدث عند تغيير المدفوع
     discountEl.addEventListener('input', updateRemaining);
 
     // تحقق قبل إرسال النموذج

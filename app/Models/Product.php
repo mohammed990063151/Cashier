@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Product extends Model
 {
     // use \Dimsav\Translatable\Translatable;
-//   use SoftDeletes;
+  use SoftDeletes;
     protected $guarded = ['id'];
 
     public $translatedAttributes = ['name', 'description'];

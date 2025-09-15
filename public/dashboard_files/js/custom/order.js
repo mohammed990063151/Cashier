@@ -1,29 +1,5 @@
 $(document).ready(function() {
 
-    //add product btn
-    // $('.add-product-btn').on('click', function(e) {
-
-    //     e.preventDefault();
-    //     var name = $(this).data('name');
-    //     var id = $(this).data('id');
-    //     var price = $.number($(this).data('price'), 2);
-
-    //     $(this).removeClass('btn-success').addClass('btn-default disabled');
-
-    //     var html =
-    //         `<tr>
-    //             <td>${name}</td>
-    //             <td><input type="number" name="products[${id}][quantity]" data-price="${price}" class="form-control input-sm product-quantity" min="1" value="1"></td>
-    //             <td class="product-price">${price}</td>               
-    //             <td><button class="btn btn-danger btn-sm remove-product-btn" data-id="${id}"><span class="fa fa-trash"></span></button></td>
-    //         </tr>`;
-
-    //     $('.order-list').append(html);
-
-    //     //to calculate total price
-    //     calculateTotal();
-    // });
-    //add product btn
     $('.add-product-btn').on('click', function(e) {
         e.preventDefault();
         var name = $(this).data('name');
@@ -92,21 +68,6 @@ $(document).ready(function() {
 
     }); //end of disabled
 
-    //remove product btn
-    // $('body').on('click', '.remove-product-btn', function(e) {
-
-    //     e.preventDefault();
-    //     var id = $(this).data('id');
-
-    //     $(this).closest('tr').remove();
-    //     $('#product-' + id).removeClass('btn-default disabled').addClass('btn-success');
-
-    //     //to calculate total price
-    //     calculateTotal();
-
-    // }); //end of remove product btn
-
-    //change product quantity
     $('body').on('keyup change', '.product-quantity', function() {
 
         var quantity = Number($(this).val()); //2
@@ -140,16 +101,12 @@ $(document).ready(function() {
 
     }); //end of order products click
 
-    //print order
-    // $(document).on('click', '.print-btn', function() {
 
-    //     $('#print-area').printThis();
-
-    // });//end of click function
 
 }); //end of document ready
 
-//calculate the total
+
+
 // function calculateTotal() {
 //     let total = 0;
 
@@ -164,12 +121,16 @@ $(document).ready(function() {
 //         total += productTotal;
 //     });
 
+//     // تحديث الإجمالي
 //     $('.total-price').text(total.toFixed(2));
 
+//     // حساب الخصم والمتبقي
 //     let discount = parseFloat($('#discount').val()) || 0;
 //     let remaining = total - discount;
+//     if (remaining < 0) remaining = 0;
 
-//     $('.remaining-price').text(remaining.toFixed(2));
+//     // تحديث حقل المتبقي الصحيح
+//     $('#remaining').val(remaining.toFixed(2));
 // }
 
 function calculateTotal() {
@@ -178,28 +139,38 @@ function calculateTotal() {
     $('.order-list tr').each(function() {
         let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
         let unitPrice = parseFloat($(this).find('.product-unit-price').val()) || 0;
-        let productTotal = quantity * unitPrice;
 
+        let productTotal = quantity * unitPrice;
         $(this).find('.product-price').text(productTotal.toFixed(2));
         $(this).find('input[name$="[total_price]"]').val(productTotal);
 
         total += productTotal;
     });
 
-    // تحديث الإجمالي
+    // إجمالي قبل الخصم
     $('.total-price').text(total.toFixed(2));
 
-    // حساب الخصم والمتبقي
-    let discount = parseFloat($('#discount').val()) || 0;
-    let remaining = total - discount;
+    // حساب الخصم
+    let invoiceDiscount = parseFloat($('#invoice_discount').val()) || 0;
+    let discountedTotal = total - invoiceDiscount;
+    if (discountedTotal < 0) discountedTotal = 0;
+
+    // المدفوع العام
+    let paid = parseFloat($('#discount').val()) || 0;
+
+    // المتبقي
+    let remaining = discountedTotal - paid;
     if (remaining < 0) remaining = 0;
 
-    // تحديث حقل المتبقي الصحيح
     $('#remaining').val(remaining.toFixed(2));
 }
 
+
 // تحديث عند تغيير الكمية أو السعر
-$(document).on('input', '.product-quantity, .product-unit-price', function() {
+// $(document).on('input', '.product-quantity, .product-unit-price', function() {
+//     calculateTotal();
+// });
+$(document).on('input', '.product-quantity, .product-unit-price, #invoice_discount, #discount', function() {
     calculateTotal();
 });
 

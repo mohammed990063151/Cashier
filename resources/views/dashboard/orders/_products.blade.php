@@ -162,7 +162,7 @@
         <table class="header-table">
             <tr>
                 <td colspan="2">
-                    <img src="{{ $setting && $setting->logo ? asset('storage/'.$setting->logo) : asset('default-logo.png') }}" class="header-logo" alt="الشعار">
+                    <img src="{{ asset($setting->logo) }}" class="header-logo" alt="الشعار">
                 </td>
             </tr>
             <tr>
@@ -218,6 +218,10 @@
                 <tr class="total-row">
                     <th colspan="2" style="text-align:right;">اجمالي المبلغ</th>
                     <td colspan="2" style="color: green">{{ number_format($order->total_price, 2) }} ج.س</td>
+                </tr>
+                 <tr class="total-row">
+                    <th colspan="2" style="text-align:right;"> المبلغ المخصوم</th>
+                    <td colspan="2" style="color: rgb(123, 123, 0)">{{ number_format($order->tax_amount, 2) }} ج.س</td>
                 </tr>
                 <tr class="total-row">
                     <th colspan="2" style="text-align:right;">المدفوع منه</th>

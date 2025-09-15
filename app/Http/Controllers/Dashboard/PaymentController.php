@@ -22,7 +22,7 @@ class PaymentController extends Controller
 
     public function index(Request $request)
     {
-        $query = Order::with(['client', 'payments']);
+        $query = Order::with(['client', 'payments']) ->where('remaining', '>', 0);
 
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
