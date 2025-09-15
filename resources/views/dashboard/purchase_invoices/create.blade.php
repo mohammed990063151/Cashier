@@ -145,16 +145,14 @@
 
                                             </td>
                                             <td><input type="number" name="items[0][quantity]" class="form-control quantity" value="1" min="1" required></td>
-                                            <td>
-                                                <input type="number" name="items[0][price]" class="form-control price" value="0" min="0" step="1" required>
-                                                @foreach($products as $product)
-                                                 <small class="text-warning">
-        ⚠️ تأكد من إدخال السعر بعناية، سيستخدم آخر سعر شراء {{ $product->purchase_price ?? 0 }} كمرجع
+                             <td>
+    <input type="number" name="items[0][price]" class="form-control price" value="0" min="0" step="1" required>
+    <!-- تحذير السعر لكل صف -->
+    <small class="text-warning price-alert" style="display:none;">
+        ⚠️ تأكد من إدخال السعر بعناية، سيستخدم آخر سعر شراء 0 كمرجع
     </small>
+</td>
 
-                                                </option>
-                                                @endforeach
-                                            </td>
                                             <td class="row-total">0</td>
                                             <td><button type="button" class="btn btn-danger btn-sm remove-row">✖</button></td>
                                         </tr>
