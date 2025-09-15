@@ -57,6 +57,7 @@
                                 <th>اسماء المنتجات</th>
                                 <th>السعر <br />الكمية</th>
                                 <th>الإجمالي</th>
+                                <th>الخصومات</th>
                                 <th>المدفوع</th>
                                 <th>المتبقي</th>
                                 <th>التاريخ</th>
@@ -82,6 +83,7 @@
 
 
                                 <td>{{ number_format($invoice->total, 2) }}</td>
+                                <td>{{ number_format($invoice->tax_amount, 2) }}</td>
                                 <td>{{ number_format($invoice->paid, 2) }}</td>
                                 <td>{{ number_format($invoice->remaining, 2) }}</td>
                                 <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
@@ -147,25 +149,25 @@
             , buttons: [{
                     extend: 'copy'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
                     } // استبعاد عمود الإجراءات
                 }
                 , {
                     extend: 'excel'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
                     }
                 }
                 , {
                     extend: 'csv'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
                     }
                 }
                 , {
                     extend: 'pdf'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
                     }
                     , orientation: 'landscape'
                     , pageSize: 'A4'
@@ -173,7 +175,7 @@
                 , {
                     extend: 'print'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
                     }
                 }
             ]

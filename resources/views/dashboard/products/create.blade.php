@@ -55,17 +55,17 @@
 
                         <div class="form-group">
                             <label>سعر الشراء</label>
-                            <input type="number" name="purchase_price" step="0.01" class="form-control" value="{{ old('purchase_price') }}">
+                            <input type="number" name="purchase_price" step="1" class="form-control" value="{{ old('purchase_price') }}">
                         </div>
 
                         <div class="form-group">
                             <label>سعر البيع</label>
-                            <input type="number" name="sale_price" step="0.01" class="form-control" value="{{ old('sale_price') }}">
+                            <input type="number" name="sale_price" step="1" class="form-control" value="{{ old('sale_price') }}">
                         </div>
 
                         <div class="form-group">
                             <label>الكمية في المخزون</label>
-                            <input type="number" name="stock" class="form-control" value="{{ old('stock') }}">
+                            <input type="number" name="stock" step="1"  class="form-control" value="{{ old('stock') }}">
                         </div>
                          <div class="form-group">
                             <label>الصورة</label>

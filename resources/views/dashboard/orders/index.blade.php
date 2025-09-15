@@ -70,6 +70,7 @@
                                 <th>رقم الطلب</th>
                                 <th>اسم العميل</th>
                                 <th>اجمالي طلب</th>
+                                <th>مخصوم طلب</th>
                                 <th>المدفوع منه</th>
                                 <th>المتبقي عليه</th>
                                 <th>تاريخ الإنشاء</th>
@@ -81,6 +82,7 @@
                                 <td>{{ $order->order_number }}</td>
                                 <td>{{ $order->client->name }}</td>
                                 <td style="color: #01941f; font-weight: bold;">{{ number_format($order->total_price, 2) }}</td>
+                                 <td style="color: #b88607; font-weight: bold;">{{ number_format($order->tax_amount, 2) }}</td>
                                 <td>{{ number_format($order->discount, 2) }}</td>
                                 <td style="color: #e74c3c; font-weight: bold;">{{ number_format($order->remaining, 2) }}</td>
                                 <td>{{ $order->created_at->toFormattedDateString() }}</td>

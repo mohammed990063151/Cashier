@@ -39,6 +39,7 @@
                                     <th>#</th>
                                     <th>اسم العميل</th>
                                     <th>إجمالي الفاتورة</th>
+                                      <th>إجمالي الخصومات</th>
                                     <th>المدفوع</th>
                                     <th>المتبقي</th>
                                     <th>تاريخ الطلب</th>
@@ -53,6 +54,7 @@
                                         <td>{{ $order->id }}</td>
                                         <td>{{ $order->client->name ?? '-' }}</td>
                                         <td style="color: green">{{ number_format($order->total_price,2) }} ج.س</td>
+                                         <td style="color: rgb(173, 173, 5)">{{ number_format($order->tax_amount,2) }} ج.س</td>
                                         {{-- <td>{{ number_format($order->discount + sum($order->payments->amount)  ,2) }} ج.س</td> --}}
                                         <td>{{ number_format($order->discount + $order->payments->sum('amount'), 2) }} ج.س</td>
 

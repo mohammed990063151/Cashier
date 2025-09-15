@@ -134,6 +134,53 @@
             </div>
         </div>
 
+
+        {{-- Products --}}
+<div class="box box-primary">
+    <div class="box-header with-border">
+        <h3 class="box-title">المنتجات المحذوفة <small>{{ $products->count() }}</small></h3>
+    </div>
+
+    <div class="box-body">
+        @if($products->count() > 0)
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم</th>
+                        <th>القسم</th>
+                        <th>سعر الشراء</th>
+                        <th>سعر البيع</th>
+                        <th>المخزون</th>
+                        <th>تاريخ الحذف</th>
+                        <th>الإجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($products as $index => $product)
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td>{{ $product->name }}</td>
+                            <td>{{ $product->category->name ?? '-' }}</td>
+                            <td>{{ $product->purchase_price }}</td>
+                            <td>{{ $product->sale_price }}</td>
+                            <td>{{ $product->stock }}</td>
+                            <td>{{ $product->deleted_at }}</td>
+                            <td>
+                                <a href="{{ route('dashboard.admin.restore', ['type'=>'products', 'id'=>$product->id]) }}" class="btn btn-success btn-sm">
+                                    <i class="fa fa-undo"></i> استرجاع
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @else
+            <h4 class="text-center">لا توجد منتجات محذوفة</h4>
+        @endif
+    </div>
+</div>
+
     </section>
 </div>
 

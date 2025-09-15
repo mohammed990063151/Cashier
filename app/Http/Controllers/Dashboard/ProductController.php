@@ -7,51 +7,62 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Intervention\Image\Facades\Image;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        $categories = Category::all();
 
+        $products = Product::when($request->search, function ($q) use ($request) {
+            return $q->where('name', 'like', '%' . $request->search . '%');
+        })->when($request->category_id, function ($q) use ($request) {
+            return $q->where('category_id', $request->category_id);
+        })->get();
 
-        return view('dashboard.products.index');
-
-    }//end of index
+        return view('dashboard.products.index', compact('categories', 'products'));
+    }
 
     public function create()
     {
         $categories = Category::all();
         return view('dashboard.products.create', compact('categories'));
-
-    }//end of create
+    }
 
     public function store(Request $request)
     {
+        // return $request;
         $rules = [
-            'category_id' => 'required'
+            'category_id'    => 'required',
+            'name'           => 'required|string|max:255|unique:products,name',
+            'purchase_price' => 'required|numeric|min:0',
+            'sale_price'     => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
         ];
 
-        foreach (config('translatable.locales') as $locale) {
-
-            $rules += [$locale . '.name' => 'required|unique:product_translations,name'];
-            $rules += [$locale . '.description' => 'required'];
-
-        }//end of  for each
-
-        $rules += [
-            'purchase_price' => 'required',
-            'sale_price' => 'required',
-            'stock' => 'required',
+        $messages = [
+            'category_id.required'    => 'حقل القسم مطلوب.',
+            'name.required'           => 'حقل الاسم مطلوب.',
+            'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
+            'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
+            'name.unique'             => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
+            'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
+            'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
+            'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
+            'sale_price.required'     => 'حقل سعر البيع مطلوب.',
+            'sale_price.numeric'      => 'سعر البيع يجب أن يكون رقمًا.',
+            'sale_price.min'          => 'سعر البيع يجب ألا يقل عن 0.',
+            'stock.required'          => 'حقل المخزون مطلوب.',
+            'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
+            'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
         ];
 
-        $request->validate($rules);
+        $request->validate($rules, $messages);
 
         $request_data = $request->all();
 
         if ($request->image) {
-
             Image::make($request->image)
                 ->resize(300, null, function ($constraint) {
                     $constraint->aspectRatio();
@@ -59,52 +70,56 @@ class ProductController extends Controller
                 ->save(public_path('uploads/product_images/' . $request->image->hashName()));
 
             $request_data['image'] = $request->image->hashName();
-
-        }//end of if
+        }
+        // return $request_data;
 
         Product::create($request_data);
-        session()->flash('success', __('تم الإضافة بنجاح'));
-        return redirect()->route('dashboard.products.index');
 
-    }//end of store
+        session()->flash('success', 'تم الإضافة بنجاح');
+        return redirect()->route('dashboard.products.index');
+    }
 
     public function edit(Product $product)
     {
         $categories = Category::all();
         return view('dashboard.products.edit', compact('categories', 'product'));
-
-    }//end of edit
+    }
 
     public function update(Request $request, Product $product)
     {
         $rules = [
-            'category_id' => 'required'
+            'category_id'    => 'required',
+            'name'           => 'required|string|max:255|unique:products,name,' . $product->id,
+            'purchase_price' => 'required|numeric|min:0',
+            'sale_price'     => 'required|numeric|min:0',
+            'stock'          => 'required|integer|min:0',
         ];
 
-        foreach (config('translatable.locales') as $locale) {
-
-            $rules += [$locale . '.name' => ['required', Rule::unique('product_translations', 'name')->ignore($product->id, 'product_id')]];
-            $rules += [$locale . '.description' => 'required'];
-
-        }//end of  for each
-
-        $rules += [
-            'purchase_price' => 'required',
-            'sale_price' => 'required',
-            'stock' => 'required',
+        $messages = [
+            'category_id.required'    => 'حقل القسم مطلوب.',
+            'name.required'           => 'حقل الاسم مطلوب.',
+            'name.string'             => 'حقل الاسم يجب أن يكون نصًا.',
+            'name.max'                => 'حقل الاسم يجب ألا يزيد عن 255 حرفًا.',
+            'name.unique'             => 'اسم المنتج مستخدم من قبل، يرجى اختيار اسم آخر.',
+            'purchase_price.required' => 'حقل سعر الشراء مطلوب.',
+            'purchase_price.numeric'  => 'سعر الشراء يجب أن يكون رقمًا.',
+            'purchase_price.min'      => 'سعر الشراء يجب ألا يقل عن 0.',
+            'sale_price.required'     => 'حقل سعر البيع مطلوب.',
+            'sale_price.numeric'      => 'سعر البيع يجب أن يكون رقمًا.',
+            'sale_price.min'          => 'سعر البيع يجب ألا يقل عن 0.',
+            'stock.required'          => 'حقل المخزون مطلوب.',
+            'stock.integer'           => 'المخزون يجب أن يكون عددًا صحيحًا.',
+            'stock.min'               => 'المخزون يجب ألا يقل عن 0.',
         ];
 
-        $request->validate($rules);
+        $request->validate($rules, $messages);
 
         $request_data = $request->all();
 
         if ($request->image) {
-
             if ($product->image != 'default.png') {
-
                 Storage::disk('public_uploads')->delete('/product_images/' . $product->image);
-
-            }//end of if
+            }
 
             Image::make($request->image)
                 ->resize(300, null, function ($constraint) {
@@ -113,28 +128,22 @@ class ProductController extends Controller
                 ->save(public_path('uploads/product_images/' . $request->image->hashName()));
 
             $request_data['image'] = $request->image->hashName();
-
-        }//end of if
+        }
 
         $product->update($request_data);
-        session()->flash('success', __('تم التعديل بنجاح'));
-        return redirect()->route('dashboard.products.index');
 
-    }//end of update
+        session()->flash('success', 'تم التعديل بنجاح');
+        return redirect()->route('dashboard.products.index');
+    }
 
     public function destroy(Product $product)
     {
         if ($product->image != 'default.png') {
-
             Storage::disk('public_uploads')->delete('/product_images/' . $product->image);
-
-        }//end of if
+        }
 
         $product->delete();
-        session()->flash('success', __('تم الحذف بنجاح'));
+        session()->flash('success', 'تم الحذف بنجاح');
         return redirect()->route('dashboard.products.index');
-
-    }//end of destroy
-
-
-}//end of controller
+    }
+}
