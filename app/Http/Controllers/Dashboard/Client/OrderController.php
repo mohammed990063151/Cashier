@@ -11,6 +11,8 @@ use App\Models\CashTransaction;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Services\CashService;
+use App\Services\OrderLineNormalizer;
+use App\Services\OrderFinancialService;
 use Illuminate\Support\Facades\Log;
 
 
@@ -32,38 +34,39 @@ class OrderController extends Controller
 
     // =================== حفظ الطلب ===================
 
-    public function store(Request $request, $client)
+    public function storeDirectSale(Request $request, OrderLineNormalizer $normalizer)
+    {
+        $client = $this->getDefaultClient();
+
+        return $this->store($request, $client->id, $normalizer);
+    }
+
+    public function store(Request $request, $client, OrderLineNormalizer $normalizer)
     {
         $request->validate([
-            'products' => 'required|array',
-            'products.*.quantity' => 'required|integer|min:1',
-            'products.*.sale_price' => 'required|numeric|min:0',
-            'discount' => 'nullable|numeric|min:0',
-            'remaining' => 'nullable|numeric|min:0',
+            'products' => 'required|array|min:1',
+            'paid_at_sale' => 'nullable|numeric|min:0',
+            'invoice_discount' => 'nullable|numeric|min:0',
         ], [
-            // الرسائل بالعربي
             'products.required' => 'يجب اختيار منتج واحد على الأقل.',
-            'products.*.quantity.required' => 'يجب إدخال الكمية.',
-            'products.*.quantity.integer' => 'الكمية يجب أن تكون رقم صحيح.',
-            'products.*.quantity.min' => 'أقل كمية مسموحة هي 1.',
-            'products.*.sale_price.required' => 'يجب إدخال سعر البيع.',
-            'products.*.sale_price.numeric' => 'سعر البيع يجب أن يكون رقم.',
-            'products.*.sale_price.min' => 'سعر البيع لا يمكن أن يكون سالب.',
-            'discount.numeric' => 'قيمة الخصم يجب أن تكون رقم.',
-            'discount.min' => 'الخصم لا يمكن أن يكون سالب.',
-            'remaining.numeric' => 'المتبقي يجب أن يكون رقم.',
-            'remaining.min' => 'المتبقي لا يمكن أن يكون سالب.',
+            'products.min' => 'يجب اختيار منتج واحد على الأقل.',
+            'paid_at_sale.numeric' => 'المدفوع يجب أن يكون رقمًا.',
+            'paid_at_sale.min' => 'المدفوع لا يمكن أن يكون سالبًا.',
+            'invoice_discount.numeric' => 'الخصم يجب أن يكون رقمًا.',
+            'invoice_discount.min' => 'الخصم لا يمكن أن يكون سالبًا.',
         ]);
 
+        $products = $normalizer->fromRequest($request);
+
+        if (empty($products)) {
+            return back()
+                ->withInput()
+                ->with('error', 'يجب إدخال كمية واحدة على الأقل في أحد الوحدات.');
+        }
+
+        $request->merge(['products' => $products]);
 
         $client = Client::findOrFail($client);
-
-        // شرط زبون مباشر
-        if ($client->name === 'زبون مباشر' && $request->remaining > 0) {
-            return back()->withErrors([
-                'remaining' => 'لا يمكن أن يكون هناك مبلغ متبقي على العميل زبون مباشر.'
-            ])->withInput();
-        }
 
         $total_price = 0;
 
@@ -83,19 +86,32 @@ class OrderController extends Controller
             $total_price += $sale_price * $quantity;
         }
 
-        // تحقق من أن الخصم لا يتجاوز الإجمالي
-        $discount = $request->discount ?? 0;
-        if ($discount > $total_price) {
+        $paidAtSale = (float) ($request->paid_at_sale ?? 0);
+        $invoiceDiscount = (float) ($request->invoice_discount ?? 0);
+        $totalAfterDiscount = max($total_price - $invoiceDiscount, 0);
+
+        if ($invoiceDiscount > $total_price) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', __("الخصم ($discount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
+                ->with('error', __("الخصم ($invoiceDiscount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
         }
 
-        // توليد رقم طلب فريد
-        $orderNumber = $this->generateUniqueOrderNumber();
+        if ($paidAtSale > $totalAfterDiscount) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', __("المدفوع ($paidAtSale) لا يمكن أن يكون أكبر من الإجمالي بعد الخصم ($totalAfterDiscount)"));
+        }
 
-        // تمرير الطلب مع السعر الجديد لحساب الإجمالي والفائدة
-        $order = $this->attach_order($request, $client, $orderNumber, $discount);
+        $remaining = max($totalAfterDiscount - $paidAtSale, 0);
+
+        if ($client->name === 'زبون مباشر' && $remaining > 0) {
+            return back()
+                ->withInput()
+                ->with('error', 'زبون مباشر يجب أن يدفع المبلغ كاملاً الآن (المدفوع = الإجمالي بعد الخصم).');
+        }
+
+        $orderNumber = $this->generateUniqueOrderNumber();
+        $order = $this->attach_order($request, $client, $orderNumber, $paidAtSale, $invoiceDiscount);
 
 
         return redirect()->route('dashboard.orders.index')
@@ -104,23 +120,30 @@ class OrderController extends Controller
     }
 
 
-public function update(Request $request, Client $client, Order $order, CashService $cashService)
+public function update(Request $request, Client $client, Order $order, CashService $cashService, OrderLineNormalizer $normalizer)
 {
-    // return  $request;
     $request->validate([
-        'products' => 'required|array',
-        'products.*.quantity' => 'required|integer|min:1',
-        'products.*.sale_price' => 'required|numeric|min:0',
-        'discount' => 'nullable|numeric|min:0',
+        'products' => 'required|array|min:1',
+        'paid_at_sale' => 'nullable|numeric|min:0',
+        'invoice_discount' => 'nullable|numeric|min:0',
     ]);
 
-    // 📌 استخراج المبلغ الجديد والمدفوع القديم
-    $discount = $request->discount ?? 0;
-    $invoiceDiscount = $request->tax_amount ?? 0;
+    $products = $normalizer->fromRequest($request);
+
+    if (empty($products)) {
+        return back()
+            ->withInput()
+            ->with('error', 'يجب إدخال كمية واحدة على الأقل في أحد الوحدات.');
+    }
+
+    $request->merge(['products' => $products]);
+
+    $paidAtSale = (float) ($request->paid_at_sale ?? 0);
+    $invoiceDiscount = (float) ($request->invoice_discount ?? 0);
     $oldTransaction = CashTransaction::where('order_id', $order->id)->first();
     $oldDiscount = $oldTransaction?->amount ?? 0;
 
-    $difference = $discount - $oldDiscount;
+    $difference = $paidAtSale - $oldDiscount;
     $currentBalance = $cashService->getBalance();
 
     // ✅ التحقق من الرصيد في الخزينة
@@ -174,24 +197,22 @@ public function update(Request $request, Client $client, Order $order, CashServi
             ->with('error', __("الخصم ($invoiceDiscount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
     }
  $total_after_discount = max($total_price - $invoiceDiscount, 0);
-    $discount = $request->discount ?? 0;
-    if ($discount > $total_after_discount) {
+    if ($paidAtSale > $total_after_discount) {
         return redirect()->back()
             ->withInput()
-            ->with('error', __("الخصم ($discount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
+            ->with('error', __("المدفوع ($paidAtSale) لا يمكن أن يكون أكبر من الإجمالي بعد الخصم ($total_after_discount)"));
     }
 
-    $remaining = max($total_after_discount - $discount, 0);
-$total_after_discount = max($total_price - $invoiceDiscount, 0);
- $total_profit =  $total_profit - $invoiceDiscount ;
-    // ✅ تحديث الطلب
+    $remaining = max($total_after_discount - $paidAtSale, 0);
+    $total_profit = $total_profit - $invoiceDiscount;
+
     $order->update([
-        'discount'    => $discount,
-         'tax_amount'  => $invoiceDiscount,
+        'paid_at_sale' => $paidAtSale,
+        'invoice_discount' => $invoiceDiscount,
         'total_price' => $total_price,
-        'remaining'   => $remaining,
-          'total_after_discount'=> $total_after_discount,
-        'profit'      => floor($total_profit),
+        'remaining' => $remaining,
+        'total_after_discount' => $total_after_discount,
+        'profit' => floor($total_profit),
     ]);
 
     // ✅ تحديث المخزون
@@ -206,28 +227,32 @@ $total_after_discount = max($total_price - $invoiceDiscount, 0);
     $order->products()->sync($productData);
 
     // ✅ تحديث أو إنشاء حركة الخزينة
-    if ($discount > 0) {
-        $existingDiscountTransaction = CashTransaction::where('order_id', $order->id)->first();
+    $existingOrderTransaction = CashTransaction::where('order_id', $order->id)->first();
 
-        if ($existingDiscountTransaction) {
+    if ($paidAtSale > 0) {
+        if ($existingOrderTransaction) {
             $cashService->updateTransaction(
-                $existingDiscountTransaction,
-                $discount,
+                $existingOrderTransaction,
+                $paidAtSale,
                 "تحديث الدفعيات على الطلب رقم #{$order->order_number} من العميل {$client->name}",
-                'discount',
+                'order',
                 now()
             );
         } else {
             $cashService->record(
                 'add',
-                $discount,
-                "دفع جديد على الطلب رقم #{$order->order_number}",
-                'discount',
+                $paidAtSale,
+                CashService::orderSalePaymentDescription($order, $paidAtSale),
+                'order',
                 now(),
                 $order->id
             );
         }
+    } elseif ($existingOrderTransaction) {
+        $cashService->deleteTransaction($existingOrderTransaction);
     }
+
+    app(OrderFinancialService::class)->recordInitialPayment($order, $paidAtSale);
 
     return redirect()->route('dashboard.orders.index')
         ->with('success', __('تم تعديل الطلب بنجاح'))
@@ -268,9 +293,10 @@ $total_after_discount = max($total_price - $invoiceDiscount, 0);
         return view('dashboard.clients.orders.edit', compact('client', 'order', 'categories', 'orders'));
     }
 
-    private function attach_order($request, $client, $orderNumber = null, $discount = 0)
+    private function attach_order($request, $client, $orderNumber = null, $paidAtSale = 0, $invoiceDiscount = 0)
     {
-        $discount = max(0, $discount); // لا يقبل خصم سالب
+        $paidAtSale = max(0, $paidAtSale);
+        $invoiceDiscount = max(0, $invoiceDiscount);
 
         $total_price = 0;
         $productData = [];
@@ -298,23 +324,19 @@ $total_after_discount = max($total_price - $invoiceDiscount, 0);
 
             // $total_profit = floor($total_profit);
         }
-    $tax_amount = isset($request->tax_amount) ? max(0, $request->tax_amount) : 0;
-$total_after_discount = max($total_price - $tax_amount, 0);
-    $total_prices = $total_price - $tax_amount ;
-        // تحقق من أن الخصم لا يجعل المتبقي سالب
-        $remaining = max($total_prices - $discount, 0);
- $total_profit =  $total_profit - $tax_amount ;
-  $total_profit = floor($total_profit);
-        // إنشاء الطلب
+        $total_after_discount = max($total_price - $invoiceDiscount, 0);
+        $remaining = max($total_after_discount - $paidAtSale, 0);
+        $total_profit = floor(max($total_profit - $invoiceDiscount, 0));
+
         $order = $client->orders()->create([
             'order_number' => $orderNumber ?? $this->generateUniqueOrderNumber(),
-            'discount'     => $discount,
-            'total_price'  => $total_price,
-            'remaining'    => $remaining,
-            'profit'       => $total_profit,
-              'total_after_discount'=> $total_after_discount,
-            'client_id'   => $client->id,
-            'tax_amount'   => $tax_amount,
+            'paid_at_sale' => $paidAtSale,
+            'total_price' => $total_price,
+            'remaining' => $remaining,
+            'profit' => $total_profit,
+            'total_after_discount' => $total_after_discount,
+            'client_id' => $client->id,
+            'invoice_discount' => $invoiceDiscount,
         ]);
 
         // ربط المنتجات وتحديث المخزون
@@ -333,17 +355,18 @@ $total_after_discount = max($total_price - $tax_amount, 0);
         // ======================
         // إضافة الخصم إلى الخزينة إذا كان أكبر من 0
         // ======================
-        if ($discount > 0) {
+        if ($paidAtSale > 0) {
             $cashService = app(\App\Services\CashService::class);
-            Log::info('Order ID for CashService:', ['id' => $order->id]);
+            $order->load('client');
             $cashService->record(
                 'add',
-                $discount,
-                "مدفوع من العميل للطلب #{$order->order_number}",
+                $paidAtSale,
+                CashService::orderSalePaymentDescription($order, $paidAtSale),
                 'order',
                 now(),
                 $order->id
             );
+            app(OrderFinancialService::class)->recordInitialPayment($order, $paidAtSale);
         }
 
         session()->flash('success', __('تم إضافة الطلب بنجاح'));

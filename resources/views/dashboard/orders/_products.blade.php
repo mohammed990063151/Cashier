@@ -1,260 +1,175 @@
-<!-- filepath: resources/views/pdf/order-invoice.blade.php -->
+@php
+    $fin = app(\App\Services\OrderFinancialService::class);
+    $status = $fin->paymentStatus($order);
+    $statusLabel = $fin->paymentStatusLabel($status);
+    $statusClass = $fin->paymentStatusClass($status);
+@endphp
 
-    <style>
-
-        .invoice-container {
-            width: 100%;
-            padding: 2px;
-        }
-
-        /* الهيدر: أزرق رئيسي وحدود خفيفة، وكل المحتوى في الوسط */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            background: #f7faff;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .header-table td {
-            border: 1px solid #e3e6ea !important;
-            padding: 4px 0 4px 0;
-            vertical-align: middle;
-            font-size: 11px;
-            text-align: center !important;
-        }
-
-        .header-logo {
-            width: 38px;
-            max-width: 38px;
-            border-radius: 4px;
-            display: block;
-            margin: 0 auto 2px auto;
-        }
-
-        .header-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: #337ab7;
-            letter-spacing: 1px;
-            font-family: 'Cairo', 'Tajawal', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-subtitle {
-            font-size: 11px;
-            font-weight: bold;
-            color: #f39c12;
-            font-family: 'Cairo', 'Tajawal', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-info {
-            font-size: 10px;
-            color: #337ab7;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-sep {
-            border-bottom: 1px dashed #337ab7;
-            margin: 2px 0 3px 0;
-        }
-
-        /* جدول المنتجات */
-        table.products {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 5px 0;
-            background: #fff;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        table.products th,
-        table.products td {
-            border: 1px solid #e3e6ea;
-            padding: 2px 1px;
-            text-align: center;
-            font-size: 9px;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
-        }
-
-        table.products th {
-            background: #337ab7;
-            color: #fff;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .total-row th,
-        .total-row td {
-            background: #f7faff;
-            font-weight: bold;
-            font-size: 10px;
-            border-top: 2px solid #f39c12;
-            color: #337ab7;
-        }
-
-        /* الملاحظات */
-        .notes {
-            background: #fffbe6;
-            padding: 4px 5px;
-            margin-top: 5px;
-            border-radius: 4px;
-            font-size: 9px;
-            color: #f39c12;
-            border: 1px solid #f9e0a8;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
-            text-align: center;
-        }
-
-        /* التوقيع */
-        .signature {
-            margin-top: 7px;
-            font-size: 9px;
-            color: #337ab7;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
-            text-align: center;
-        }
-
-        .signature-box {
-            width: 60px;
-            height: 16px;
-            border: 1px dashed #337ab7;
-            margin: 2px auto 0 auto;
-            background: #f7faff;
-        }
-
-        /* خطوط Google للطباعة PDF */
-        @font-face {
-            font-family: 'Tajawal';
-            font-style: normal;
-            font-weight: 400;
-            src: url('https://fonts.gstatic.com/s/tajawal/v8/Iura6YBj_oCad4k1nzSBC45I.woff2') format('woff2');
-        }
-
-        @font-face {
-            font-family: 'Cairo';
-            font-style: normal;
-            font-weight: 700;
-            src: url('https://fonts.gstatic.com/s/cairo/v20/SLXGc1nY6HkvalIhTQ.woff2') format('woff2');
-        }
-        .print-btn {
-    display: inline-block;
-    background-color: #337ab7;
-    color: white;
-    font-size: 1rem;
-    padding: 10px 20px;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-    border-radius: 6px;
-    width: 100%;
-    margin-top: 20px;
-}
-
-    </style>
-
-    <div class="invoice-container">
-        <!-- رأس الفاتورة داخل جدول عمودين متقابلين بخطوط خفيفة وملونة وكل المحتوى في الوسط -->
-        <table class="header-table">
-            <tr>
-                <td colspan="2">
-                    <img src="{{ asset($setting->logo) }}" class="header-logo" alt="الشعار">
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-title">
-                    {{ $setting->name }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-subtitle">
-                    فاتورة مبيعات
-                </td>
-            </tr>
-            <tr>
-                <td class="header-info">
-                    التاريخ: {{ \Carbon\Carbon::parse($order->created_at)->format('d/m/Y') }}
-                </td>
-                <td class="header-info">
-                    رقم الإيصال: {{ $order->order_number }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-info">
-                    العميل: {{ $order->client->name  }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <div class="header-sep"></div>
-                </td>
-            </tr>
-        </table>
-
-        <!-- جدول المنتجات مع صف الإجمالي -->
-        <table class="products">
-            <thead>
-                <tr>
-                    <th>الصنف</th>
-                    <th>الكمية</th>
-                    <th>السعر</th>
-                    <th>الإجمالي</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($products as $product)
-                <tr>
-                    <td>{{ $product->name }}</td>
-                    <td>{{ $product->pivot->quantity }}</td>
-                    <td>{{ number_format($product->pivot->sale_price, 2) }}</td>
-                    <td>{{ number_format($product->pivot->quantity * $product->pivot->sale_price, 2) }}</td>
-                </tr>
-                @endforeach
-                <!-- صف الإجمالي -->
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">اجمالي المبلغ</th>
-                    <td colspan="2" style="color: green">{{ number_format($order->total_price, 2) }} ج.س</td>
-                </tr>
-                 <tr class="total-row">
-                    <th colspan="2" style="text-align:right;"> المبلغ المخصوم</th>
-                    <td colspan="2" style="color: rgb(123, 123, 0)">{{ number_format($order->tax_amount, 2) }} ج.س</td>
-                </tr>
-                 <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">اجمالي بعد الخصم</th>
-                    <td colspan="2" style="color: rgb(25, 0, 123)">{{ number_format($order->total_after_discount, 2) }} ج.س</td>
-                </tr>
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">المدفوع منه</th>
-                    <td colspan="2">{{ number_format($order->discount, 2) }} ج.س</td>
-                </tr>
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">المتبقي</th>
-                    <td colspan="2" style="color: red">{{ number_format($order->remaining, 2) }} ج.س</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- الملاحظات -->
-        <div class="notes">
-            <p><strong>ملاحظة:</strong>
-               لا تُقبل المرتجعات بعد 24 ساعة من الاستلام. تعتبر هذه الفاتورة مستنداً رسمياً إلا بتوقيع المسؤول.
-
-            </p>
+<div class="order-preview-panel">
+    <div class="preview-head">
+        <div>
+            <strong class="preview-order-no">{{ $order->order_number }}</strong>
+            <div class="preview-client">{{ $order->client->name }}</div>
+            <small class="text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</small>
         </div>
+        <span class="label {{ $statusClass }}" style="font-size:12px;">{{ $statusLabel }}</span>
+    </div>
 
-        <!-- التوقيع -->
-        <div class="signature">
-            <p>توقيع المستلم:</p>
-            <div class="signature-box"></div>
+    @include('dashboard.orders._order_accounting', array_merge(get_defined_vars(), ['order' => $order, 'compact' => true]))
+
+    <div class="preview-totals">
+        <div class="preview-row">
+            <span>{{ ($hasReturns ?? false) ? 'الصافي الحالي' : 'الإجمالي' }}</span>
+            <span class="money money-total">{{ number_format($totalSale, 2) }}</span>
+        </div>
+        @if($invoiceDiscount > 0)
+        <div class="preview-row">
+            <span>الخصم</span>
+            <span class="money money-discount">-{{ number_format($invoiceDiscount, 2) }}</span>
+        </div>
+        @endif
+        <div class="preview-row">
+            <span>بعد الخصم</span>
+            <span class="money">{{ number_format($totalAfterDiscount, 2) }}</span>
+        </div>
+        <div class="preview-row preview-row--paid">
+            <span>المدفوع</span>
+            <span class="money money-paid">{{ number_format($totalPaid, 2) }}</span>
+        </div>
+        <div class="preview-row">
+            <span>المتبقي</span>
+            <span class="money {{ $remaining > 0 ? 'money-remain-due' : 'money-remain-zero' }}">{{ number_format($remaining, 2) }}</span>
         </div>
     </div>
-    <button class="btn btn-primary print-btn" onclick="window.location.href='{{ route('dashboard.orders.pdf', $order->id) }}'">
-    <i class="fa fa-scannd "></i> طباعة PDF
-</button>
+
+    <div class="preview-section-title">الأصناف</div>
+    <div class="preview-products">
+        @foreach($order->products as $product)
+            @php
+                $breakdown = $fin->productUnitBreakdown($product);
+                $lineTotal = $product->pivot->quantity * $product->pivot->sale_price;
+            @endphp
+            <div class="preview-product-item">
+                <div class="preview-product-top">
+                    <strong>{{ $product->name }}</strong>
+                    <span class="money">{{ number_format($lineTotal, 2) }}</span>
+                </div>
+                @php $saleLine = $fin->formatProductSaleLine($product); @endphp
+                <div class="preview-product-meta">
+                    {{ $saleLine['quantity'] }} — {{ $saleLine['price'] }}
+                </div>
+                @if(count($breakdown) > 0)
+                <div class="preview-units">
+                    @foreach($breakdown as $line)
+                    <span class="preview-unit-tag">{{ $line['label'] }} ×{{ $line['count'] }}</span>
+                    @endforeach
+                </div>
+                @endif
+            </div>
+        @endforeach
+    </div>
 
 
+    <div class="preview-actions">
+        @if($order->products->count() > 0)
+        <button type="button" class="btn btn-warning btn-block btn-sm order-return-btn"
+                data-url="{{ route('dashboard.orders.return', $order->id) }}">
+            <i class="fa fa-undo"></i> تسجيل مرتجع
+        </button>
+        @endif
+        <button type="button" class="btn btn-default btn-block btn-sm view-order-modal-btn"
+                data-order-id="{{ $order->id }}">
+            <i class="fa fa-eye"></i> تفاصيل كاملة
+        </button>
+        <a href="{{ route('dashboard.orders.pdf', $order->id) }}" target="_blank" class="btn btn-primary btn-block">
+            <i class="fa fa-print"></i> طباعة PDF
+        </a>
+    </div>
+</div>
 
+<style>
+.order-preview-panel { font-size: 13px; }
+.preview-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #3c8dbc;
+}
+.preview-order-no { font-size: 16px; color: #1e3c72; display: block; }
+.preview-client { color: #475569; margin: 2px 0; }
+.preview-totals {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
+.preview-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px dashed #e8edf3;
+}
+.preview-row:last-child { border-bottom: none; }
+.preview-row--paid {
+    background: #e3f2fd;
+    margin: 4px -6px;
+    padding: 6px !important;
+    border-radius: 4px;
+    border-bottom: none;
+}
+.preview-row .money {
+    font-weight: 700;
+    direction: ltr;
+}
+.preview-section-title {
+    font-weight: 700;
+    color: #3c8dbc;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+.preview-products {
+    max-height: 280px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+}
+.preview-product-item {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+.preview-product-item:last-child { border-bottom: none; }
+.preview-product-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+.preview-product-meta {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+}
+.preview-units {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.preview-unit-tag {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+.preview-actions .btn { margin-bottom: 6px; }
+.preview-actions .btn:last-child { margin-bottom: 0; }
+.money-total { color: #2e7d32; }
+.money-discount { color: #b8860b; }
+.money-paid { color: #1b5e20; }
+.money-remain-due { color: #c62828; }
+.money-remain-zero { color: #2e7d32; }
+</style>

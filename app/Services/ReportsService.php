@@ -9,6 +9,8 @@ use App\Models\Client;
 use App\Models\Supplier;
 use App\Models\Expense;
 use App\Models\CashTransaction;
+use App\Models\Order;
+use App\Models\OrderReturn;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +63,7 @@ class ReportsService
         $totalSales      = $sales->sum('total_amount');
         $totalReturns    = $sales->sum('total_return') ?? 0;
         $netSales        = $totalSales - $totalReturns;
-        $totalTax        = $sales->sum('tax_amount') ?? 0;
+        $totalTax        = $sales->sum('invoice_discount') ?? 0;
         $totalPaid       = $sales->sum('paid_amount') ?? 0;
         $remaining       = $netSales - $totalPaid;
 
@@ -116,8 +118,8 @@ class ReportsService
         $suppliers = Supplier::all();
         $overview = [];
         foreach ($suppliers as $supplier) {
-            $totalPurchases  = $supplier->purchaseInvoices()->whereBetween('invoice_date', [$this->startDate, $this->endDate])->sum('total_amount');
-            $paid            = $supplier->purchaseInvoices()->whereBetween('invoice_date', [$this->startDate, $this->endDate])->sum('paid_amount');
+            $totalPurchases  = $supplier->purchaseInvoices()->whereBetween('invoice_date', [$this->startDate, $this->endDate])->sum('total');
+            $paid            = $supplier->purchaseInvoices()->whereBetween('invoice_date', [$this->startDate, $this->endDate])->sum('paid');
             $remaining       = $totalPurchases - $paid;
             $overview[] = [
                 'supplier' => $supplier->name,
@@ -134,7 +136,7 @@ class ReportsService
     {
         $purchases = PurchaseInvoice::whereBetween('invoice_date', [$this->startDate, $this->endDate]);
         $totalPurchases = $purchases->sum('total');
-        $totalPaid      = $purchases->sum('paid_amount');
+        $totalPaid      = $purchases->sum('paid');
         $remaining      = $totalPurchases - $totalPaid;
 
         return compact('totalPurchases', 'totalPaid', 'remaining');
@@ -150,10 +152,40 @@ class ReportsService
     // ======== بيانات الخزينة ========
     public function cashOverview()
     {
-        $totalCashIn  = CashTransaction::whereBetween('transaction_date', [$this->startDate, $this->endDate])
-                        ->where('type', 'in')->sum('amount');
-        $totalCashOut = CashTransaction::whereBetween('transaction_date', [$this->startDate, $this->endDate])
-                        ->where('type', 'out')->sum('amount');
-        return compact('totalCashIn', 'totalCashOut');
+        $query = CashTransaction::whereBetween('transaction_date', [$this->startDate, $this->endDate]);
+        $totalCashIn = (clone $query)->where('type', 'add')->sum('amount');
+        $totalCashOut = (clone $query)->where('type', 'deduct')->sum('amount');
+        $totalReturnsOut = (clone $query)->where('category', 'returns')->where('type', 'deduct')->sum('amount');
+
+        return compact('totalCashIn', 'totalCashOut', 'totalReturnsOut');
+    }
+
+    // ======== مرتجعات الطلبات ========
+    public function ordersReturnsOverview()
+    {
+        $returns = OrderReturn::with(['order.client', 'items'])
+            ->whereBetween('return_date', [$this->startDate->toDateString(), $this->endDate->toDateString()])
+            ->orderByDesc('return_date')
+            ->get();
+
+        $totalMerchandiseReturned = (float) $returns->sum('items_total');
+        $totalRefunded = (float) $returns->sum('refund_amount');
+        $ordersWithReturns = Order::where('total_return', '>', 0)
+            ->whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->count();
+
+        $grossSales = (float) Order::whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->sum(DB::raw('total_price + total_return'));
+        $netSales = (float) Order::whereBetween('created_at', [$this->startDate, $this->endDate])
+            ->sum('total_price');
+
+        return compact(
+            'returns',
+            'totalMerchandiseReturned',
+            'totalRefunded',
+            'ordersWithReturns',
+            'grossSales',
+            'netSales'
+        );
     }
 }

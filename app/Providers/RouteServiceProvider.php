@@ -33,7 +33,7 @@ class RouteServiceProvider extends ServiceProvider
         $dashboardPath = base_path('routes/dashboard');
 
         foreach (glob($dashboardPath.'/*.php') as $routeFile) {
-            Route::middleware(['web', 'auth'])
+            Route::middleware(['web'])
                 ->namespace($this->namespace)
                 ->group($routeFile);
         }

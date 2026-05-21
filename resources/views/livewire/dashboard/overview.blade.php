@@ -123,6 +123,62 @@
             </div>
         </div>
 
+        @if($collectionAlertsCount > 0)
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-warning">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-bell"></i> تنبيهات مواعيد سداد العملاء</h3>
+                        <div class="box-tools pull-left">
+                            <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}" class="btn btn-sm btn-warning">
+                                عرض الكل ({{ $collectionAlertsCount }})
+                            </a>
+                            <a href="{{ route('dashboard.collection-schedules.index') }}" class="btn btn-sm btn-default">جدولة السداد</a>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        <div class="row" style="margin-bottom:12px;">
+                            <div class="col-sm-3"><span class="label label-danger">متأخر: {{ $collectionSummary['overdue'] ?? 0 }}</span></div>
+                            <div class="col-sm-3"><span class="label label-warning">اليوم: {{ $collectionSummary['due_today'] ?? 0 }}</span></div>
+                            <div class="col-sm-3"><span class="label label-info">قريب: {{ $collectionSummary['due_soon'] ?? 0 }}</span></div>
+                            <div class="col-sm-3"><span class="label label-default">بدون موعد: {{ $collectionSummary['no_date'] ?? 0 }}</span></div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-condensed table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>العميل</th>
+                                        <th>رقم الطلب</th>
+                                        <th>قسط مستحق</th>
+                                        <th>موعد السداد</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($collectionAlerts as $alert)
+                                    @php
+                                        $sched = app(\App\Services\CollectionScheduleService::class);
+                                        $st = $alert['status'] ?? 'due_soon';
+                                        $alertOrder = $alert['order'];
+                                        $alertInst = $alert['installment'];
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $alertOrder->client->name }}</td>
+                                        <td>{{ $alertOrder->order_number }}</td>
+                                        <td class="text-danger">{{ number_format($alertInst->amount, 2) }}</td>
+                                        <td>{{ $alertInst->due_at->format('d/m/Y') }}</td>
+                                        <td><span class="label {{ $sched->scheduleStatusClass($st) }}">{{ $sched->scheduleStatusLabel($st) }}</span></td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- آخر الحركات في الخزينة --}}
 
         {{-- الرسوم البيانية --}}

@@ -38,7 +38,7 @@ class Client extends Model
 
         return $orders->sum(function($order){
             $total = $order->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
-            $paid  = $order->payments->sum('amount') + $order->discount ;
+            $paid  = $order->payments->sum('amount') + $order->paid_at_sale;
             // لو عندك عمود remaining في order ممكن تستخدمه بدل الحساب:
             return $order->remaining ?? ($total - $paid);
             // return ($total - $paid);

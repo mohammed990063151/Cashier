@@ -12,6 +12,7 @@ use App\Models\Expense;
 use App\Models\Cash;
 use App\Models\CashTransaction;
 use Illuminate\Support\Facades\DB;
+use App\Services\CollectionScheduleService;
 use Carbon\Carbon;
 
 class Overview extends Component
@@ -51,6 +52,12 @@ class Overview extends Component
     public $topProductsChart;
     public $dailyCashChart;
     public $profitChart;
+
+    public $collectionAlerts = [];
+
+    public $collectionSummary = [];
+
+    public $collectionAlertsCount = 0;
 
     // تحديث عند تغيير النطاق الزمني
     public function updatedSelectedRange()
@@ -117,6 +124,11 @@ class Overview extends Component
         // العملاء والموردين
         $this->clientsOverview = ['total_due' => Order::sum('remaining')];
         $this->suppliersOverview = ['total_due' => DB::table('suppliers')->sum('balance')];
+
+        $collection = app(CollectionScheduleService::class);
+        $this->collectionAlerts = $collection->dashboardAlerts(8)->values()->all();
+        $this->collectionSummary = $collection->summaryCounts();
+        $this->collectionAlertsCount = $collection->dashboardAlertsCount();
 
         // الخزينة
         $cash = Cash::first();

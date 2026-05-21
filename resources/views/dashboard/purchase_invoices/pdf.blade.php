@@ -2,327 +2,237 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>فاتورة شراء رقم {{ $purchaseInvoice->invoice_number }}</title>
+    <title>فاتورة شراء {{ $purchaseInvoice->invoice_number }}</title>
     <style>
-        @page { size: 80mm 80mm; margin: 0; }
         body {
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+            font-family: dejavusans, sans-serif;
             direction: rtl;
-            font-size: 10px;
+            font-size: 9pt;
+            color: #1a1a2e;
             margin: 0;
-            padding: 2px;
-            background: #fff;
-            color: #222;
+            padding: 0;
         }
-        .invoice-container { width: 100%; padding: 2px; }
+        table { border-collapse: collapse; width: 100%; }
+        td, th { vertical-align: middle; }
 
-        /* جدول الهيدر */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            background: #f7faff;
-            border-radius: 6px;
-        }
-        .header-table td {
-            border: 1px solid #e3e6ea;
-            padding: 4px;
+        /* ── Header ── */
+        .hdr { margin-bottom: 6px; }
+        .hdr td { padding: 0; border: none; }
+        .hdr-bar { background: #0f4c81; height: 4px; }
+        .hdr-main td { padding: 8px 10px; border: 1px solid #cbd5e1; }
+        .hdr-brand { background: #f8fafc; width: 62%; }
+        .hdr-doc { background: #0f4c81; color: #fff; text-align: center; width: 38%; }
+        .company { font-size: 13pt; font-weight: bold; color: #0f4c81; }
+        .sub { font-size: 7.5pt; color: #64748b; }
+        .doc-title { font-size: 14pt; font-weight: bold; }
+        .doc-no { font-size: 10pt; margin-top: 2px; }
+        .logo { max-height: 38px; max-width: 90px; }
+
+        /* ── Meta strip ── */
+        .meta { margin-bottom: 6px; font-size: 8pt; }
+        .meta td { padding: 5px 8px; border: 1px solid #e2e8f0; background: #f1f5f9; }
+        .meta-lbl { color: #64748b; width: 72px; }
+        .meta-val { font-weight: bold; }
+
+        /* ── Items ── */
+        .items { margin-bottom: 6px; }
+        .items th {
+            background: #0f4c81;
+            color: #fff;
+            padding: 5px 4px;
+            font-size: 8pt;
+            font-weight: bold;
             text-align: center;
-            font-size: 11px;
+            border: 1px solid #0a3d66;
         }
-        .header-logo { width: 38px; margin: 0 auto 2px auto; }
-        .header-title { font-size: 13px; font-weight: bold; color: #337ab7; margin-bottom: 1px; }
-        .header-subtitle { font-size: 11px; font-weight: bold; color: #f39c12; margin-bottom: 1px; }
-        .header-info { font-size: 10px; color: #337ab7; margin-bottom: 1px; }
-        .header-sep { border-bottom: 1px dashed #337ab7; margin: 2px 0 3px 0; }
-
-        /* جدول المنتجات */
-        table.products { width: 100%; border-collapse: collapse; margin: 5px 0; }
-        table.products th, table.products td {
-            border: 1px solid #e3e6ea;
-            padding: 2px;
+        .items td {
+            padding: 4px 4px;
+            font-size: 8.5pt;
             text-align: center;
-            font-size: 9px;
+            border: 1px solid #e2e8f0;
         }
-        table.products th { background: #337ab7; color: #fff; font-weight: bold; font-size: 10px; }
-        .total-row th, .total-row td { background: #f7faff; font-weight: bold; border-top: 2px solid #f39c12; color: #337ab7; }
+        .items tr.alt td { background: #f8fafc; }
+        .items .name { text-align: right; font-weight: bold; }
+        .items .num { font-weight: bold; }
 
-        /* الملاحظات */
-        .notes { background: #fffbe6; padding: 4px 5px; margin-top: 5px; border-radius: 4px; font-size: 9px; color: #f39c12; border: 1px solid #f9e0a8; text-align: center; }
+        /* ── Summary rows in table footer ── */
+        .sum td {
+            padding: 5px 8px;
+            font-size: 9pt;
+            font-weight: bold;
+            border: 1px solid #e2e8f0;
+        }
+        .sum-grand td { background: #0f4c81; color: #fff; font-size: 10pt; }
+        .sum-paid td { background: #ecfdf5; color: #047857; }
+        .sum-due td { background: #fef2f2; color: #b91c1c; }
+        .sum-lbl { text-align: right; width: 70%; }
+        .sum-val { text-align: left; width: 30%; }
 
-        /* التوقيع */
-        .signature { margin-top: 7px; font-size: 9px; color: #337ab7; text-align: center; }
-        .signature-box { width: 60px; height: 16px; border: 1px dashed #337ab7; margin: 2px auto 0 auto; background: #f7faff; }
+        /* ── Bottom: notes + signatures ── */
+        .bottom td { vertical-align: top; padding: 0; border: none; }
+        .notes-cell { width: 58%; padding-left: 6px; }
+        .sig-cell-wrap { width: 42%; }
+        .notes-box {
+            border: 1px solid #fde68a;
+            background: #fffbeb;
+            padding: 6px 8px;
+            font-size: 7.5pt;
+            color: #92400e;
+            line-height: 1.35;
+        }
+        .inst-line { font-size: 7.5pt; color: #0f4c81; margin-top: 4px; font-weight: bold; }
+        .sig-table td { text-align: center; padding: 4px 6px; border: 1px solid #e2e8f0; width: 50%; }
+        .sig-h { font-size: 7.5pt; color: #64748b; padding-bottom: 18px; }
+        .sig-line { border-top: 1px solid #94a3b8; font-size: 7pt; color: #475569; padding-top: 3px; }
+
+        .foot {
+            margin-top: 4px;
+            text-align: center;
+            font-size: 7pt;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 3px;
+        }
     </style>
 </head>
 <body>
-<div class="invoice-container">
 
-    <!-- رأس الفاتورة -->
-    <table class="header-table">
-        <tr>
-            <td colspan="2"> <img src="{{ $setting && $setting->logo ? public_path('storage/'.$setting->logo) : public_path('logo.png') }}" class="header-logo" alt="الشعار">
-</td>
-        </tr>
-        <tr>
-            <td colspan="2" class="header-title"> {{ $setting->name }}</td>
-        </tr>
-        <tr>
-            <td colspan="2" class="header-subtitle">فاتورة شراء</td>
-        </tr>
-        <tr>
-            <td class="header-info">التاريخ: {{ $purchaseInvoice->created_at->format('d/m/Y') }}</td>
-            <td class="header-info">رقم الفاتورة: {{ $purchaseInvoice->invoice_number }}</td>
-        </tr>
-        <tr>
-            <td colspan="2" class="header-info">المورد: {{ $purchaseInvoice->supplier->name ?? 'غير معروف' }}</td>
-        </tr>
-        <tr><td colspan="2"><div class="header-sep"></div></td></tr>
-    </table>
+@php
+    $logoPath = ($setting && $setting->logo) ? public_path('storage/'.$setting->logo) : public_path('logo.png');
+    $hasLogo = file_exists($logoPath);
+    $invoiceDate = optional($purchaseInvoice->invoice_date)->format('d/m/Y') ?? $purchaseInvoice->created_at->format('d/m/Y');
+    $unpaidInst = $purchaseInvoice->paymentInstallments?->whereNull('paid_at') ?? collect();
+    $itemCount = $purchaseInvoice->items->count();
+@endphp
 
-    <!-- جدول المنتجات -->
-    <table class="products">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>اسم المنتج</th>
-            <th>الكمية</th>
-            <th>سعر الوحدة</th>
-            <th>الإجمالي</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach ($purchaseInvoice->items as $index => $item)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $item->product->name ?? 'غير معروف' }}</td>
-                <td>{{ $item->quantity }}</td>
-                <td>{{ number_format($item->price, 2) }}</td>
-                <td>{{ number_format($item->subtotal, 2) }}</td>
-            </tr>
-        @endforeach
-        <tr class="total-row">
-            <th colspan="3">الإجمالي</th>
-            <td colspan="2" style="color:green">{{ number_format($purchaseInvoice->total, 2) }} ج.س</td>
-        </tr>
-        <tr class="total-row">
-            <th colspan="3">المدفوع</th>
-            <td colspan="2">{{ number_format($purchaseInvoice->paid, 2) }} ج.س</td>
-        </tr>
-        <tr class="total-row">
-            <th colspan="3">المتبقي</th>
-            <td colspan="2" style="color: red">{{ number_format($purchaseInvoice->remaining, 2) }} ج.س</td>
-        </tr>
-        </tbody>
-    </table>
-
-    <!-- الملاحظات -->
-    <div class="notes">
-        <p>يرجى التأكد من فحص البضاعة قبل المغادرة. لا تُقبل المرتجعات بعد 24 ساعة من الاستلام. تعتبر هذه الفاتورة مستنداً رسمياً عند توقيع المسؤول.</p>
-    </div>
-
-    <!-- التوقيع -->
-<table style="width: 100%; border-collapse: collapse; margin-top: 7px;">
-    <tr>
-        <!-- توقيع المورد -->
-        <td style="width: 50%; text-align: center; vertical-align: middle; font-size: 9px; font-family: 'Tajawal', 'Cairo', Arial, sans-serif; color: #337ab7;">
-            <p style="margin: 0 0 3px 0;">توقيع المورد:</p>
-            <table style="width: 80px; height: 30px; border: 1px dashed #337ab7; margin: 0 auto;">
-                <tr><td></td></tr>
-            </table>
+{{-- Header --}}
+<table class="hdr">
+    <tr><td colspan="2" class="hdr-bar"></td></tr>
+    <tr class="hdr-main">
+        <td class="hdr-brand">
+            <table width="100%"><tr>
+                @if($hasLogo)
+                <td width="95" style="border:none;padding:0 0 0 8px;">
+                    <img src="{{ $logoPath }}" class="logo" alt="">
+                </td>
+                @endif
+                <td style="border:none;padding:0;">
+                    <div class="company">{{ $setting->name ?? 'شركة عتاب التجارية' }}</div>
+                    <div class="sub">فاتورة شراء تجارية — Purchase Invoice</div>
+                </td>
+            </tr></table>
         </td>
+        <td class="hdr-doc">
+            <div class="doc-title">فاتورة شراء</div>
+            <div class="doc-no">{{ $purchaseInvoice->invoice_number }}</div>
+            <div style="font-size:8pt;margin-top:4px;opacity:.9;">{{ $invoiceDate }}</div>
+        </td>
+    </tr>
+</table>
 
-        <!-- توقيع المستلم -->
-        <td style="width: 50%; text-align: center; vertical-align: middle; font-size: 9px; font-family: 'Tajawal', 'Cairo', Arial, sans-serif; color: #337ab7;">
-            <p style="margin: 0 0 3px 0;">توقيع المستلم:</p>
-            <table style="width: 80px; height: 30px; border: 1px dashed #337ab7; margin: 0 auto;">
-                <tr><td></td></tr>
+{{-- Meta: supplier + invoice facts in one row --}}
+<table class="meta">
+    <tr>
+        <td class="meta-lbl">المورد</td>
+        <td class="meta-val">{{ $purchaseInvoice->supplier->name ?? '—' }}</td>
+        <td class="meta-lbl">الهاتف</td>
+        <td class="meta-val">{{ $purchaseInvoice->supplier->phone ?? '—' }}</td>
+        <td class="meta-lbl">التاريخ</td>
+        <td class="meta-val">{{ $invoiceDate }}</td>
+        <td class="meta-lbl">الأصناف</td>
+        <td class="meta-val">{{ $itemCount }}</td>
+    </tr>
+    @if($purchaseInvoice->supplier->address ?? null)
+    <tr>
+        <td class="meta-lbl">العنوان</td>
+        <td class="meta-val" colspan="7">{{ $purchaseInvoice->supplier->address }}</td>
+    </tr>
+    @endif
+</table>
+
+{{-- Items + financial summary in one table --}}
+<table class="items">
+    <thead>
+        <tr>
+            <th width="22">#</th>
+            <th width="28%">الصنف</th>
+            <th width="14%">الوحدة</th>
+            <th width="8%">الكمية</th>
+            <th width="12%">حبات</th>
+            <th width="12%">السعر</th>
+            <th width="14%">الإجمالي</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach($purchaseInvoice->items as $index => $item)
+        @php
+            $unitLabel = $item->purchase_unit_label ?? 'حبة';
+            $entered = $item->entered_qty ?? $item->quantity;
+        @endphp
+        <tr class="{{ $index % 2 ? 'alt' : '' }}">
+            <td>{{ $index + 1 }}</td>
+            <td class="name">{{ $item->product->name ?? '—' }}</td>
+            <td>{{ $unitLabel }}</td>
+            <td>{{ $entered }}</td>
+            <td>{{ number_format($item->quantity) }}</td>
+            <td>{{ number_format($item->price, 2) }}</td>
+            <td class="num">{{ number_format($item->subtotal, 2) }}</td>
+        </tr>
+        @endforeach
+    </tbody>
+    <tfoot>
+        <tr class="sum sum-grand">
+            <td colspan="5" class="sum-lbl">إجمالي الفاتورة</td>
+            <td colspan="2" class="sum-val">{{ number_format($purchaseInvoice->total, 2) }} ج.س</td>
+        </tr>
+        <tr class="sum sum-paid">
+            <td colspan="5" class="sum-lbl">المدفوع</td>
+            <td colspan="2" class="sum-val">{{ number_format($purchaseInvoice->paid, 2) }} ج.س</td>
+        </tr>
+        <tr class="sum sum-due">
+            <td colspan="5" class="sum-lbl">المتبقي على المورد</td>
+            <td colspan="2" class="sum-val">{{ number_format($purchaseInvoice->remaining, 2) }} ج.س</td>
+        </tr>
+    </tfoot>
+</table>
+
+{{-- Notes + signatures side by side --}}
+<table class="bottom" width="100%">
+    <tr>
+        <td class="notes-cell">
+            <div class="notes-box">
+                @if($purchaseInvoice->payment_notes)
+                    <strong>ملاحظات:</strong> {{ $purchaseInvoice->payment_notes }} —
+                @endif
+                فحص البضاعة عند الاستلام. المرتجعات خلال 24 ساعة بإذن مسبق.
+            </div>
+            @if($unpaidInst->count())
+            <div class="inst-line">
+                جدولة السداد:
+                @foreach($unpaidInst as $inst)
+                    {{ number_format($inst->amount, 2) }} ({{ $inst->due_at->format('d/m/Y') }})@if(!$loop->last) · @endif
+                @endforeach
+            </div>
+            @endif
+        </td>
+        <td class="sig-cell-wrap">
+            <table class="sig-table" width="100%">
+                <tr>
+                    <td>
+                        <div class="sig-h">توقيع وختم المورد</div>
+                        <div class="sig-line">الاسم: ..................</div>
+                    </td>
+                    <td>
+                        <div class="sig-h">توقيع المستلم</div>
+                        <div class="sig-line">الاسم: ..................</div>
+                    </td>
+                </tr>
             </table>
         </td>
     </tr>
 </table>
 
+<div class="foot">{{ $purchaseInvoice->invoice_number }} — {{ now()->format('d/m/Y H:i') }}</div>
 
-</div>
 </body>
 </html>
-
-
-
-
-{{-- <!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>فاتورة شراء رقم {{ $purchaseInvoice->id }}</title>
-    <style>
-        body {
-            font-family: 'DejaVu Sans', sans-serif;
-            direction: rtl;
-            font-size: 14px;
-            margin: 0;
-            padding: 0;
-            background: #fff;
-            color: #2c3e50;
-        }
-
-        .invoice-box {
-            max-width: 1000px;
-            margin: auto;
-            padding: 25px;
-            border: 1px solid #eee;
-            box-shadow: 0 0 10px #ccc;
-            background: #fdfdfd;
-        }
-
-        /* جداول عامة */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        /* جدول الهيدر */
-        .header-table td {
-            vertical-align: top;
-            padding: 5px 10px;
-            border: none; /* شفاف */
-        }
-
-        .company-info {
-            text-align: right;
-            font-size: 15px;
-        }
-
-        .invoice-info {
-            text-align: left;
-            font-size: 15px;
-        }
-
-        /* جدول المنتجات */
-        .items th, .items td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        }
-
-        .items th {
-            background: #3498db;
-            color: #fff;
-        }
-
-        /* الإجماليات */
-        .summary {
-            margin-top: 20px;
-            width: 50%;
-            float: left;
-            font-size: 14px;
-        }
-
-        /* الملاحظات */
-        .notes {
-            clear: both;
-            margin-top: 40px;
-            font-size: 13px;
-            background: #fcfcfc;
-            border-right: 5px solid #2980b9;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        /* جدول التوقيع */
-        .signature-table {
-            margin-top: 60px;
-            border-top: 1px solid #000;
-        }
-
-        .signature-table td {
-            width: 50%;
-            text-align: center;
-            padding-top: 30px; /* مساحة للتوقيع اليدوي */
-            border: none; /* شفاف */
-        }
-
-        @media print {
-            .invoice-box {
-                box-shadow: none;
-                border: none;
-            }
-        }
-    </style>
-</head>
-<body onload="window.print()">
-
-<div class="invoice-box">
-
-    <!-- الهيدر -->
-    <table class="header-table">
-        <tr>
-            <!-- بيانات الشركة -->
-            <td class="company-info">
-                <h2>شركة أبو الطاهر للتوريدات</h2>
-                <p>السجل التجاري: 1234567890</p>
-                <p>الرقم الضريبي: 9876543210</p>
-                <p>العنوان: الخرطوم - السوق العربي</p>
-                <p>الهاتف: 0999999999</p>
-                <p>البريد الإلكتروني: info@abotaher.com</p>
-            </td>
-            <!-- بيانات الفاتورة -->
-            <td class="invoice-info">
-                <br />
-                <p><strong>رقم الفاتورة:</strong> {{ $purchaseInvoice->id }}</p>
-                <p><strong>التاريخ:</strong> {{ $purchaseInvoice->created_at->format('Y-m-d') }}</p>
-                <p><strong>الوقت:</strong> {{ $purchaseInvoice->created_at->format('H:i') }}</p>
-                <p><strong>العميل:</strong> {{ $purchaseInvoice->supplier->name ?? 'غير معروف' }}</p>
-                <p><strong>طريقة الدفع:</strong> {{ $purchaseInvoice->payment_method ?? 'نقداً' }}</p>
-            </td>
-        </tr>
-    </table>
-
-    <!-- جدول المنتجات -->
-    <table class="items" style="margin-top:20px;">
-        <thead>
-        <tr>
-            <th>#</th>
-            <th>اسم المنتج</th>
-            <th>الكمية</th>
-            <th>سعر الوحدة</th>
-            <th>الإجمالي</th>
-        </tr>
-        </thead>
-        <tbody>
-        @foreach($purchaseInvoice->items as $index => $item)
-            <tr>
-                <td>{{ $index + 1 }}</td>
-                <td>{{ $item->product->name ?? 'غير معروف' }}</td>
-                <td>{{ $item->quantity }}</td>
-                <td>{{ number_format($item->price, 2) }}</td>
-                <td>{{ number_format($item->subtotal, 2) }}</td>
-            </tr>
-        @endforeach
-        </tbody>
-    </table>
-
-    <!-- الإجماليات -->
-    <div class="summary">
-        <p><strong>الإجمالي الكلي:</strong> {{ number_format($purchaseInvoice->total, 2) }} ج.س</p>
-         <p><strong>الإجمالي المدفوع:</strong> {{ number_format($purchaseInvoice->paid, 2) }} ج.س</p>
-          <p><strong>الإجمالي المتبقي:</strong> {{ number_format($purchaseInvoice->remaining, 2) }} ج.س</p>
-    </div>
-
-    <!-- الملاحظات -->
-    <div class="notes">
-        <p><strong>ملاحظات:</strong> يرجى التأكد من فحص البضاعة قبل المغادرة. لا تُقبل المرتجعات بعد 24 ساعة من الاستلام. هذه الفاتورة لا تعتبر مستنداً رسمياً إلا بتوقيع المسؤول.</p>
-    </div>
-
-    <!-- التوقيعات -->
-    <table class="signature-table">
-        <tr>
-            <td>توقيع المورد</td>
-            <td>توقيع المستلم</td>
-        </tr>
-    </table>
-
-</div>
-
-</body>
-</html> --}}

@@ -8,7 +8,11 @@ Route::get('/custom-login', function() {
 
 
 Route::get('/', function () {
-    return redirect()->route('dashboard.welcome');
+    if (auth()->check()) {
+        return redirect()->route('dashboard.welcome');
+    }
+
+    return redirect()->route('login');
 });
 
 Auth::routes(['register' => false]);

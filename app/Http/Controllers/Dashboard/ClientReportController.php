@@ -61,7 +61,7 @@ class ClientReportController extends Controller
         // فواتير العميل (مع مجموعات لكل فاتورة)
         $invoices = $client->orders->map(function($order){
             $total = $order->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
-            $paid  = $order->payments->sum('amount') + $order->discount;
+            $paid  = $order->payments->sum('amount') + $order->paid_at_sale;
             return (object)[
                 'id' => $order->id,
                 'order_number' => $order->order_number  ?? $order->id,
@@ -90,7 +90,7 @@ class ClientReportController extends Controller
         // كشف الحساب بالتفصيل (يمكن تضمين تواريخ، مدفوعات متكررة...)
         $statement = $client->orders->map(function($order){
             $total = $order->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
-              $paid  = $order->payments->sum('amount') + $order->discount;
+              $paid  = $order->payments->sum('amount') + $order->paid_at_sale;
             $paidItems = $order->payments->map(fn($pay) => [
                 'payment_id' => $pay->id,
                 'amount' => $pay->amount,

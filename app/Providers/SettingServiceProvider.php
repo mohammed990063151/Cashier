@@ -2,9 +2,10 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\View;
 use App\Models\Setting;
+use App\Services\CollectionScheduleService;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 
 class SettingServiceProvider extends ServiceProvider
 {
@@ -21,9 +22,21 @@ class SettingServiceProvider extends ServiceProvider
      */
       public function boot(): void
     {
-        // مشاركة بيانات الإعدادات مع كل الصفحات
         View::composer('*', function ($view) {
-            $view->with('setting', Setting::first());
+            $view->with('setting', cache()->remember('app.setting', 3600, fn () => Setting::first()));
+        });
+
+        View::composer('layouts.dashboard.app', function ($view) {
+            if (! auth()->check()) {
+                return;
+            }
+
+            $schedule = app(CollectionScheduleService::class);
+            $view->with([
+                'collectionAlerts' => $schedule->dashboardAlerts(15),
+                'collectionAlertsCount' => $schedule->dashboardAlertsCount(),
+                'collectionDueToday' => $schedule->dueTodayAlerts(),
+            ]);
         });
     }
 }

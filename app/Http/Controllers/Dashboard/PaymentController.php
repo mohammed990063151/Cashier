@@ -1,40 +1,110 @@
 <?php
-// PaymentController.php
+
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Client;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\CashTransaction;
 use App\Services\CashService;
-use Illuminate\Support\Facades\DB;
+use App\Services\CollectionScheduleService;
+use App\Services\OrderFinancialService;
+use App\Services\PaymentService;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use InvalidArgumentException;
 
 class PaymentController extends Controller
 {
-    protected $cashService;
-
-    public function __construct(CashService $cashService)
-    {
-        $this->cashService = $cashService;
-    }
-
+    public function __construct(
+        protected CashService $cashService,
+        protected OrderFinancialService $orderFinancial,
+        protected CollectionScheduleService $collectionSchedule,
+        protected PaymentService $paymentService
+    ) {}
 
     public function index(Request $request)
     {
-        $query = Order::with(['client', 'payments']) ->where('remaining', '>', 0);
+        $query = Order::with(['client', 'payments.receipts', 'products', 'paymentInstallments']);
+        $paymentStatus = $request->payment_status;
+        $logOrderId = $request->filled('log_order') ? (int) $request->log_order : null;
 
-        if ($request->has('search') && $request->search != '') {
-            $search = $request->search;
-            $query->where('order_number', 'like', "%$search%")
-                ->orWhereHas('client', function ($q) use ($search) {
-                    $q->where('name', 'like', "%$search%");
-                });
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
         }
 
-        $orders = $query->orderBy('created_at', 'desc')->paginate(15);
+        if ($request->filled('order_id')) {
+            $query->where('id', $request->order_id);
+        }
 
-        return view('dashboard.payments.index', compact('orders'));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                    ->orWhereHas('client', function ($clientQuery) use ($search) {
+                        $clientQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($paymentStatus === null || $paymentStatus === '') {
+            $query->where(function ($q) use ($logOrderId) {
+                $q->where('remaining', '>', 0.009);
+                if ($logOrderId) {
+                    $q->orWhere('id', $logOrderId);
+                }
+            });
+            $paymentStatus = 'due';
+        } else {
+            $this->orderFinancial->applyPaymentStatusFilter($query, $paymentStatus);
+        }
+
+        $orders = $query->orderByDesc('created_at')->get();
+
+        if ($orders->isNotEmpty() && $orders->count() <= 30) {
+            $repaired = $this->collectionSchedule->repairOrdersCollection(
+                $orders,
+                $this->cashService,
+                $this->orderFinancial
+            );
+            if ($repaired > 0) {
+                session()->flash('success', "تم مزامنة {$repaired} طلب — خُصم المبالغ المسدّدة من المتبقي.");
+                $orders = $query->orderByDesc('created_at')->get();
+            }
+        }
+
+        $clientGroups = $this->collectionSchedule->paginateClientGroups($orders, 8);
+
+        $clients = Client::query()
+            ->whereHas('orders', fn ($q) => $q->where('remaining', '>', 0))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $clientOrders = $request->filled('client_id')
+            ? $this->collectionSchedule->clientOpenOrders((int) $request->client_id)
+            : [];
+
+        $selectedClient = $request->filled('client_id')
+            ? Client::find($request->client_id)
+            : null;
+
+        $filters = $request->only(['search', 'client_id', 'order_id', 'payment_status']);
+
+        return view('dashboard.payments.index', compact(
+            'clientGroups',
+            'paymentStatus',
+            'clients',
+            'clientOrders',
+            'selectedClient',
+            'filters'
+        ));
+    }
+
+    public function clientOrders(Client $client)
+    {
+        return response()->json([
+            'orders' => $this->collectionSchedule->clientOpenOrders($client->id),
+        ]);
     }
 
     public function store(Request $request)
@@ -42,132 +112,180 @@ class PaymentController extends Controller
         $request->validate([
             'order_id' => 'required|exists:orders,id',
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'nullable|string',
-            'notes' => 'nullable|string',
+            'method' => 'required|in:cash,bank',
+            'notes' => 'nullable|string|max:500',
+            'bank_receipts' => 'required_if:method,bank|nullable|array|min:1',
+            'bank_receipts.*' => 'image|mimes:jpeg,jpg,png,webp|max:4096',
+        ], [
+            'bank_receipts.required_if' => 'أرفق صورة واحدة على الأقل لإشعار التحويل البنكي.',
+            'bank_receipts.min' => 'أرفق صورة واحدة على الأقل لإشعار التحويل البنكي.',
         ]);
 
-        $order = Order::with('payments')->findOrFail($request->order_id);
+        $order = Order::with(['payments', 'paymentInstallments', 'products'])->findOrFail($request->order_id);
+        $maxAllowed = $this->paymentService->maxAllowedAmount($order);
 
-        // $totalPaid = $order->payments->sum('amount');
-        $remaining = $order->remaining;
-
-        if ($request->amount > $remaining) {
-            return redirect()->back()->with('error', "المبلغ المدخل أكبر من المتبقي ({$remaining})")->withInput();
+        if ($request->amount > $maxAllowed + 0.02) {
+            return redirect()->back()->with('error', "المبلغ أكبر من المتبقي ({$maxAllowed})")->withInput();
         }
 
-        $payment = Payment::create($request->all());
+        $data = $request->only(['order_id', 'amount', 'method', 'notes']);
 
-        // تحديث المتبقي للطلب
-        $order->remaining = $remaining - $request->amount;
-        $order->save();
-
-        // تسجيل الدفعة في صندوق الكاش
         try {
-            $this->cashService->record('add', $request->amount, "دفعة طلب رقم {$order->order_number}", 'payment', now(), $order->id, $payment->id);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', "خطأ في تسجيل الدفعة في الصندوق: {$e->getMessage()}")->withInput();
+            $payment = Payment::create($data);
+
+            if ($request->method === 'bank') {
+                $this->paymentService->attachReceiptFiles($payment, $request->file('bank_receipts', []));
+            }
+
+            $order->load('client');
+            $this->cashService->record(
+                'add',
+                (float) $request->amount,
+                CashService::orderPaymentDescription($order, (float) $request->amount),
+                'payment',
+                now(),
+                $order->id,
+                $payment->id
+            );
+
+            $order = $this->orderFinancial->syncOrderTotals($order->fresh(['products', 'payments', 'paymentInstallments']));
+            $this->collectionSchedule->resyncInstallmentsFromPayments($order);
+
+            $msg = 'تم إضافة الدفعة وتسجيلها في الخزينة.';
+            if ($order->remaining <= 0.009) {
+                $msg .= ' الطلب مسدد بالكامل.';
+            }
+
+            return redirect()->back()->with('success', $msg);
+        } catch (\Throwable $e) {
+            if (isset($payment)) {
+                $this->paymentService->deleteAllReceipts($payment);
+                $payment->delete();
+            }
+
+            return redirect()->back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
+    protected function redirectBackToPayments(Order $order, string $message, string $type = 'success')
+    {
+        $params = array_filter([
+            'log_order' => $order->id,
+            'client_id' => request('client_id'),
+            'order_id' => request('order_id'),
+            'search' => request('search'),
+            'payment_status' => request('payment_status'),
+        ], fn ($v) => $v !== null && $v !== '');
+
+        session()->flash('open_log_order', $order->id);
+
+        return redirect()->route('dashboard.payments.index', $params)->with($type, $message);
+    }
+
+    public function update(Request $request, Payment $payment)
+    {
+        $rules = [
+            'amount' => 'required|numeric|min:0.01',
+            'notes' => 'nullable|string|max:500',
+            'bank_receipts' => 'nullable|array',
+            'bank_receipts.*' => 'image|mimes:jpeg,jpg,png,webp|max:4096',
+        ];
+
+        if ($payment->method !== 'cash_at_sale') {
+            $rules['method'] = 'required|in:cash,bank';
         }
 
-        return redirect()->back()->with('success', 'تم إضافة الدفعة بنجاح');
-    }
+        $request->validate($rules);
 
-
-    public function editPayments($orderId)
-    {
-        $order = Order::with('payments')->findOrFail($orderId);
-        return view('dashboard.payments.edit', compact('order'));
-    }
-
-public function update(Request $request, $paymentId)
-{
-    // dd($request);
-    $request->validate([
-        'amount' => 'required|numeric|min:0.01',
-        'method' => 'required|in:cash,bank',
-        'notes'  => 'nullable|string|max:255',
-    ]);
-
-    $payment = Payment::findOrFail($paymentId);
-    $order   = $payment->order()->with('payments')->first();
-
-    // مجموع الدفعات الأخرى بدون الدفعة الحالية
-    $totalPaidExcludingCurrent = $order->payments()
-        ->where('id', '!=', $paymentId)
-        ->sum('amount');
-
-    // المتبقي الفعلي مع الخصم
-    $remaining = ($order->total_price - $order->discount) - $totalPaidExcludingCurrent;
-
-    if ($request->amount > $remaining) {
-        return back()->with('error', "المبلغ المدخل أكبر من المتبقي ({$remaining})")->withInput();
-    }
-
-    $oldAmount = (float) $payment->amount;
-    $oldMethod = $payment->method;
-    $newAmount = (float) $request->amount;
-    $newMethod = $request->method;
-
-    DB::beginTransaction();
-    try {
-        // ===== تحديث حركة الصندوق عبر CashService =====
-       $cashService = app(\App\Services\CashService::class);
-
-// الحصول على الحركة المرتبطة بالدفعة
-$transaction = $payment->transaction;
-
-if ($transaction) {
-    // تعديل الحركة المالية عبر CashService
-    $cashService->updateTransaction(
-        $transaction,
-        $newAmount,
-        "تعديل دفعة لطلب {$order->order_number}",
-        'payment',
-        now()
-    );
-} else {
-    // إنشاء حركة مالية جديدة عبر CashService
-    $cashService->record(
-        $newMethod === 'cash' ? 'add' : 'deduct',
-        $newAmount,
-        "دفعة جديدة لطلب {$order->order_number}",
-        'payment',
-        now(),
-        $order->id
-    )->update([
-        'payment_id' => $payment->id
-    ]);
-}
-
-        // ===== تحديث بيانات الدفع =====
-        $payment->update([
-            'amount' => $newAmount,
-            'method' => $newMethod,
-            'notes'  => $request->notes,
+        $request->merge([
+            'log_order' => $request->input('log_order', $payment->order_id),
         ]);
 
-        // ===== تحديث المبلغ المتبقي في الطلب =====
-        $order->load('payments');
-        $order->remaining = ($order->total_price - $order->discount) - $order->payments->sum('amount');
-        $order->save();
+        try {
+            $order = $this->paymentService->updatePayment(
+                $payment,
+                $request->only(['amount', 'method', 'notes']),
+                $request->file('bank_receipts', [])
+            );
 
-        DB::commit();
-        return back()->with('success', 'تم تعديل الدفعة بنجاح');
-    } catch (\Throwable $e) {
-        DB::rollBack();
-        return back()->with('error', "فشل تعديل الدفعة: {$e->getMessage()}")->withInput();
+            $msg = 'تم التعديل — المتبقي: '.number_format($order->remaining, 2).' ج.س';
+
+            return $this->redirectAfterPaymentChange($order, $msg);
+        } catch (InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
     }
-}
 
-
-
-
-    public function showPayments($id)
+    public function destroy(Request $request, Payment $payment)
     {
-        $order = \App\Models\Order::with('payments')->findOrFail($id);
+        try {
+            $order = $this->paymentService->deletePayment($payment);
 
-        $totalPaid = $order->payments->sum('amount');
-        $remaining = $order->remaining;
+            return $this->redirectAfterPaymentChange(
+                $order,
+                'تم الحذف — المتبقي: '.number_format($order->remaining, 2).' ج.س'
+            );
+        } catch (InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
 
-        return view('dashboard.payments.view_payments_modal', compact('order', 'totalPaid', 'remaining'));
+    public function paymentLog(Order $order)
+    {
+        $order->load(['payments.receipts', 'client']);
+        $summary = $this->orderFinancial->calculate($order);
+
+        return view('dashboard.payments._payment_log_body', compact('order', 'summary'));
+    }
+
+    public function showPayments(Order $order)
+    {
+        return redirect()->route('dashboard.payments.index', array_filter([
+            'log_order' => $order->id,
+            'client_id' => request('client_id'),
+            'order_id' => request('order_id'),
+            'search' => request('search'),
+            'payment_status' => request('payment_status'),
+        ]));
+    }
+
+    protected function redirectAfterPaymentChange(Order $order, string $message): \Illuminate\Http\RedirectResponse
+    {
+        $params = array_filter([
+            'log_order' => $order->id,
+            'client_id' => request('client_id'),
+            'order_id' => request('order_id'),
+            'search' => request('search'),
+            'payment_status' => request('payment_status'),
+        ]);
+
+        session()->flash('open_log_order', $order->id);
+
+        return redirect()->route('dashboard.payments.index', $params)->with('success', $message);
+    }
+
+    protected function storeBankReceipt($file): string
+    {
+        $dir = public_path('uploads/payment_receipts');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        $filename = $file->hashName();
+        $file->move($dir, $filename);
+
+        return $filename;
+    }
+
+    protected function deleteBankReceiptFile(?string $filename): void
+    {
+        if (! $filename) {
+            return;
+        }
+
+        $path = public_path('uploads/payment_receipts/'.$filename);
+        if (file_exists($path)) {
+            @unlink($path);
+        }
     }
 }

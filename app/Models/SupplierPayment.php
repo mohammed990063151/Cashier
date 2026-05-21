@@ -16,10 +16,14 @@ class SupplierPayment extends Model
 
     // app/Models/SupplierPayment.php
 
-public function purchase_invoice()
-{
-    return $this->belongsTo(\App\Models\PurchaseInvoice::class, 'purchase_invoice_id');
-}
+    public function purchase_invoice()
+    {
+        return $this->belongsTo(PurchaseInvoice::class, 'purchase_invoice_id');
+    }
 
+    public function transaction()
+    {
+        return $this->hasOne(CashTransaction::class);
+    }
 }
 

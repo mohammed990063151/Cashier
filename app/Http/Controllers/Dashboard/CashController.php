@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cash;
 use App\Models\CashTransaction;
 use App\Models\CashSetting;
+use App\Services\CashService;
 use Illuminate\Http\Request;
 
 class CashController extends Controller
@@ -17,28 +18,27 @@ class CashController extends Controller
         return view('dashboard.cash.index', compact('cash', 'transactions'));
     }
 
-    public function storeTransaction(Request $request)
+    public function storeTransaction(Request $request, CashService $cashService)
     {
         $data = $request->validate([
             'type' => 'required|in:add,deduct',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01',
             'description' => 'nullable|string',
             'transaction_date' => 'required|date',
-            'category' => 'nullable|string'
+            'category' => 'nullable|string',
         ]);
 
-        $cash = Cash::first();
-        if ($data['type'] === 'add') {
-            $cash->balance += $data['amount'];
-        } else {
-            if ($cash->balance < $data['amount']) {
-                return back()->withErrors(['balance' => 'الرصيد غير كافٍ.']);
-            }
-            $cash->balance -= $data['amount'];
+        try {
+            $cashService->record(
+                $data['type'],
+                (float) $data['amount'],
+                $data['description'] ?? null,
+                $data['category'] ?? 'direct',
+                $data['transaction_date']
+            );
+        } catch (\Throwable $e) {
+            return back()->withErrors(['balance' => $e->getMessage()])->withInput();
         }
-        $cash->save();
-
-        CashTransaction::create($data);
 
         return redirect()->route('dashboard.cash.index')->with('success', 'تمت العملية بنجاح');
     }
@@ -72,7 +72,7 @@ class CashController extends Controller
         }
 
         $transactions = $query->latest()->paginate(10);
-        $cash = Cash::first();
+        $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
 
         return view('dashboard.cash.index', compact('cash', 'transactions'));
     }

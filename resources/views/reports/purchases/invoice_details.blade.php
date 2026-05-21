@@ -21,14 +21,11 @@
                         <th>المتبقي</th>
                         <th>تاريخ الفاتورة</th>
                     </tr>
-                    @php
-                        $totalPaid = $invoice->paid + ($invoice->payments->sum('amount') ?? 0);
-                    @endphp
                     <tr>
-                        <td>{{ number_format($invoice->total,2) }}</td>
-                        <td>{{ number_format($totalPaid,2) }}</td>
-                        <td>{{ number_format($invoice->remaining,2) }}</td>
-                        <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
+                        <td>{{ number_format($invoice->total, 2) }}</td>
+                        <td>{{ number_format($invoice->paid, 2) }}</td>
+                        <td>{{ number_format($invoice->remaining, 2) }}</td>
+                        <td>{{ optional($invoice->invoice_date)->format('Y-m-d') ?? $invoice->created_at->format('Y-m-d') }}</td>
                     </tr>
                 </table>
 
@@ -49,8 +46,9 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $item->product->name ?? '—' }}</td>
+                            <td>{{ ($item->purchase_unit_label ?? 'حبة').' × '.($item->entered_qty ?? $item->quantity) }}</td>
                             <td>{{ $item->quantity }}</td>
-                            <td>{{ number_format($item->price,2) }}</td>
+                            <td>{{ number_format($item->price, 2) }}</td>
                             <td>{{ number_format($item->subtotal,2) }}</td>
                         </tr>
                         @endforeach

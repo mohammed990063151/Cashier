@@ -158,61 +158,60 @@ class SupplierController extends Controller
         ]);
 
         $supplier = Supplier::findOrFail($supplierId);
-        // return $supplier ;
-        if ($request->purchase_invoice_id) {
-            $invoice = PurchaseInvoice::findOrFail($request->purchase_invoice_id);
+        $amount = round((float) $request->amount, 2);
+        $invoice = PurchaseInvoice::findOrFail($request->purchase_invoice_id);
 
-            // تحقق أن المبلغ لا يتجاوز المتبقي في الفاتورة
-            if ($request->amount > $invoice->remaining) {
-                return redirect()->back()->with('error', '⚠️ المبلغ المدخل أكبر من المتبقي في الفاتورة!');
-            }
-
-            // خصم المبلغ من الفاتورة
-            $invoice->update([
-                'remaining' => $invoice->remaining - $request->amount
-            ]);
+        if ($amount > (float) $invoice->remaining + 0.02) {
+            return redirect()->back()->with('error', '⚠️ المبلغ المدخل أكبر من المتبقي في الفاتورة!');
         }
-        // منع دفع مبلغ أكبر من الرصيد
-        if ($request->amount > $supplier->balance) {
+
+        if ($amount > (float) $supplier->balance + 0.02) {
             return redirect()->back()->withErrors(['amount' => 'المبلغ أكبر من رصيد المورد!'])->withInput();
         }
-        // return $request;
-        // محاولة تسجيل الحركة في الخزنة
-        if ($request->amount > 0) {
-            try {
+
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($request, $supplier, $invoice, $amount) {
+                $payment = SupplierPayment::create([
+                    'supplier_id' => $supplier->id,
+                    'purchase_invoice_id' => $invoice->id,
+                    'amount' => $amount,
+                    'payment_date' => $request->payment_date,
+                    'note' => $request->note,
+                ]);
+
                 $this->cashService->record(
                     'deduct',
-                    $request->amount, // خصم المدفوع فقط
-                    "دفعة نقدية للمورد {$supplier->name}",
+                    $amount,
+                    "دفعة نقدية للمورد {$supplier->name} — فاتورة {$invoice->invoice_number}",
                     'supplier_payment',
-                    now(),
+                    $request->payment_date,
                     null,
                     null,
+                    $invoice->id,
                     null,
-                    null
+                    $payment->id
                 );
-            } catch (\Exception $e) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', '⚠️ لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ');
-            }
+
+                $newPaid = round((float) $invoice->paid + $amount, 2);
+                $newRemaining = max((float) $invoice->total - $newPaid, 0);
+
+                $invoice->update([
+                    'paid' => $newPaid,
+                    'remaining' => $newRemaining,
+                ]);
+
+                $supplier->update([
+                    'balance' => max(0, (float) $supplier->balance - $amount),
+                ]);
+            });
+        } catch (\Throwable $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', '⚠️ لا يمكن إتمام العملية: '.$e->getMessage());
         }
 
-        // حفظ الدفعة
-        SupplierPayment::create([
-            'supplier_id'  => $supplier->id,
-            'purchase_invoice_id' => $request->purchase_invoice_id,
-            'amount'       => $request->amount,
-            'payment_date' => $request->payment_date,
-            'note'         => $request->note,
-        ]);
-
-        // تحديث رصيد المورد
-        $supplier->update([
-            'balance' => $supplier->balance - $request->amount,
-        ]);
         return redirect()->route('dashboard.suppliers.index')
-            ->with('success', 'تم إضافة الدفعة بنجاح');
+            ->with('success', 'تم إضافة الدفعة وتسجيلها في الخزينة بنجاح');
     }
     //     public function storepayme(Request $request)
     // {
@@ -339,65 +338,85 @@ class SupplierController extends Controller
         'payment_date.date'            => 'تاريخ الدفع غير صالح.',
     ]);
 
-    $payment = SupplierPayment::findOrFail($id);
+    $payment = SupplierPayment::with('transaction')->findOrFail($id);
     $supplier = Supplier::findOrFail($request->supplier_id);
-    $newAmount = $request->amount;
-    $oldAmount = $payment->amount;
-     // احتساب الفرق لتحديث رصيد المورد
-        $diff = $request->amount - $payment->amount;
-        if ($diff > $supplier->balance) {
-            return redirect()->back()->withErrors(['amount' => 'المبلغ أكبر من رصيد المورد!']);
-        }
-
-     // خصم المبلغ الجديد من الفاتورة الجديدة
+    $newAmount = round((float) $request->amount, 2);
+    $oldAmount = round((float) $payment->amount, 2);
+    $diff = round($newAmount - $oldAmount, 2);
     $newInvoice = PurchaseInvoice::findOrFail($request->purchase_invoice_id);
-    if ($newAmount > $newInvoice->remaining) {
+
+    $maxOnInvoice = (float) $newInvoice->remaining;
+    if ((int) $payment->purchase_invoice_id === (int) $newInvoice->id) {
+        $maxOnInvoice += $oldAmount;
+    }
+
+    if ($newAmount > $maxOnInvoice + 0.02) {
         return redirect()->back()->withErrors(['amount' => '⚠️ المبلغ المدخل أكبر من المتبقي في الفاتورة!']);
     }
-      $newInvoice->update([
-        'remaining' => $newInvoice->remaining - $newAmount
-    ]);
-    // استرجاع المبلغ القديم للفاتورة السابقة إذا موجودة
-    if ($payment->purchase_invoice_id) {
-        $oldInvoice = PurchaseInvoice::find($payment->purchase_invoice_id);
-        if ($oldInvoice) {
-            $oldInvoice->update([
-                'remaining' => $oldInvoice->remaining + $oldAmount
-            ]);
-        }
+
+    if ($diff > 0 && $diff > (float) $supplier->balance + 0.02) {
+        return redirect()->back()->withErrors(['amount' => 'المبلغ أكبر من رصيد المورد!']);
     }
 
-
-        // تحديث الخزنة (خصم/إضافة الفرق)
-        if ($diff != 0) {
-            try {
-                $type = $diff > 0 ? 'deduct' : 'add';
-                $this->cashService->record(
-                    $type,
-                    abs($diff),
-                    "تعديل دفعة المورد {$supplier->name}",
-                    'supplier_payment',
-                    now()
-                );
-            } catch (\Exception $e) {
-                return redirect()->back()->withErrors(['cash' => '⚠️ لا يمكن إتمام العملية: الرصيد في الصندوق غير كافٍ']);
+    try {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $payment, $supplier, $newInvoice, $newAmount, $oldAmount, $diff) {
+            if ($payment->purchase_invoice_id) {
+                $oldInvoice = PurchaseInvoice::find($payment->purchase_invoice_id);
+                if ($oldInvoice) {
+                    $revertedPaid = max(0, (float) $oldInvoice->paid - $oldAmount);
+                    $oldInvoice->update([
+                        'paid' => $revertedPaid,
+                        'remaining' => max((float) $oldInvoice->total - $revertedPaid, 0),
+                    ]);
+                }
             }
-        }
 
-        // تحديث الدفعة
-        $payment->update([
-            'amount'       => $request->amount,
-            'payment_date' => $request->payment_date,
-            'purchase_invoice_id' => $request->purchase_invoice_id,
-            'note'         => $request->note,
-        ]);
+            $newPaid = round((float) $newInvoice->paid + $newAmount, 2);
+            $newInvoice->update([
+                'paid' => $newPaid,
+                'remaining' => max((float) $newInvoice->total - $newPaid, 0),
+            ]);
 
-        // تحديث رصيد المورد
-        $supplier->update([
-            'balance' => $supplier->balance - $diff,
-        ]);
+            if ($transaction = $payment->transaction) {
+                $this->cashService->updateTransaction(
+                    $transaction,
+                    $newAmount,
+                    "تعديل دفعة المورد {$supplier->name} — فاتورة {$newInvoice->invoice_number}",
+                    'supplier_payment',
+                    $request->payment_date
+                );
+            } elseif ($newAmount > 0) {
+                $this->cashService->record(
+                    'deduct',
+                    $newAmount,
+                    "دفعة المورد {$supplier->name} — فاتورة {$newInvoice->invoice_number}",
+                    'supplier_payment',
+                    $request->payment_date,
+                    null,
+                    null,
+                    $newInvoice->id,
+                    null,
+                    $payment->id
+                );
+            }
 
-        return redirect()->route("dashboard.suppliers.payments", $payment->supplier->id)->with('success', 'تم تعديل الدفعة بنجاح');
+            $payment->update([
+                'amount' => $newAmount,
+                'payment_date' => $request->payment_date,
+                'purchase_invoice_id' => $request->purchase_invoice_id,
+                'note' => $request->note,
+            ]);
+
+            $supplier->update([
+                'balance' => max(0, (float) $supplier->balance - $diff),
+            ]);
+        });
+    } catch (\Throwable $e) {
+        return redirect()->back()->withErrors(['cash' => '⚠️ لا يمكن إتمام العملية: '.$e->getMessage()]);
+    }
+
+    return redirect()->route('dashboard.suppliers.payments', $payment->supplier->id)
+        ->with('success', 'تم تعديل الدفعة وتحديث الخزينة بنجاح');
     }
 
 

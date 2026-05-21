@@ -1,0 +1,93 @@
+.purchase-invoice-page .pi-label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.purchase-invoice-page .pi-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin: 20px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3c8dbc;
+}
+
+.purchase-invoice-page .pi-hint-box {
+    background: #ebf5fb;
+    border: 1px solid #aed6f1;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 13px;
+    margin-top: 24px;
+}
+
+.purchase-invoice-page .pi-items-table thead th {
+    background: #f4f6f9;
+    font-size: 13px;
+}
+
+.purchase-invoice-page .pi-summary-card {
+    background: #f8f9fa;
+    border: 2px solid #e0e6ed;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+
+.purchase-invoice-page .pi-summary-card label {
+    display: block;
+    font-size: 13px;
+    color: #7f8c8d;
+    margin-bottom: 6px;
+}
+
+.purchase-invoice-page .pi-summary-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: #2c3e50;
+}
+
+.purchase-invoice-page .pi-remaining-card {
+    border-color: #f5c6cb;
+    background: #fff5f5;
+}
+
+.purchase-invoice-page .pi-installments-panel {
+    background: #fffbea;
+    border: 2px dashed #f39c12;
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 20px;
+}
+
+.purchase-invoice-page .pi-form-actions {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.purchase-invoice-page .purchase-validation-alert ul {
+    padding-right: 20px;
+}
+
+.purchase-invoice-page .unit-pieces-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.purchase-invoice-page .row-subtotal {
+    font-size: 15px;
+    vertical-align: middle !important;
+}
+
+.purchase-invoice-page #btnOpenQuickProduct {
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#quickProductModal .modal-content {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(15, 76, 129, 0.25);
+}

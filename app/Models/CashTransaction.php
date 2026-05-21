@@ -7,16 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 class CashTransaction extends Model
 {
     protected $fillable = [
-        'type', 'amount', 'description', 'transaction_date', 'category','order_id','payment_id', 'purchase_invoice_id','expense_id'
+        'type', 'amount', 'description', 'transaction_date', 'category', 'order_id', 'payment_id', 'purchase_invoice_id', 'expense_id', 'supplier_payment_id', 'order_return_id',
     ];
 
     public function order()
 {
     return $this->belongsTo(Order::class);
 }
- public function payment()
+    public function payment()
     {
         return $this->belongsTo(Payment::class);
     }
 
+    public function supplierPayment()
+    {
+        return $this->belongsTo(SupplierPayment::class);
+    }
+
+    public function orderReturn()
+    {
+        return $this->belongsTo(OrderReturn::class);
+    }
 }

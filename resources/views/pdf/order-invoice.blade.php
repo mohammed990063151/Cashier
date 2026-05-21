@@ -1,263 +1,376 @@
-<!-- filepath: resources/views/pdf/order-invoice.blade.php -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>فاتورة رقم {{ $order->order_number}}</title>
+    <title>{{ $order->order_number }}</title>
     <style>
-        @page {
-            size: 80mm 80mm;
-            margin: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Tajawal', 'Cairo', 'DejaVu Sans', Arial, sans-serif;
+            font-family: dejavusans, sans-serif;
+            font-size: 9pt;
+            color: #1a1a1a;
             direction: rtl;
-            font-size: 10px;
-            margin: 0;
-            padding: 2px;
             background: #fff;
-            color: #222;
+            line-height: 1.45;
         }
-
-        .invoice-container {
+        .receipt {
             width: 100%;
-            padding: 2px;
+            max-width: 72mm;
+            margin: 0 auto;
+            padding: 0 1mm;
         }
 
-        /* الهيدر: أزرق رئيسي وحدود خفيفة، وكل المحتوى في الوسط */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            background: #f7faff;
-            border-radius: 6px;
-            overflow: hidden;
+        /* ── فواصل مثل إيصالات المولات ── */
+        .rule-double {
+            border: none;
+            border-top: 2px solid #1a1a1a;
+            border-bottom: 1px solid #1a1a1a;
+            height: 3px;
+            margin: 6px 0;
         }
-
-        .header-table td {
-            border: 1px solid #e3e6ea !important;
-            padding: 4px 0 4px 0;
-            vertical-align: middle;
-            font-size: 11px;
-            text-align: center !important;
-        }
-
-        .header-logo {
-            width: 38px;
-            max-width: 38px;
-            border-radius: 4px;
-            display: block;
-            margin: 0 auto 2px auto;
-        }
-
-        .header-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: #337ab7;
-            letter-spacing: 1px;
-            font-family: 'Cairo', 'Tajawal', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-subtitle {
-            font-size: 11px;
-            font-weight: bold;
-            color: #f39c12;
-            font-family: 'Cairo', 'Tajawal', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-info {
-            font-size: 10px;
-            color: #337ab7;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
-            margin-bottom: 1px;
-        }
-
-        .header-sep {
-            border-bottom: 1px dashed #337ab7;
-            margin: 2px 0 3px 0;
-        }
-
-        /* جدول المنتجات */
-        table.products {
-            width: 100%;
-            border-collapse: collapse;
+        .rule-dashed {
+            border: none;
+            border-top: 1px dashed #999;
             margin: 5px 0;
-            background: #fff;
-            border-radius: 4px;
-            overflow: hidden;
+        }
+        .rule-dotted {
+            border: none;
+            border-top: 1px dotted #bbb;
+            margin: 4px 0;
         }
 
-        table.products th,
-        table.products td {
-            border: 1px solid #e3e6ea;
-            padding: 2px 1px;
-            text-align: center;
-            font-size: 9px;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+        /* ── الترويسة ── */
+        .head-center { text-align: center; padding: 2px 0 4px; }
+        .head-center img {
+            max-height: 42px;
+            max-width: 60mm;
+            margin-bottom: 4px;
         }
-
-        table.products th {
-            background: #337ab7;
+        .store-name {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #111;
+            letter-spacing: 0.3px;
+            margin: 2px 0;
+        }
+        .receipt-type {
+            font-size: 10pt;
+            color: #444;
+            margin: 2px 0 6px;
+        }
+        .status-pill {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 12px;
+            font-size: 8pt;
+            font-weight: bold;
             color: #fff;
-            font-size: 10px;
-            font-weight: bold;
+            margin: 4px 0;
+        }
+        .status-paid { background: #15803d; }
+        .status-partial { background: #c2410c; }
+        .status-unpaid { background: #b91c1c; }
+        .status-returned { background: #0369a1; }
+        .status-partial_return { background: #7c3aed; }
+        .ret-table { width: 100%; border-collapse: collapse; font-size: 8pt; margin: 6px 0; }
+        .ret-table th, .ret-table td { border: 1px solid #ddd; padding: 3px 4px; }
+        .ret-table th { background: #f5f5f5; }
+        .acct-line { font-size: 8pt; padding: 2px 0; }
+        .acct-line strong { float: left; direction: ltr; }
+
+        .store-contact {
+            font-size: 7.5pt;
+            color: #555;
+            text-align: center;
+            line-height: 1.5;
+            margin-top: 3px;
         }
 
-        .total-row th,
-        .total-row td {
-            background: #f7faff;
+        /* ── بيانات الطلب ── */
+        .meta-table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+        .meta-table td { padding: 2px 0; vertical-align: top; }
+        .meta-table .meta-label { color: #666; width: 38%; }
+        .meta-table .meta-value { font-weight: bold; text-align: left; direction: ltr; }
+
+        /* ── المنتجات ── */
+        .section-label {
+            text-align: center;
+            font-size: 8pt;
             font-weight: bold;
-            font-size: 10px;
-            border-top: 2px solid #f39c12;
-            color: #337ab7;
+            color: #555;
+            letter-spacing: 1px;
+            margin: 4px 0 6px;
+        }
+        .item-block {
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px dotted #ddd;
+        }
+        .item-block:last-child { border-bottom: none; }
+        .item-name {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        .unit-line {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        .unit-line td { padding: 1px 0; }
+        .unit-line .u-label { color: #444; }
+        .unit-line .u-qty { font-weight: bold; }
+        .unit-line .u-amt {
+            text-align: left;
+            direction: ltr;
+            font-weight: bold;
+            color: #111;
+            white-space: nowrap;
+        }
+        .item-subtotal {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 3px;
+            font-size: 8.5pt;
+        }
+        .item-subtotal td { padding: 2px 0; }
+        .item-subtotal .pieces-info { color: #666; font-size: 7.5pt; }
+        .item-subtotal .line-total {
+            text-align: left;
+            direction: ltr;
+            font-weight: bold;
+            font-size: 10pt;
+            color: #111;
         }
 
-        /* الملاحظات */
-        .notes {
-            background: #fffbe6;
-            padding: 4px 5px;
-            margin-top: 5px;
+        /* ── الإجماليات ── */
+        .totals-wrap {
+            background: #f7f7f7;
+            border: 1px solid #e0e0e0;
             border-radius: 4px;
-            font-size: 9px;
-            color: #f39c12;
-            border: 1px solid #f9e0a8;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+            padding: 6px 8px;
+            margin: 6px 0;
+        }
+        .totals-table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+        .totals-table td { padding: 3px 0; }
+        .totals-table .t-label { color: #444; }
+        .totals-table .t-value {
+            text-align: left;
+            direction: ltr;
+            font-weight: bold;
+        }
+        .totals-table tr.grand-total td {
+            padding-top: 6px;
+            border-top: 2px solid #1a1a1a;
+            font-size: 12pt;
+            font-weight: bold;
+            color: #111;
+        }
+        .totals-table .paid-val { color: #15803d; }
+        .totals-table .remain-val { color: #b91c1c; }
+        .totals-table .zero-val { color: #15803d; }
+
+        /* ── التذييل ── */
+        .footer {
             text-align: center;
+            padding: 8px 0 4px;
         }
-
-        /* التوقيع */
-        .signature {
-            margin-top: 7px;
-            font-size: 9px;
-            color: #337ab7;
-            font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+        .footer-thanks {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        .footer-note {
+            font-size: 7.5pt;
+            color: #888;
+            line-height: 1.5;
+        }
+        .barcode-deco {
             text-align: center;
+            font-size: 14pt;
+            letter-spacing: 2px;
+            color: #ccc;
+            margin: 6px 0 2px;
+            font-family: dejavusansmono, monospace;
         }
-
-        .signature-box {
-            width: 60px;
-            height: 16px;
-            border: 1px dashed #337ab7;
-            margin: 2px auto 0 auto;
-            background: #f7faff;
-        }
-
-        /* خطوط Google للطباعة PDF */
-        @font-face {
-            font-family: 'Tajawal';
-            font-style: normal;
-            font-weight: 400;
-            src: url('https://fonts.gstatic.com/s/tajawal/v8/Iura6YBj_oCad4k1nzSBC45I.woff2') format('woff2');
-        }
-
-        @font-face {
-            font-family: 'Cairo';
-            font-style: normal;
-            font-weight: 700;
-            src: url('https://fonts.gstatic.com/s/cairo/v20/SLXGc1nY6HkvalIhTQ.woff2') format('woff2');
-        }
-
     </style>
 </head>
 <body>
-    <div class="invoice-container">
-        <!-- رأس الفاتورة داخل جدول عمودين متقابلين بخطوط خفيفة وملونة وكل المحتوى في الوسط -->
-        <table class="header-table">
-            <tr>
-                <td colspan="2">
-                    <img src="{{ $setting->logo}}" class="header-logo" alt="الشعار">
+@php
+    $fin = app(\App\Services\OrderFinancialService::class);
+    $status = $fin->paymentStatus($order);
+    $statusLabel = $fin->paymentStatusLabel($status);
+@endphp
 
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-title">
-                    {{ $setting->name }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-subtitle">
-                    فاتورة مبيعات
-                </td>
-            </tr>
-            <tr>
-                <td class="header-info">
-                    التاريخ: {{ \Carbon\Carbon::parse($order->created_at)->format('d/m/Y') }}
-                </td>
-                <td class="header-info">
-                    رقم الإيصال: {{ $order->order_number }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2" class="header-info">
-                    العميل: {{ $order->client->name  }}
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <div class="header-sep"></div>
-                </td>
-            </tr>
-        </table>
+<div class="receipt">
 
-        <!-- جدول المنتجات مع صف الإجمالي -->
-        <table class="products">
-            <thead>
-                <tr>
-                    <th>الصنف</th>
-                    <th>الكمية</th>
-                    <th>السعر</th>
-                    <th>الإجمالي</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($products as $product)
-                <tr>
-                    <td>{{ $product->name }}</td>
-                    <td>{{ $product->pivot->quantity }}</td>
-                    <td>{{ number_format($product->pivot->sale_price, 2) }}</td>
-                    <td>{{ number_format($product->pivot->quantity * $product->pivot->sale_price, 2) }}</td>
-                </tr>
-                @endforeach
-                <!-- صف الإجمالي -->
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">اجمالي المبلغ</th>
-                    <td colspan="2" style="color: green">{{ number_format($order->total_price, 2) }} ج.س</td>
-                </tr>
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;"> المبلغ المخصوم</th>
-                    <td colspan="2" style="color: rgb(106, 94, 2)">{{ number_format($order->tax_amount, 2) }} ج.س</td>
-                </tr>
-                   <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">  اجمالي بعد الخصم</th>
-                    <td colspan="2" style="color: rgb(106, 94, 2)">{{ number_format($order->total_after_discount, 2) }} ج.س</td>
-                </tr>
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">المدفوع منه</th>
-                    <td colspan="2">{{ number_format($order->discount, 2) }} ج.س</td>
-                </tr>
-                <tr class="total-row">
-                    <th colspan="2" style="text-align:right;">المتبقي</th>
-                    <td colspan="2" style="color: red">{{ number_format($order->remaining, 2) }} ج.س</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- الملاحظات -->
-        <div class="notes">
-            <p><strong>ملاحظة:</strong>
-               لا تُقبل المرتجعات بعد 24 ساعة من الاستلام. تعتبر هذه الفاتورة مستنداً رسمياً إلا بتوقيع المسؤول.
-
-            </p>
+    {{-- ═══ الترويسة ═══ --}}
+    <div class="head-center">
+        @if(!empty($logoPath))
+            <img src="{{ $logoPath }}" alt="">
+        @endif
+        <div class="store-name">{{ $setting->name ?? 'إيصال مبيعات' }}</div>
+        <div class="receipt-type">إيصال مبيعات</div>
+        <span class="status-pill status-{{ $status }}">{{ $statusLabel }}</span>
+        @if($setting && ($setting->phone || $setting->address))
+        <div class="store-contact">
+            @if($setting->phone){{ $setting->phone }}@endif
+            @if($setting->phone && $setting->address) · @endif
+            @if($setting->address){{ $setting->address }}@endif
         </div>
+        @endif
+    </div>
 
-        <!-- التوقيع -->
-        <div class="signature">
-            <p>توقيع المستلم:</p>
-            <div class="signature-box"></div>
+    <div class="rule-double"></div>
+
+    {{-- ═══ بيانات الطلب ═══ --}}
+    <table class="meta-table">
+        <tr>
+            <td class="meta-label">رقم الطلب</td>
+            <td class="meta-value">{{ $order->order_number }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">التاريخ</td>
+            <td class="meta-value">{{ $order->created_at->format('d/m/Y') }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">الوقت</td>
+            <td class="meta-value">{{ $order->created_at->format('H:i') }}</td>
+        </tr>
+        <tr>
+            <td class="meta-label">العميل</td>
+            <td class="meta-value" style="direction:rtl;text-align:right;">{{ $order->client->name }}</td>
+        </tr>
+    </table>
+
+    <div class="rule-dashed"></div>
+    <div class="section-label">— تفاصيل المشتريات —</div>
+
+    {{-- ═══ المنتجات ═══ --}}
+    @foreach ($order->products as $product)
+            @php
+                $breakdown = $fin->productUnitBreakdown($product);
+                $saleLine = $fin->formatProductSaleLine($product);
+                $lineTotal = $saleLine['line_total'];
+                $qtyLabel = $fin->formatProductQuantity($product);
+            @endphp
+        <div class="item-block">
+            <div class="item-name">{{ $product->name }}</div>
+
+            @if(count($breakdown) > 0)
+                @foreach($breakdown as $line)
+                <table class="unit-line">
+                    <tr>
+                        <td class="u-label">{{ $line['label'] }}</td>
+                        <td class="u-qty" style="width:18%;text-align:center;">× {{ $line['count'] }}</td>
+                        <td class="u-amt" style="width:32%;">{{ number_format($line['line_total'], 2) }}</td>
+                    </tr>
+                </table>
+                @endforeach
+            @endif
+
+            <table class="item-subtotal">
+                <tr>
+                    <td class="pieces-info">{{ $qtyLabel }} — {{ $saleLine['price'] }}</td>
+                    <td class="line-total" style="width:38%;">{{ number_format($lineTotal, 2) }}</td>
+                </tr>
+            </table>
+        </div>
+    @endforeach
+
+    @if($hasReturns ?? false)
+    <div class="rule-dashed"></div>
+    <div class="section-label">— المرتجعات —</div>
+    @foreach($order->returns->sortByDesc('return_date') as $ret)
+    <div style="font-size:8pt;margin-bottom:6px;padding:4px;border:1px dashed #ccc;">
+        <strong>{{ $ret->return_number }}</strong> — {{ $ret->return_date->format('d/m/Y') }}<br>
+        قيمة بضاعة: {{ number_format($ret->items_total, 2) }}
+        @if($ret->refund_amount > 0)
+        | مُسترد نقداً: {{ number_format($ret->refund_amount, 2) }}
+        @endif
+        @if($ret->items->isNotEmpty())
+        <table class="ret-table">
+            @foreach($ret->items as $item)
+            <tr>
+                <td>{{ $item->product->name ?? '—' }}</td>
+                <td style="text-align:center;">{{ $item->quantity }}</td>
+                <td style="text-align:center;">{{ number_format($item->subtotal, 2) }}</td>
+            </tr>
+            @endforeach
+        </table>
+        @endif
+    </div>
+    @endforeach
+    @endif
+
+    <div class="rule-double"></div>
+
+    {{-- ═══ الإجماليات ═══ --}}
+    <div class="totals-wrap">
+        <table class="totals-table">
+            @if($hasReturns ?? false)
+            <tr>
+                <td class="t-label">إجمالي البيع الأصلي</td>
+                <td class="t-value">{{ number_format($originalTotalSale, 2) }}</td>
+            </tr>
+            <tr>
+                <td class="t-label">إجمالي المرتجعات</td>
+                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalReturnedMerchandise, 2) }}</td>
+            </tr>
+            @endif
+            <tr>
+                <td class="t-label">{{ ($hasReturns ?? false) ? 'صافي المبيعات الحالي' : 'إجمالي المبيعات' }}</td>
+                <td class="t-value">{{ number_format($totalSale, 2) }}</td>
+            </tr>
+            @if($invoiceDiscount > 0)
+            <tr>
+                <td class="t-label">خصم الفاتورة</td>
+                <td class="t-value" style="color:#c2410c;">- {{ number_format($invoiceDiscount, 2) }}</td>
+            </tr>
+            @endif
+            <tr>
+                <td class="t-label">بعد الخصم</td>
+                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }}</td>
+            </tr>
+            <tr>
+                <td class="t-label">إجمالي المدفوع</td>
+                <td class="t-value paid-val">{{ number_format($totalPaid, 2) }}</td>
+            </tr>
+            @if(($totalRefundedToCustomer ?? 0) > 0)
+            <tr>
+                <td class="t-label">مُسترد للعميل (خزينة)</td>
+                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalRefundedToCustomer, 2) }}</td>
+            </tr>
+            @endif
+            <tr>
+                <td class="t-label">المتبقي</td>
+                <td class="t-value {{ $remaining > 0 ? 'remain-val' : 'zero-val' }}">{{ number_format($remaining, 2) }}</td>
+            </tr>
+            <tr class="grand-total">
+                <td class="t-label">الإجمالي النهائي</td>
+                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }} ج.س</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="rule-dashed"></div>
+
+    {{-- ═══ التذييل ═══ --}}
+    <div class="footer">
+        <div class="footer-thanks">شكراً لتعاملكم معنا</div>
+        <div class="footer-note">
+            هذا الإيصال صادر إلكترونياً ولا يحتاج توقيعاً<br>
+            {{ $order->order_number }} · {{ $order->created_at->format('Y-m-d H:i') }}
         </div>
     </div>
+
+    <div class="barcode-deco">▌▌▌▌ ▌ ▌▌▌▌ ▌ ▌▌▌▌</div>
+    <div class="rule-double"></div>
+
+</div>
 </body>
 </html>

@@ -2,6 +2,8 @@
 
 @section('content')
 
+@include('dashboard.clients.orders._order_units_styles')
+
 <div class="content-wrapper">
 
     <section class="content-header">
@@ -52,6 +54,7 @@
                                         <table class="table table-hover">
                                             <tr>
                                                 <th>الاسم</th>
+                                                <th>طريقة البيع</th>
                                                 <th>المخزون</th>
                                                 <th>السعر</th>
                                                 <th>إضافة</th>
@@ -60,11 +63,12 @@
                                             @foreach ($category->products as $product)
                                             <tr>
                                                 <td>{{ $product->name }}</td>
+                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
                                                 <td>{{ $product->stock }}</td>
                                                 <td>{{ number_format($product->sale_price, 2) }}</td>
 
                                                 <td>
-                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" class="btn btn-success btn-sm add-product-btn">
+                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" data-bulk-size="{{ $product->pieces_per_carton ?? 12 }}" data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}" class="btn btn-success btn-sm add-product-btn">
                                                         <i class="fa fa-plus"></i>
                                                     </a>
                                                 </td>
@@ -105,7 +109,7 @@
 
                     <div class="box-body">
 
-                        <form action="{{ route('dashboard.clients.orders.store', $client->id) }}" method="post">
+                        <form action="{{ request()->routeIs('dashboard.direct-sale') ? route('dashboard.direct-sale.store') : route('dashboard.clients.orders.store', $client->id) }}" method="post">
 
                             {{ csrf_field() }}
                             {{ method_field('post') }}
@@ -117,13 +121,17 @@
 
                             @include('partials._errors')
 
-                            <table class="table table-hover">
+                            <p class="text-muted" style="margin-bottom:10px;">
+                                تظهر وحدات البيع حسب إعداد كل منتج: <strong>حبة فقط</strong>، <strong>عبوة/كرتون فقط</strong>، أو <strong>مرن</strong> (حبة + 3 + 6 + دستة + عبوة).
+                            </p>
+
+                            <table class="table table-hover order-list-table">
                                 <thead>
                                     <tr>
                                         <th>المنتج</th>
-                                        <th>الكمية</th>
-                                        <th>سعر الوحدة</th>
+                                        <th colspan="2">الوحدات والأسعار</th>
                                         <th>الإجمالي</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
 
@@ -133,23 +141,22 @@
 
                             </table><!-- end of table -->
 
-                            <h4>الإجمالي: <span class="total-price" style="color: #01941f; font-weight: bold;">0</span></h4>
+                            <h4>الإجمالي: <span class="total-price" style="color:#01941f;font-weight:bold;">0</span></h4>
                             <div class="form-group">
-                                <label>الخصم :</label>
-                                <input type="number" step="0" name="tax_amount" id="invoice_discount" class="form-control" value="0">
+                                <label>خصم الفاتورة (اختياري):</label>
+                                <input type="number" step="1" min="0" name="invoice_discount" id="invoice_discount" class="form-control" value="{{ old('invoice_discount', 0) }}">
                             </div>
                             <h4>الإجمالي بعد الخصم:
-                                <span id="discounted-total" style="color: #007bff; font-weight: bold;">0</span>
+                                <span id="discounted-total" style="color:#007bff;font-weight:bold;">0</span>
                             </h4>
-
                             <div class="form-group">
-                                <label>المدفوع :</label>
-                                <input type="number" step="1" name="discount" id="discount" class="form-control" value="0">
+                                <label>المدفوع الآن:</label>
+                                <input type="number" step="1" min="0" name="paid_at_sale" id="paid_at_sale" class="form-control" value="{{ old('paid_at_sale', 0) }}">
+                                <small class="text-muted">اتركه <strong>0</strong> إذا لم يدفع العميل الآن (بيع آجل — يُسجّل المتبقي تلقائياً).</small>
                             </div>
-
                             <div class="form-group">
-                                <label>المتبقي:</label>
-                                <input type="text" name="remaining" id="remaining" class="form-control" readonly value="0" style="color: #d50606; font-weight: bold;">
+                                <label>المتبقي على العميل:</label>
+                                <p id="remaining-display" class="form-control-static text-danger" style="font-size:18px;font-weight:bold;margin:0;">0</p>
                             </div>
 
 
@@ -196,18 +203,19 @@
                                                 <thead class="table-primary">
                                                     <tr>
                                                         <th class="fw-bold">المنتج</th>
-                                                        <th class="fw-bold">الكمية</th>
-                                                        <th class="fw-bold">سعر الوحدة</th>
+                                                <th class="fw-bold">الكمية</th>
+                                                <th class="fw-bold">السعر</th>
                                                         <th class="fw-bold">الإجمالي</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($order->products as $product)
+                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
                                                     <tr>
                                                         <td class="fw-bold text-start">{{ $product->name }}</td>
-                                                        <td>{{ $product->pivot->quantity }}</td>
-                                                        <td class="text-success fw-bold">{{ number_format($product->sale_price,2) }} ج.س</td>
-                                                        <td class="text-primary fw-bold">{{ number_format($product->pivot->sale_price * $product->pivot->quantity,2) }} ج.س</td>
+                                                        <td>{{ $line['quantity'] }}</td>
+                                                        <td class="text-success fw-bold">{{ $line['price'] }}</td>
+                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س</td>
                                                     </tr>
                                                     @endforeach
                                                 </tbody>
@@ -230,7 +238,7 @@
                                                 <strong>الإجمالي:</strong> {{ number_format($order->total_price,2) }} ج.س
                                             </div>
                                             <div class="col-md-3">
-                                                <strong>المدفوع عند البيع:</strong> {{ number_format($order->discount,2) }} ج.س
+                                                <strong>المدفوع عند البيع:</strong> {{ number_format($order->paid_at_sale,2) }} ج.س
                                             </div>
                                             <div class="col-md-3">
                                                 <strong>اجمالي مدفوع:</strong> {{ number_format($paid,2) }} ج.س
@@ -266,53 +274,6 @@
 
 
 @push('scripts')
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const form = document.querySelector('form'); // النموذج
-        const totalPriceEl = document.querySelector('.total-price');
-        const discountEl = document.getElementById('discount');
-        const remainingEl = document.getElementById('remaining');
-
-        // تحويل النص إلى رقم
-        function parseNumber(str) {
-            return parseFloat(str.replace(/,/g, '')) || 0;
-        }
-
-        // تحديث المتبقي عند تغيير المدفوع
-        discountEl.addEventListener('input', function() {
-            const total = parseNumber(totalPriceEl.textContent);
-            const discount = parseNumber(this.value);
-
-            remainingEl.value = Math.max(total - discount, 0);
-
-            // إذا المدفوع  أكبر من الإجمالي
-            if (discount > total) {
-                remainingEl.style.color = '#d50606';
-                remainingEl.style.fontWeight = 'bold';
-            } else {
-                remainingEl.style.color = '#000';
-                remainingEl.style.fontWeight = 'normal';
-            }
-        });
-
-        // تحقق قبل إرسال النموذج
-        form.addEventListener('submit', function(e) {
-            const total = parseNumber(totalPriceEl.textContent);
-            const discount = parseNumber(discountEl.value);
-
-            if (discount > total) {
-                e.preventDefault(); // إيقاف الإرسال
-                alert("المدفوع  لا يمكن أن يكون أكبر من إجمالي الطلب!");
-                discountEl.focus();
-            }
-        });
-    });
-
-</script>
-
-
-
-
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         let alertBox = document.getElementById('error-alert');

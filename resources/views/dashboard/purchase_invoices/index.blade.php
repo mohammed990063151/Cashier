@@ -54,10 +54,9 @@
                             <tr>
                                 <th>رقم الفاتورة</th>
                                 <th>المورد</th>
-                                <th>اسماء المنتجات</th>
-                                <th>السعر <br />الكمية</th>
+                                <th>المنتجات</th>
+                                <th>الوحدة × الكمية</th>
                                 <th>الإجمالي</th>
-                                <th>الخصومات</th>
                                 <th>المدفوع</th>
                                 <th>المتبقي</th>
                                 <th>التاريخ</th>
@@ -77,13 +76,11 @@
 
                                 <td>
                                     @foreach ($invoice->items as $item)
-                                    {{ number_format($item->price, 2) }} × {{ number_format($item->quantity, 2) }}<br>
+                                    {{ $item->purchase_unit_label ?? 'حبة' }} × {{ $item->entered_qty ?? $item->quantity }}
+                                    <small class="text-muted">({{ $item->quantity }} حبة)</small><br>
                                     @endforeach
                                 </td>
-
-
                                 <td>{{ number_format($invoice->total, 2) }}</td>
-                                <td>{{ number_format($invoice->tax_amount, 2) }}</td>
                                 <td>{{ number_format($invoice->paid, 2) }}</td>
                                 <td>{{ number_format($invoice->remaining, 2) }}</td>
                                 <td>{{ $invoice->created_at->format('Y-m-d') }}</td>

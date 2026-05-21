@@ -2,22 +2,53 @@
 
 namespace App\Models;
 
+use App\Support\SaleUnits;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseInvoiceItem extends Model
 {
-    protected $fillable = ['purchase_invoice_id', 'product_id', 'quantity', 'price', 'subtotal'];
     protected $table = 'purchase_invoice_items';
 
-    // protected $fillable = ['purchase_invoice_id', 'product_id', 'quantity', 'price'];
+    protected $fillable = [
+        'purchase_invoice_id',
+        'product_id',
+        'purchase_unit',
+        'entered_qty',
+        'quantity',
+        'price',
+        'subtotal',
+    ];
 
-    public function invoice()
+    protected $casts = [
+        'entered_qty' => 'integer',
+        'quantity' => 'integer',
+        'price' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+    ];
+
+    public function invoice(): BelongsTo
     {
         return $this->belongsTo(PurchaseInvoice::class, 'purchase_invoice_id');
     }
 
-    public function product()
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function getPurchaseUnitLabelAttribute(): string
+    {
+        $product = $this->relationLoaded('product') ? $this->product : $this->product()->first();
+        if (! $product) {
+            return $this->purchase_unit ?? 'حبة';
+        }
+
+        $units = SaleUnits::unitsForOrderForm(
+            max(1, (int) ($product->pieces_per_carton ?? 12)),
+            $product->sale_mode
+        );
+
+        return $units[$this->purchase_unit]['label'] ?? 'حبة';
     }
 }

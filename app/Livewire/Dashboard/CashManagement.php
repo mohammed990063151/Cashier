@@ -8,6 +8,7 @@ use Livewire\WithPagination;
 use App\Models\Cash;
 use App\Models\CashTransaction;
 use App\Models\CashSetting;
+use App\Services\CashService;
 
 class CashManagement extends Component
 {
@@ -32,12 +33,13 @@ public $totalAdded = 0;
 
 
     public $categories = [
-        'order' => 'فواتير المبيعات',
-        'returns' => 'فواتير المرتجعات',
+        'order' => 'دفع عند البيع',
+        'payment' => 'دفعات العملاء',
+        'returns' => 'مرتجعات الطلبات',
         'purchase' => 'فواتير المشتريات',
-        'discount' => 'سندات العملاء',
-        'supplier_payment' => 'سندات الموردين',
-        'operational' => 'المصروفات',
+        'supplier_payment' => 'دفعات الموردين',
+        'operational' => 'مصروفات تشغيلية',
+        'other' => 'مصروفات أخرى',
         'direct' => 'إضافة/سحب نقد مباشر',
     ];
 
@@ -47,37 +49,23 @@ public $totalAdded = 0;
     {
         $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
 
-        $query = CashTransaction::query();
+        $query = $this->filteredTransactionsQuery();
 
-        // فلترة حسب الفئة
-        if ($this->filterCategory !== 'all') {
-            // dd($this->filterCategory);
-            $query->where('category', $this->filterCategory);
-        }
+        $this->totalAdded = (float) (clone $query)->where('type', 'add')->sum('amount');
+        $this->totalDeducted = (float) (clone $query)->where('type', 'deduct')->sum('amount');
+        $this->totalAmount = $this->totalAdded - $this->totalDeducted;
 
-        if (!empty($this->filterAmount)) {
-    $query->where('amount', 'like', '%' . $this->filterAmount . '%');
-}
+        $transactions = (clone $query)
+            ->with(['order.client', 'orderReturn.order'])
+            ->latest()
+            ->paginate(50);
 
-if (!empty($this->filterDescription)) {
-    $query->where('description', 'like', '%' . $this->filterDescription . '%');
-}
-
-// فلترة حسب التاريخ
-if (!empty($this->filterDate)) {
-    $query->where('transaction_date', $this->filterDate);
-}
-        $transactions = $query->latest()->paginate(50);
-//         $this->totalAmount = $query->get()->sum(function($trx) {
-//     return $trx->type === 'add' ? $trx->amount : -$trx->amount;
-// });
-$this->totalAdded = $transactions->where('type', 'add')->sum('amount');       // مجموع المضاف
-$this->totalDeducted = $transactions->where('type', 'deduct')->sum('amount'); // مجموع المسحوب
-$this->totalAmount = $this->totalAdded - $this->totalDeducted;               // الرصيد النهائي
+        $totalReturnsOut = (float) (clone $query)->where('category', 'returns')->where('type', 'deduct')->sum('amount');
 
         return view('livewire.dashboard.cash-management', [
             'cash' => $cash,
             'transactions' => $transactions,
+            'totalReturnsOut' => $totalReturnsOut,
         ]);
     }
 
@@ -106,29 +94,45 @@ $this->totalAmount = $this->totalAdded - $this->totalDeducted;               // 
     {
         $this->validate();
 
-        $cash = Cash::firstOrCreate(['id' => 1], ['balance' => 0]);
+        try {
+            app(CashService::class)->record(
+                $this->type,
+                (float) $this->amount,
+                $this->description,
+                'direct',
+                $this->transaction_date
+            );
+        } catch (\Throwable $e) {
+            session()->flash('error', $e->getMessage());
 
-        if ($this->type === 'add') {
-            $cash->balance += $this->amount;
-        } else {
-            if ($cash->balance < $this->amount) {
-                session()->flash('error', 'الرصيد غير كافٍ.');
-                return;
-            }
-            $cash->balance -= $this->amount;
+            return;
         }
-        $cash->save();
-
-        CashTransaction::create([
-            'type' => $this->type,
-            'amount' => $this->amount,
-            'description' => $this->description,
-            'transaction_date' => $this->transaction_date,
-            'category' => "direct",
-        ]);
 
         $this->resetInput();
         session()->flash('success', 'تمت العملية بنجاح');
+    }
+
+    protected function filteredTransactionsQuery()
+    {
+        $query = CashTransaction::query();
+
+        if ($this->filterCategory !== 'all') {
+            $query->where('category', $this->filterCategory);
+        }
+
+        if (! empty($this->filterAmount)) {
+            $query->where('amount', 'like', '%'.$this->filterAmount.'%');
+        }
+
+        if (! empty($this->filterDescription)) {
+            $query->where('description', 'like', '%'.$this->filterDescription.'%');
+        }
+
+        if (! empty($this->filterDate)) {
+            $query->where('transaction_date', $this->filterDate);
+        }
+
+        return $query;
     }
 
     public function resetInput()

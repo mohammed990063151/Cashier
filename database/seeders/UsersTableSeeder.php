@@ -32,10 +32,14 @@ class UsersTableSeeder extends Seeder
             ]
         );
 
-        // ربط المستخدم بالدور
-       $user->roles()->syncWithoutDetaching([
-    $role->id => ['user_type' => User::class]
-]);
+        // ربط المستخدم بالدور والصلاحيات
+        $user->roles()->syncWithoutDetaching([
+            $role->id => ['user_type' => User::class],
+        ]);
 
+        $permissionIds = $role->permissions()->pluck('permissions.id')->toArray();
+        if (! empty($permissionIds)) {
+            $user->permissions()->syncWithPivotValues($permissionIds, ['user_type' => User::class]);
+        }
     }
 }

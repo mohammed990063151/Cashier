@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>{{ $setting->name ?? '' }}</title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{--<!-- Bootstrap 3.3.7 -->--}}
     <link rel="stylesheet" href="{{ asset('dashboard_files/css/bootstrap.min.css') }}">
@@ -98,6 +99,8 @@
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 
+    @stack('styles')
+
 </head>
 <body class="hold-transition skin-blue sidebar-mini">
 
@@ -162,22 +165,45 @@
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-bell-o"></i>
-                                {{-- <span class="label label-warning">10</span> --}}
+                                @if(($collectionAlertsCount ?? 0) > 0)
+                                    <span class="label label-warning">{{ $collectionAlertsCount }}</span>
+                                @endif
                             </a>
                             <ul class="dropdown-menu">
-                                {{-- <li class="header">You have 10 notifications</li> --}}
+                                <li class="header">
+                                    تنبيهات السداد
+                                    @if(($collectionAlertsCount ?? 0) > 0)
+                                        ({{ $collectionAlertsCount }})
+                                    @endif
+                                </li>
                                 <li>
-                                    {{--<!-- inner menu: contains the actual data -->--}}
                                     <ul class="menu">
-                                        <li>
-                                            <a href="#">
-                                                {{-- <i class="fa fa-users text-aqua"></i> 5 new members joined today --}}
-                                            </a>
-                                        </li>
+                                        @forelse($collectionAlerts ?? [] as $alert)
+                                            @php
+                                                $alertSchedule = app(\App\Services\CollectionScheduleService::class);
+                                                $alertStatus = $alert['status'] ?? 'due_soon';
+                                                $alertOrder = $alert['order'];
+                                                $alertInst = $alert['installment'];
+                                            @endphp
+                                            <li>
+                                                <a href="{{ route('dashboard.payments.index', ['client_id' => $alertOrder->client_id, 'order_id' => $alertOrder->id]) }}">
+                                                    <i class="fa fa-warning text-{{ $alertStatus === 'overdue' ? 'red' : 'yellow' }}"></i>
+                                                    {{ $alertOrder->client->name }} — {{ $alertOrder->order_number }}
+                                                    <br>
+                                                    <small>
+                                                        قسط {{ number_format($alertInst->amount, 2) }} ج.س —
+                                                        {{ $alertSchedule->scheduleStatusLabel($alertStatus) }}
+                                                        ({{ $alertInst->due_at->format('d/m/Y') }})
+                                                    </small>
+                                                </a>
+                                            </li>
+                                        @empty
+                                            <li><a href="#"><small class="text-muted">لا توجد تنبيهات حالياً</small></a></li>
+                                        @endforelse
                                     </ul>
                                 </li>
                                 <li class="footer">
-                                    {{-- <a href="#">View all</a> --}}
+                                    <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}">عرض الكل</a>
                                 </li>
                             </ul>
                         </li>
@@ -240,6 +266,8 @@
             </nav>
 
         </header>
+
+        @include('dashboard.partials.collection-due-banner')
 
         @include('layouts.dashboard._aside')
 

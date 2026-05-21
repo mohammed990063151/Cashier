@@ -39,10 +39,15 @@
             @endif
 
             {{-- الموردين --}}
-            <li>
-                <a href="{{ route('dashboard.suppliers.index') }}">
+            <li class="treeview {{ request()->routeIs('dashboard.suppliers.*', 'dashboard.supplier-schedules.*') ? 'active menu-open' : '' }}">
+                <a href="#">
                     <i class="fa fa-truck"></i> <span>الموردين</span>
+                    <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
+                <ul class="treeview-menu">
+                    <li><a href="{{ route('dashboard.suppliers.index') }}"><i class="fa fa-circle-o"></i> قائمة الموردين</a></li>
+                    <li><a href="{{ route('dashboard.supplier-schedules.index') }}"><i class="fa fa-calendar"></i> جدولة السداد</a></li>
+                </ul>
             </li>
 
             {{-- العملاء --}}
@@ -64,6 +69,7 @@
                 <ul class="treeview-menu">
                     <li><a href="{{ route('dashboard.orders.index') }}"><i class="fa fa-circle-o"></i> الطلبات</a></li>
                     <li><a href="{{ route('dashboard.payments.index') }}"><i class="fa fa-circle-o"></i> المدفوعات</a></li>
+                    <li><a href="{{ route('dashboard.collection-schedules.index') }}"><i class="fa fa-calendar-check-o"></i> جدولة السداد</a></li>
                     <li><a href="{{ route('dashboard.purchase-invoices.index') }}"><i class="fa fa-file-text"></i> فواتير الشراء</a></li>
                     <li><a href="{{ route('dashboard.sale-invoices.index') }}"><i class="fa fa-file-text"></i> فواتير البيع</a></li>
                     <li><a href="{{ route('dashboard.orders.trashed') }}"><i class="fa fa-trash"></i> الطلبات المحذوفة</a></li>

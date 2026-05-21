@@ -34,23 +34,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                         @php
-                $grandTotalProfit = 0;
-            @endphp
                         @foreach($orders as $order)
                             @foreach($order->products as $product)
                                @php
-                        $profit = ($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity;
-                        $grandTotalProfit += $profit;
+                        $lineProfit = ($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity;
                     @endphp
                                 <tr>
                                     <td>{{ $order->id }}</td>
                                     <td>{{ $order->client->name ?? '-' }}</td>
                                     <td>{{ $product->name }}</td>
-                                    <td>{{ $product->pivot->quantity }}</td>
-                                    <td>{{ number_format($product->pivot->sale_price,2) }} ج.س</td>
+                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
+                                    <td>{{ $line['quantity'] }}</td>
+                                    <td>{{ $line['price'] }}</td>
                                     <td>{{ number_format($product->pivot->cost_price,2) }} ج.س</td>
-                                    <td>{{ number_format(($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity,2) }} ج.س</td>
+                                    <td>{{ number_format($lineProfit, 2) }} ج.س</td>
 
                                 </tr>
                             @endforeach
@@ -59,8 +56,12 @@
                     </tbody>
                      <tfoot>
             <tr>
-                <th colspan="6" style="text-align: right;">إجمالي الربح الكلي:</th>
-                <th style="color: #01941f; font-weight: bold;">{{ number_format($grandTotalProfit,2) }} ج.س</th>
+                <th colspan="6" style="text-align: right;">إجمالي ربح المبيعات (من الطلبات):</th>
+                <th style="color: #01941f; font-weight: bold;">{{ number_format($totals['profit'] ?? 0, 2) }} ج.س</th>
+            </tr>
+            <tr>
+                <th colspan="6" style="text-align: right;">صافي المبيعات:</th>
+                <th>{{ number_format($totals['sales'] ?? 0, 2) }} ج.س</th>
             </tr>
         </tfoot>
                 </table>

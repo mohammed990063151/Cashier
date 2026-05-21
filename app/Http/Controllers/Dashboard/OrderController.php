@@ -6,254 +6,257 @@ use App\Models\Order;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-// use Barryvdh\DomPDF\Facade\Mpdf;
 use Mpdf\Mpdf;
 use App\Services\CashService;
+use App\Services\OrderFinancialService;
+use App\Services\OrderReturnService;
 use App\Models\CashTransaction;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    protected $cashService;
 
-   protected $cashService;
+    protected OrderFinancialService $orderFinancial;
 
-    public function __construct(CashService $cashService)
+    public function __construct(CashService $cashService, OrderFinancialService $orderFinancial)
     {
         $this->cashService = $cashService;
+        $this->orderFinancial = $orderFinancial;
     }
 
+    public function show($id)
+    {
+        $order = Order::with(['products.category', 'client', 'payments', 'returns.items.product'])->findOrFail($id);
+        $summary = $this->orderFinancial->summary($order);
 
-    // public function show($id)
-    // {
-    //     $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
-
-    //     // حساب إجمالي الشراء: كمية كل منتج × سعر الشراء من جدول products
-    //     $totalPurchase = $order->products->sum(function ($product) {
-    //         return $product->pivot->quantity * $product->pivot->cost_price;
-    //     });
-
-    //     // حساب إجمالي البيع: كمية كل منتج × سعر البيع من جدول products
-    //     $totalSale = $order->products->sum(function ($product) {
-    //         return $product->pivot->quantity * $product->pivot->sale_price;
-    //     });
-
-    //     // حساب الربح والمكسب بالنسبة المئوية
-    //     $profit = $totalSale - $totalPurchase;
-    //     $profitPercentage = $totalPurchase > 0 ? ($profit / $totalPurchase) * 100 : 0;
-
-    //     return view('dashboard.orders.order_details', compact(
-    //         'order',
-    //         'totalPurchase',
-    //         'totalSale',
-    //         'profit',
-    //         'profitPercentage'
-    //     ));
-    // }
-public function show($id)
-{
-    $order = \App\Models\Order::with(['products', 'client', 'payments'])->findOrFail($id);
-
-    // إجمالي الشراء
-    $totalPurchase = $order->products->sum(function ($product) {
-        return $product->pivot->quantity * $product->pivot->cost_price;
-    });
-
-    // إجمالي البيع
-    $totalSale = $order->products->sum(function ($product) {
-        return $product->pivot->quantity * $product->pivot->sale_price;
-    });
-
-    // الخصم من الطلب
-    $discount = $order->tax_amount ?? 0;
-
-    // الإجمالي بعد الخصم
-    $totalAfterDiscount = max($totalSale - $discount, 0);
-
-    // الربح قبل الخصم
-    $profit = $totalSale - $totalPurchase;
-
-    // الربح بعد الخصم
-    $profitAfterDiscount = $totalAfterDiscount - $totalPurchase;
-
-    // نسبة الربح (على الشراء)
-    $profitPercentage = $totalPurchase > 0 ? ($profitAfterDiscount / $totalPurchase) * 100 : 0;
-
-    return view('dashboard.orders.order_details', compact(
-        'order',
-        'totalPurchase',
-        'totalSale',
-        'discount',
-        'totalAfterDiscount',
-        'profit',
-        'profitAfterDiscount',
-        'profitPercentage'
-    ));
-}
+        return view('dashboard.orders.order_details', $summary);
+    }
 
     public function index(Request $request)
     {
         $search = $request->search;
+        $paymentStatus = $request->payment_status;
 
-        $orders = Order::whereHas('client', function ($q) use ($search) {
-            $q->where('name', 'like', '%' . $search . '%');
-        })
-            ->orWhere('order_number', 'like', '%' . $search . '%')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $orders = Order::with(['client', 'payments', 'returns'])->withCount('products')
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('order_number', 'like', '%'.$search.'%')
+                        ->orWhereHas('client', function ($clientQuery) use ($search) {
+                            $clientQuery->where('name', 'like', '%'.$search.'%');
+                        });
+                });
+            });
 
-        return view('dashboard.orders.index', compact('orders'));
-    } //end of index
+        $this->orderFinancial->applyPaymentStatusFilter($orders, $paymentStatus);
+
+        $orders = $orders->orderByDesc('created_at')->paginate(10)->withQueryString();
+
+        return view('dashboard.orders.index', compact('orders', 'paymentStatus'));
+    }
 
     public function products(Order $order)
     {
-        $products = $order->products;
-        return view('dashboard.orders._products', compact('order', 'products'));
-    } //end of products
-    public function generatePdf($orderId)
-    {
-        $order = Order::with('products')->findOrFail($orderId);
-        $products = $order->products;
-        $setting = Setting::first();
-        $mpdf = new \Mpdf\Mpdf([
-            'mode' => 'utf-8',
-            'format' => [80, 80], // مقاس الورق 80mm * 80mm
-            'default_font' => 'dejavusans',
-            'margin_left' => 2,
-            'margin_right' => 2,
-            'margin_top' => 2,
-            'margin_bottom' => 2,
-            'isRemoteEnabled' => true,
-        ]);
+        $order->load(['products', 'client', 'payments', 'returns.items.product']);
+        $summary = $this->orderFinancial->summary($order);
 
-        $html = view('pdf.order-invoice', compact('order', 'products', 'setting'))->render();
-
-        $mpdf->WriteHTML($html);
-        return $mpdf->Output("receipt-{$order->id}.pdf", 'I'); // عرض مباشرة
+        return view('dashboard.orders._products', $summary);
     }
 
-    //   public function destroy(Order $order , CashService $cashService)
-    // {
-    //     // إعادة المنتجات إلى المخزون
-    //     foreach ($order->products as $product) {
-    //         $product->update([
-    //             'stock' => $product->stock + $product->pivot->quantity
-    //         ]);
-    //     }
+    public function generatePdf($orderId)
+    {
+        $order = Order::with(['products', 'client', 'payments', 'returns.items.product'])->findOrFail($orderId);
+        $summary = $this->orderFinancial->summary($order);
+        $setting = Setting::first();
 
-    //     // تحديث بيانات الطلب قبل الحذف
-    //     $order->update([
-    //         'total_return' => $order->total_price,
-    //     ]);
+        $logoPath = $setting && $setting->logo
+            ? public_path(ltrim($setting->logo, '/'))
+            : null;
 
-    //     // Soft Delete
-    //     $order->delete();
+        $productCount = $order->products->count();
+        $breakdownLines = $order->products->sum(
+            fn ($product) => count($this->orderFinancial->productUnitBreakdown($product))
+        );
+        $pageHeightMm = min(450, max(160, 95 + ($productCount * 28) + ($breakdownLines * 8)));
 
-    //       // تحديث/حذف حركة الخزينة المرتبطة بالطلب
-    //     $transaction = CashTransaction::where('order_id', $order->id)->first();
-    //     if ($transaction) {
-    //         $cashService->deleteTransaction($transaction);
-    //     }
-    //     session()->flash('success', "تم حذف الطلب (#{$order->order_number}) مؤقتاً.");
-    //     return redirect()->route('dashboard.orders.index');
-    // }
+        $mpdf = new Mpdf([
+            'mode' => 'utf-8',
+            'format' => [80, $pageHeightMm],
+            'default_font' => 'dejavusans',
+            'margin_left' => 3,
+            'margin_right' => 3,
+            'margin_top' => 4,
+            'margin_bottom' => 4,
+            'tempDir' => storage_path('app/mpdf'),
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+
+        $html = view('pdf.order-invoice', array_merge($summary, [
+            'setting' => $setting,
+            'logoPath' => $logoPath && file_exists($logoPath) ? $logoPath : null,
+        ]))->render();
+
+        $mpdf->WriteHTML($html);
+
+        return response($mpdf->Output('', 'S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="receipt-'.$order->order_number.'.pdf"',
+        ]);
+    }
+
     public function destroy(Order $order, CashService $cashService)
     {
-        // return 0;
-        // البحث عن حركة الخزينة المرتبطة بالطلب
-        $transaction = CashTransaction::where('order_id', $order->id)->first();
+        $order->load('payments');
 
-        // التحقق من أن الرصيد في الخزينة يكفي لإرجاع المبلغ إذا كان هناك حركة
-        if ($transaction && $cashService->getBalance() < $transaction->amount) {
-            return redirect()->back()->with('error', '⚠️ الرصيد في الصندوق غير كافٍ لاسترجاع مبلغ الطلب!');
-        }
-
-        // إعادة المنتجات إلى المخزون
         foreach ($order->products as $product) {
             $product->update([
-                'stock' => $product->stock + $product->pivot->quantity
+                'stock' => $product->stock + $product->pivot->quantity,
             ]);
         }
 
-        // تحديث بيانات الطلب قبل الحذف (مثلاً لتسجيل الإجمالي المسترجع)
         $order->update([
             'total_return' => $order->total_price,
         ]);
 
-        // Soft Delete
+        $cashService->deleteTransactionsForOrder($order);
         $order->delete();
 
-        // حذف حركة الخزينة المرتبطة بالطلب
-        if ($transaction) {
-            $cashService->deleteTransaction($transaction);
-        }
-
         session()->flash('success', "تم حذف الطلب (#{$order->order_number}) مؤقتاً.");
+
         return redirect()->route('dashboard.orders.index');
     }
 
-   public function softdelet()
-{
-    $orders = Order::onlyTrashed()->with('client')->paginate(10);
+    public function softdelet()
+    {
+        $orders = Order::onlyTrashed()->with('client')->paginate(10);
+        $balance = $this->cashService->getBalance();
 
-    // رصيد الخزينة الحالي
-    $balance = $this->cashService->getBalance();
+        $hasProblem = $orders->contains(function ($order) use ($balance) {
+            return $order->paid_at_sale > $balance;
+        });
 
-    // تحقق: إذا فيه أي طلب مدفوع أكبر من رصيد الخزينة
-    $hasProblem = $orders->contains(function ($order) use ($balance) {
-        return $order->paid > $balance;
-    });
+        if ($hasProblem) {
+            session()->flash('error', '⚠️ يوجد طلب مدفوع أكبر من رصيد الخزينة الحالي!');
+        }
 
-    if ($hasProblem) {
-        session()->flash('error', '⚠️ يوجد طلب مدفوع أكبر من رصيد الخزينة الحالي!');
+        return view('dashboard.orders.trashed', compact('orders'));
     }
-
-    return view('dashboard.orders.trashed', compact('orders'));
-}
-
-
 
     public function restore($id, CashService $cashService)
     {
         $order = Order::withTrashed()->findOrFail($id);
-
-        // استرجاع الطلب نفسه
         $order->restore();
 
-        // استرجاع المنتجات المرتبطة
         foreach ($order->products as $product) {
             $product->update([
-                'stock' => $product->stock - $product->pivot->quantity
+                'stock' => $product->stock - $product->pivot->quantity,
             ]);
         }
 
-        // إعادة القيم الأصلية إذا أحببت
         $order->update([
             'total_return' => 0,
             'remaining' => $order->remaining,
-            'profit' => $order->profit, // حسب الحاجة
+            'profit' => $order->profit,
         ]);
 
-        // تحديث أو إعادة تسجيل حركة الخزينة المرتبطة بالطلب
         $transaction = CashTransaction::where('order_id', $order->id)->first();
         if ($transaction) {
             $cashService->updateTransaction(
                 $transaction,
-                $order->discount,
-                "استرجاع الدفعيات على الطلب رقم #{$order->order_number}   من العميل {$order->client->name}",
-                'discount',
+                $order->paid_at_sale,
+                "استرجاع الدفعيات على الطلب رقم #{$order->order_number} من العميل {$order->client->name}",
+                'order',
                 now()
             );
-        } elseif ($order->discount > 0) {
+        } elseif ($order->paid_at_sale > 0) {
             $cashService->record(
                 'add',
-                $order->discount,
+                $order->paid_at_sale,
                 "استرجاع الدفعيات على الطلب رقم #{$order->order_number} من العميل {$order->client->name}",
-                'discount',
+                'order',
                 now(),
                 $order->id
             );
         }
 
         session()->flash('success', "تم استرجاع الطلب بالكامل: #{$order->order_number}");
+
         return redirect()->route('dashboard.orders.index');
     }
-}//end of controller
+
+    public function returnForm(Order $order)
+    {
+        $order->load(['products', 'client', 'returns.items.product']);
+        $summary = $this->orderFinancial->summary($order, false);
+
+        $alreadyRefundedCash = round((float) $order->returns->sum('refund_amount'), 2);
+
+        return view('dashboard.orders._return_form', array_merge($summary, [
+            'order' => $order,
+            'alreadyRefundedCash' => $alreadyRefundedCash,
+        ]));
+    }
+
+    public function returnStore(Request $request, Order $order, OrderReturnService $returnService)
+    {
+        $request->validate([
+            'lines' => 'required|array',
+            'lines.*' => 'nullable|integer|min:0',
+            'notes' => 'nullable|string|max:500',
+            'return_date' => 'nullable|date',
+        ]);
+
+        try {
+            $orderReturn = $returnService->processReturn(
+                $order,
+                $request->input('lines', []),
+                $request->notes,
+                $request->return_date
+            );
+
+            $msg = "تم تسجيل المرتجع {$orderReturn->return_number} بنجاح.";
+            if ($orderReturn->refund_amount > 0) {
+                $msg .= ' تم خصم '.number_format($orderReturn->refund_amount, 2).' ج.س من الخزينة وإرجاعها للعميل.';
+            } else {
+                $msg .= ' تم تخفيض المتبقي على الطلب دون حركة نقدية (لم يُدفع مبلغ يُسترد).';
+            }
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $msg,
+                    'return_number' => $orderReturn->return_number,
+                ]);
+            }
+
+            return redirect()
+                ->route('dashboard.orders.index')
+                ->with('success', $msg)
+                ->with('order_id', $order->id);
+        } catch (ValidationException $e) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'تحقق من البيانات المدخلة.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
+
+            return redirect()
+                ->route('dashboard.orders.index')
+                ->with('error', collect($e->errors())->flatten()->first());
+        } catch (\Throwable $e) {
+            report($e);
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+
+            return redirect()
+                ->route('dashboard.orders.index')
+                ->with('error', $e->getMessage());
+        }
+    }
+}

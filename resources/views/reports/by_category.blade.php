@@ -47,6 +47,12 @@
                                     </tr>
                                 @endforeach
                             </tbody>
+                            <tfoot>
+                                <tr style="font-weight:bold;background:#f5f5f5;">
+                                    <td colspan="2" class="text-right">الإجمالي الكلي:</td>
+                                    <td>{{ number_format($grandTotal ?? 0, 2) }} ج.س</td>
+                                </tr>
+                            </tfoot>
                         </table>
 
                         @if(count($salesByCategory) === 0)

@@ -19,6 +19,8 @@ use App\Http\Controllers\Dashboard\SupplierController;
 use App\Http\Controllers\Dashboard\CashController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Dashboard\PaymentController;
+use App\Http\Controllers\Dashboard\CollectionScheduleController;
+use App\Http\Controllers\Dashboard\SupplierPaymentScheduleController;
 use App\Http\Controllers\Dashboard\ProfitReportController;
 use App\Http\Controllers\Dashboard\SupplierReportController;
 use App\Http\Controllers\Dashboard\PurchaseReportController;
@@ -29,21 +31,13 @@ use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 
-// Redirect root to dashboard
-Route::get('/', function () {
-    return redirect()->route('dashboard.welcome');
-});
-
-// Auth routes
-Auth::routes(['register' => false]);
-
 // Home route (optional)
 Route::get('/home', function () {
     return redirect()->route('dashboard.welcome');
 })->name('home');
 
 // Dashboard routes group
-Route::middleware(['auth', 'web'])->prefix('dashboard')->name('dashboard.')->group(function () {
+Route::middleware(['auth', 'web', 'dashboard.access'])->prefix('dashboard')->name('dashboard.')->group(function () {
 
  Route::get('/admin/trash', [WelcomeController::class, 'trash'])->name('admin.trash');
 Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])->name('admin.restore');
@@ -60,7 +54,8 @@ Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])-
     Route::resource('categories', CategoryController::class)->except(['show']);
 
     // Product routes
-    Route::resource('products', ProductController::class)->except(['show']);
+    Route::resource('products', ProductController::class);
+    Route::post('products/quick-store', [ProductController::class, 'quickStore'])->name('products.quick-store');
 
     // Client routes
     Route::resource('clients', ClientController::class)->except(['show']);
@@ -81,21 +76,27 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     Route::resource('clients.orders', ClientOrderController::class)->except(['show']);
 
     Route::get('direct-sale', [ClientOrderController::class, 'create'])->name('direct-sale');
-    Route::post('direct-sale', [ClientOrderController::class, 'store'])->name('direct-sale.store');
+    Route::post('direct-sale', [ClientOrderController::class, 'storeDirectSale'])->name('direct-sale.store');
 
     // Order routes
     Route::resource('orders', OrderController::class);
     Route::get('orders/{order}/pdf', [OrderController::class, 'generatePdf'])->name('orders.pdf');
     Route::get('orders/{order}/products', [OrderController::class, 'products'])->name('orders.products');
-    Route::get('/dashboard/orders/{order}', [OrderController::class, 'showAjax'])->name('dashboard.orders.showAjax');
     Route::get('/trashed', [OrderController::class, 'softdelet'])->name('orders.trashed');
     Route::post('orders/{order}/restore', [OrderController::class, 'restore'])->name('orders.restore');
 
 
+    Route::get('collection-schedules', [CollectionScheduleController::class, 'index'])->name('collection-schedules.index');
+    Route::put('collection-schedules/{order}', [CollectionScheduleController::class, 'update'])->name('collection-schedules.update');
+    Route::post('collection-schedules/{order}/installments', [CollectionScheduleController::class, 'storeInstallments'])->name('collection-schedules.installments');
+    Route::post('collection-installments/{installment}/paid', [CollectionScheduleController::class, 'markInstallmentPaid'])->name('collection-installments.paid');
+
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+    Route::get('payments/clients/{client}/orders', [PaymentController::class, 'clientOrders'])->name('payments.client-orders');
     Route::post('payments', [PaymentController::class, 'store'])->name('payments.store');
     // web.php
-    Route::put('payments/{payment}/update', [PaymentController::class, 'update'])->name('payment.update');
+    Route::put('payments/{payment}', [PaymentController::class, 'update'])->name('payment.update');
+    Route::delete('payments/{payment}', [PaymentController::class, 'destroy'])->name('payment.destroy');
 
 
     Route::get('orders/{order}/payments/edit', [PaymentController::class, 'editPayments'])
@@ -108,9 +109,10 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
 
     // Route لتحميل المدفوعات عبر AJAX
-    Route::get('orders/{order}/payments', [PaymentController::class, 'showPayments'])->name('dashboard.orders.payments');
-    Route::post('/orders/{id}/return', [\App\Http\Controllers\Dashboard\OrderController::class, 'returnOrder'])
-        ->name('orders.return');
+    Route::get('orders/{order}/payment-log', [PaymentController::class, 'paymentLog'])->name('orders.payment-log');
+    Route::get('orders/{order}/payments', [PaymentController::class, 'showPayments'])->name('orders.payments');
+    Route::get('orders/{order}/return', [OrderController::class, 'returnForm'])->name('orders.return');
+    Route::post('orders/{order}/return', [OrderController::class, 'returnStore'])->name('orders.return.store');
 
     // User routes
     Route::resource('users', UserController::class)->except(['show']);
@@ -173,6 +175,10 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     Route::resource('purchase-invoices', PurchaseInvoiceController::class);
     Route::get('purchase-invoices/{purchaseInvoice}/print', [PurchaseInvoiceController::class, 'print'])->name('purchase-invoices.print');
 
+    Route::get('supplier-schedules', [SupplierPaymentScheduleController::class, 'index'])->name('supplier-schedules.index');
+    Route::post('supplier-schedules/{purchaseInvoice}/installments', [SupplierPaymentScheduleController::class, 'storeInstallments'])->name('supplier-schedules.installments');
+    Route::post('supplier-installments/{installment}/paid', [SupplierPaymentScheduleController::class, 'markInstallmentPaid'])->name('supplier-installments.paid');
+
     // Sale Invoices
     Route::resource('sale-invoices', SaleInvoiceController::class);
     Route::get('sale-invoices/{sale_invoice}/print', [SaleInvoiceController::class, 'print'])->name('sale-invoices.print');
@@ -191,8 +197,7 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     // Route::get('{supplier}/payments/create', [SupplierPaymentController::class, 'create'])->name('dashboard.suppliers.payments.create');
     // Route::post('{supplier}/payments', [SupplierPaymentController::class, 'store'])->name('dashboard.suppliers.payments.store');
     Route::get('payments/{payment}/edit', [SupplierController::class, 'edit_payment'])->name('suppliers.payments.edit');
-    Route::put('payments/{payment}', [SupplierController::class, 'update'])->name('dashboard.suppliers.payments.update');
-    // Route::delete('payments/{payment}', [SupplierPaymentController::class, 'destroy'])->name('dashboard.suppliers.payments.destroy');
+    // تحديث دفعات الموردين عبر supplier-payments/{payment} فقط — لا تكرار payments/{payment} (يتعارض مع PaymentController)
 
 
 

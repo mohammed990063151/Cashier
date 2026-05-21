@@ -2,6 +2,8 @@
 
 @section('content')
 
+@include('dashboard.clients.orders._order_units_styles')
+
 <div class="content-wrapper">
 
     <section class="content-header">
@@ -52,6 +54,7 @@
                                         <table class="table table-hover">
                                             <tr>
                                                 <th>الاسم</th>
+                                                <th>طريقة البيع</th>
                                                 <th>المخزون</th>
                                                 <th>السعر</th>
                                                 <th>إضافة</th>
@@ -60,10 +63,11 @@
                                             @foreach ($category->products as $product)
                                             <tr>
                                                 <td>{{ $product->name }}</td>
+                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
                                                 <td>{{ $product->stock }}</td>
                                                 <td>{{ $product->sale_price }}</td>
                                                 <td>
-                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" class="btn {{ in_array($product->id, $order->products->pluck('id')->toArray()) ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
+                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" data-bulk-size="{{ $product->pieces_per_carton ?? 12 }}" data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}" class="btn {{ in_array($product->id, $order->products->pluck('id')->toArray()) ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
                                                         <i class="fa fa-plus"></i>
                                                     </a>
                                                 </td>
@@ -115,63 +119,47 @@
                             {{ csrf_field() }}
                             {{ method_field('put') }}
 
-                            <table class="table table-hover">
+                            <p class="text-muted" style="margin-bottom:10px;">
+                                وحدات البيع تُحدَّد من إعداد المنتج (حبة فقط / عبوة فقط / مرن).
+                            </p>
+
+                            <table class="table table-hover order-list-table">
                                 <thead>
                                     <tr>
                                         <th>المنتج</th>
-                                        <th>الكمية</th>
-                                        <th>سعر الوحد</th>
-                                        <th>الاجمالي</th>
+                                        <th colspan="2">الوحدات والأسعار</th>
+                                        <th>الإجمالي</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
 
                                 <tbody class="order-list">
-
                                     @foreach ($order->products as $product)
-                                    <tr>
-                                        <td>{{ $product->name }}</td>
-                                        <td>
-                                            <input type="number" name="products[{{ $product->id }}][quantity]" class="form-control input-sm product-quantity" min="1" value="{{ $product->pivot->quantity }}">
-                                        </td>
-                                        <td>
-                                            <input type="number" name="products[{{ $product->id }}][sale_price]" class="form-control input-sm product-unit-price" min="1" step="1" value="{{ $product->pivot->sale_price }}">
-                                        </td>
-                                        <td>
-                                            <span class="product-price">{{ number_format($product->pivot->quantity * $product->pivot->sale_price, 2) }}</span>
-                                            <input type="hidden" name="products[{{ $product->id }}][total_price]" value="{{ $product->pivot->quantity * $product->pivot->sale_price }}">
-                                        </td>
-                                        <td>
-                                            <button class="btn btn-danger btn-sm remove-product-btn" data-id="{{ $product->id }}"><span class="fa fa-trash"></span></button>
-
-                                        </td>
-                                    </tr>
+                                        @include('dashboard.clients.orders._order_line_edit', ['product' => $product])
                                     @endforeach
-
-
                                 </tbody>
 
                             </table><!-- نهاية الجدول -->
 
-                            <h4>الإجمالي: <span class="total-price" style="color: #046b0a; font-weight: bold;">{{ number_format($order->total_price, 2) }}</span></h4>
-<div class="form-group">
-    <label for="invoice_discount">الخصم</label>
-    <input type="number" name="tax_amount" id="invoice_discount" class="form-control" min="0" step="0"
-           value="{{ $order->tax_amount ?? 0 }}">
-</div>
-<h4>الإجمالي بعد الخصم:
-    <span id="discounted-total" style="color:#007bff; font-weight:bold;">
-        {{ number_format($order->total_price - ($order->tax_amount ?? 0), 2) }}
-    </span>
-</h4>
+                            <h4>الإجمالي: <span class="total-price" style="color:#046b0a;font-weight:bold;">{{ number_format($order->total_price, 2) }}</span></h4>
                             <div class="form-group">
-                                <label for="discount">المدفوع </label>
-                                <input type="number" name="discount" id="discount" class="form-control" min="0" step="1" value="{{ $order->discount }}">
+                                <label for="invoice_discount">خصم الفاتورة</label>
+                                <input type="number" name="invoice_discount" id="invoice_discount" class="form-control" min="0" step="1"
+                                       value="{{ $order->invoice_discount ?? 0 }}">
                             </div>
-
-
+                            <h4>الإجمالي بعد الخصم:
+                                <span id="discounted-total" style="color:#007bff;font-weight:bold;">
+                                    {{ number_format($order->total_price - ($order->invoice_discount ?? 0), 2) }}
+                                </span>
+                            </h4>
                             <div class="form-group">
-                                <label>المتبقي:</label>
-                                <input type="text" name="remaining" id="remaining" class="form-control" readonly value="{{ number_format($order->remaining, 2) }}" style="color: #d50606; font-weight: bold;">
+                                <label for="paid_at_sale">المدفوع الآن</label>
+                                <input type="number" name="paid_at_sale" id="paid_at_sale" class="form-control" min="0" step="1" value="{{ $order->paid_at_sale }}">
+                                <small class="text-muted">0 = لم يُدفع شيء عند الطلب؛ يمكن تحصيل المتبقي لاحقاً من صفحة المدفوعات.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>المتبقي على العميل:</label>
+                                <p id="remaining-display" class="form-control-static text-danger" style="font-size:18px;font-weight:bold;margin:0;">{{ number_format($order->remaining, 2) }}</p>
                             </div>
 
 
@@ -229,11 +217,12 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($order->products as $product)
+                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
                                                     <tr>
                                                         <td class="fw-bold text-start">{{ $product->name }}</td>
-                                                        <td>{{ $product->pivot->quantity }}</td>
-                                                        <td class="text-success fw-bold">{{ number_format($product->pivot->sale_price,2) }} ج.س</td>
-                                                        <td class="text-primary fw-bold">{{ number_format($product->pivot->sale_price * $product->pivot->quantity,2) }} ج.س</td>
+                                                        <td>{{ $line['quantity'] }}</td>
+                                                        <td class="text-success fw-bold">{{ $line['price'] }}</td>
+                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س</td>
                                                     </tr>
                                                     @endforeach
                                                 </tbody>
@@ -257,7 +246,7 @@
                                                 <strong>الإجمالي:</strong> {{ number_format($order->total_price,2) }} ج.س
                                             </div>
                                             <div class="col-md-3">
-                                                <strong>المدفوع :</strong> {{ number_format($order->discount,2) }} ج.س
+                                                <strong>المدفوع :</strong> {{ number_format($order->paid_at_sale,2) }} ج.س
                                             </div>
                                              <div class="col-md-3">
                                                 <strong>اجمالي المدفوع:</strong> {{ number_format($paid,2) }} ج.س
@@ -295,142 +284,38 @@
 </div><!-- نهاية حاوية المحتوى -->
 @push('scripts')
 <script>
-// document.addEventListener("DOMContentLoaded", function() {
-//     const form = document.querySelector('form'); // النموذج
-//     const totalPriceEl = document.querySelector('.total-price');
-//     const discountEl = document.getElementById('discount');
-//     const remainingEl = document.getElementById('remaining');
-
-//     // تحويل النص إلى رقم
-//     function parseNumber(str) {
-//         return parseFloat(str.replace(/,/g, '')) || 0;
-//     }
-
-//     // تحديث المتبقي عند تغيير المدفوع
-//    function updateRemaining() {
-//     const total = parseNumber(totalPriceEl.textContent);
-//     const tax = parseNumber(document.getElementById('invoice_discount').value);
-//     const discount = parseNumber(discountEl.value);
-
-//     const totalWithTax = total + tax;
-//     remainingEl.value = Math.max(totalWithTax - discount, 0);
-
-//     if (discount > totalWithTax) {
-//         remainingEl.style.color = '#d50606';
-//         remainingEl.style.fontWeight = 'bold';
-//     } else {
-//         remainingEl.style.color = '#000';
-//         remainingEl.style.fontWeight = 'normal';
-//     }
-// }
 document.addEventListener("DOMContentLoaded", function() {
     const form = document.querySelector('form');
     const totalPriceEl = document.querySelector('.total-price');
-    const discountEl = document.getElementById('discount'); // المدفوع
-    const remainingEl = document.getElementById('remaining');
-    const invoiceDiscountEl = document.getElementById('invoice_discount'); // هذا هو tax_amount لكن كخصم
+    const discountEl = document.getElementById('paid_at_sale');
+    const invoiceDiscountEl = document.getElementById('invoice_discount');
 
-    function parseNumber(v) {
-        return parseFloat((v || "0").toString().replace(/,/g, '')) || 0;
+    function parseNumber(str) {
+        return parseFloat(String(str).replace(/,/g, '')) || 0;
     }
 
-
- function calculateTotal() {
-    let total = 0;
-
-    document.querySelectorAll('.order-list tr').forEach(row => {
-        const qty = parseNumber(row.querySelector('.product-quantity')?.value);
-        const price = parseNumber(row.querySelector('.product-unit-price')?.value);
-        const productTotal = qty * price;
-
-        row.querySelector('.product-price').textContent = productTotal.toFixed(2);
-        row.querySelector('input[name$="[total_price]"]').value = productTotal;
-
-        total += productTotal;
-    });
-
-    totalPriceEl.textContent = total.toFixed(2);
-
-    const invoiceDiscount = parseNumber(invoiceDiscountEl?.value);
-    const paid = parseNumber(discountEl?.value);
-
-    // ✅ الإجمالي بعد الخصم
-    let discountedTotal = total - invoiceDiscount;
-    if (discountedTotal < 0) discountedTotal = 0;
-    document.getElementById('discounted-total').textContent = discountedTotal.toFixed(2);
-
-    // ✅ المتبقي
-    let remaining = discountedTotal - paid;
-    if (remaining < 0) remaining = 0;
-    remainingEl.value = remaining.toFixed(2);
-
-    // hidden input عشان يتخزن في الباك
-    document.getElementById('total_price').value = total.toFixed(2);
-}
-
-
-    // تشغيل عند أي تغيير
-    $(document).on('input', '.product-quantity, .product-unit-price, #invoice_discount, #discount', function() {
+    if (typeof calculateTotal === 'function') {
         calculateTotal();
-    });
+    }
 
-    // تحقق قبل الإرسال
     form.addEventListener('submit', function(e) {
-        calculateTotal();
+        if (typeof calculateTotal === 'function') {
+            calculateTotal();
+        }
+
         const total = parseNumber(totalPriceEl.textContent);
         const invoiceDiscount = parseNumber(invoiceDiscountEl.value);
         const paid = parseNumber(discountEl.value);
+        const afterDiscount = Math.max(total - invoiceDiscount, 0);
 
-        if (paid > (total - invoiceDiscount)) {
+        if (paid > afterDiscount) {
             e.preventDefault();
             alert("المدفوع لا يمكن أن يكون أكبر من إجمالي الطلب بعد الخصم!");
             discountEl.focus();
         }
     });
-
-    // أول تحديث عند التحميل
-    calculateTotal();
-});
-
-
-document.getElementById('invoice_discount').addEventListener('input', updateRemaining);
-
-    // حدث عند تغيير المدفوع
-    discountEl.addEventListener('input', updateRemaining);
-
-    // تحقق قبل إرسال النموذج
-    form.addEventListener('submit', function(e) {
-        const total = parseNumber(totalPriceEl.textContent);
-        const discount = parseNumber(discountEl.value);
-
-        if (discount > total) {
-            e.preventDefault(); // إيقاف الإرسال
-            alert("المدفوع  لا يمكن أن يكون أكبر من إجمالي الطلب!");
-            discountEl.focus();
-        }
-    });
-
-    // إذا أردت يمكن تحديث المتبقي عند تغيير أي كمية في المنتجات
-    document.querySelectorAll('.product-quantity, .product-unit-price').forEach(input => {
-        input.addEventListener('input', function() {
-            let total = 0;
-            document.querySelectorAll('.order-list tr').forEach(row => {
-                const qty = parseNumber(row.querySelector('.product-quantity').value);
-                const price = parseNumber(row.querySelector('.product-unit-price').value);
-                total += qty * price;
-                row.querySelector('.product-price').textContent = (qty * price).toFixed(2);
-            });
-            totalPriceEl.textContent = total.toFixed(2);
-            updateRemaining();
-        });
-    });
-
-    // تحديث المتبقي عند تحميل الصفحة
-    updateRemaining();
 });
 </script>
-
-
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {

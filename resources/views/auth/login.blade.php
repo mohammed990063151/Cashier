@@ -121,11 +121,11 @@
             @csrf
             <div class="form-group">
                 <i class="fas fa-envelope"></i>
-                <input type="email" name="email" placeholder="البريد الإلكتروني" required>
+                <input type="email" name="email" placeholder="البريد الإلكتروني" autocomplete="off" required>
             </div>
             <div class="form-group">
                 <i class="fas fa-lock"></i>
-                <input type="password" name="password" placeholder="كلمة المرور" required>
+                <input type="password" name="password" placeholder="كلمة المرور" autocomplete="new-password" required>
             </div>
             <div class="form-group" style="display: flex; align-items: center;">
                 <input type="checkbox" name="remember" id="remember" style="margin-left: 10px;">

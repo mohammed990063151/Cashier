@@ -1,190 +1,311 @@
-$(document).ready(function() {
+const SALE_UNITS = {
+    piece: { label: 'حبة', multiplier: 1 },
+    pack_3: { label: '3 قطع', multiplier: 3 },
+    pack_6: { label: '6 قطع', multiplier: 6 },
+    dozen: { label: 'دستة (12)', multiplier: 12 },
+};
 
-    $('.add-product-btn').on('click', function(e) {
+function parseNumber(value) {
+    if (value === null || value === undefined) {
+        return 0;
+    }
+    const cleaned = String(value).replace(/,/g, '').trim();
+    const num = parseFloat(cleaned);
+    return Number.isFinite(num) ? num : 0;
+}
+
+function formatMoney(value) {
+    const n = Math.round(parseNumber(value) * 100) / 100;
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatPriceInput(value) {
+    const n = parseNumber(value);
+    return n > 0 ? String(Math.round(n * 100) / 100) : '0';
+}
+
+function bulkLabel(bulkSize) {
+    const size = Math.max(1, parseInt(bulkSize, 10) || 12);
+    if (size <= 1) {
+        return 'حبة';
+    }
+    return 'عبوة (' + size + ' حبة)';
+}
+
+function unitsForProduct(bulkSize, saleMode) {
+    const bulk = Math.max(1, parseInt(bulkSize, 10) || 12);
+    const mode = saleMode || 'flexible';
+
+    if (mode === 'piece_only') {
+        return [{ key: 'piece', ...SALE_UNITS.piece, isMaster: true }];
+    }
+
+    if (mode === 'bulk_only') {
+        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, isMaster: true }];
+    }
+
+    const units = [
+        { key: 'piece', ...SALE_UNITS.piece, isMaster: true },
+        { key: 'pack_3', ...SALE_UNITS.pack_3 },
+        { key: 'pack_6', ...SALE_UNITS.pack_6 },
+    ];
+
+    if (bulk === 12) {
+        units.push({ key: 'dozen', ...SALE_UNITS.dozen });
+    } else if (bulk > 1) {
+        if (bulk % 12 === 0 && bulk > 12) {
+            units.push({ key: 'dozen', ...SALE_UNITS.dozen });
+        }
+        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk });
+    } else {
+        units.push({ key: 'dozen', ...SALE_UNITS.dozen });
+    }
+
+    return units;
+}
+
+function unitBlockHtml(productId, unit, unitPrice) {
+    const priceVal = formatPriceInput(unitPrice);
+    const masterClass = unit.isMaster ? ' unit-price-master' : '';
+
+    return `
+        <div class="order-unit-block" data-unit="${unit.key}" data-multiplier="${unit.multiplier}">
+            <div class="order-unit-title">${unit.label}</div>
+            <div class="row" style="margin:0 -5px;">
+                <div class="col-xs-6" style="padding:0 5px;">
+                    <label class="order-unit-label">الكمية</label>
+                    <input type="number" min="0" step="1" value="0"
+                        name="products[${productId}][${unit.key}][qty]"
+                        class="form-control input-sm unit-qty">
+                </div>
+                <div class="col-xs-6" style="padding:0 5px;">
+                    <label class="order-unit-label">السعر</label>
+                    <input type="number" min="0" step="1" value="${priceVal}"
+                        name="products[${productId}][${unit.key}][price]"
+                        class="form-control input-sm unit-price${masterClass}">
+                </div>
+            </div>
+            <small class="text-muted unit-hint">= ${unit.multiplier} حبة</small>
+        </div>
+    `;
+}
+
+function unitBlocksHtml(productId, piecePrice, bulkSize, saleMode) {
+    const price = parseNumber(piecePrice);
+    const units = unitsForProduct(bulkSize, saleMode);
+    let html = '<div class="order-unit-grid">';
+
+    units.forEach(function (unit) {
+        html += unitBlockHtml(productId, unit, price * unit.multiplier);
+    });
+
+    html += '</div>';
+
+    return html;
+}
+
+function getPiecePriceFromRow($row) {
+    const $master = $row.find('.unit-price-master');
+    const bulkSize = Math.max(1, parseInt($row.data('bulk-size'), 10) || 12);
+
+    if ($master.length) {
+        const masterPrice = parseNumber($master.val());
+        const masterUnit = $master.closest('.order-unit-block').data('unit');
+        if (masterUnit === 'bulk') {
+            return masterPrice / bulkSize;
+        }
+        return masterPrice;
+    }
+
+    return parseNumber($row.find('.order-unit-block[data-unit="piece"] .unit-price').val());
+}
+
+function syncUnitPricesFromMaster($row) {
+    const piecePrice = getPiecePriceFromRow($row);
+    if (piecePrice <= 0) {
+        return;
+    }
+
+    $row.find('.order-unit-block').each(function () {
+        const multiplier = parseInt($(this).data('multiplier'), 10) || 1;
+        const unitKey = $(this).data('unit');
+        const $priceInput = $(this).find('.unit-price');
+        $priceInput.val(formatPriceInput(piecePrice * multiplier));
+    });
+}
+
+function calculateRowTotal($row) {
+    let lineTotal = 0;
+    let totalPieces = 0;
+
+    $row.find('.order-unit-block').each(function () {
+        const qty = parseNumber($(this).find('.unit-qty').val());
+        const price = parseNumber($(this).find('.unit-price').val());
+        const multiplier = parseInt($(this).data('multiplier'), 10) || 1;
+
+        lineTotal += qty * price;
+        totalPieces += qty * multiplier;
+    });
+
+    $row.find('.product-price').text(formatMoney(lineTotal));
+    $row.find('.total-pieces-hint').text(totalPieces > 0 ? totalPieces + ' حبة' : '0 حبة');
+    $row.find('input[name$="[total_price]"]').val(lineTotal.toFixed(2));
+
+    return lineTotal;
+}
+
+function calculateTotal() {
+    let total = 0;
+
+    $('.order-list tr.order-item').each(function () {
+        total += calculateRowTotal($(this));
+    });
+
+    $('.total-price').text(formatMoney(total));
+
+    const invoiceDiscount = parseNumber($('#invoice_discount').val());
+    let discountedTotal = total - invoiceDiscount;
+    if (discountedTotal < 0) {
+        discountedTotal = 0;
+    }
+
+    $('#discounted-total').text(formatMoney(discountedTotal));
+
+    const paid = parseNumber($('#paid_at_sale').val());
+    let remaining = discountedTotal - paid;
+    if (remaining < 0) {
+        remaining = 0;
+    }
+
+    const $remainingDisplay = $('#remaining-display');
+    if ($remainingDisplay.length) {
+        $remainingDisplay.text(formatMoney(remaining));
+        $remainingDisplay.toggleClass('text-danger', remaining > 0);
+        $remainingDisplay.toggleClass('text-success', remaining <= 0);
+    }
+}
+
+function buildOrderRow(name, id, piecePrice, bulkSize, saleMode) {
+    const price = parseNumber(piecePrice);
+    const mode = saleMode || 'flexible';
+
+    return `
+        <tr class="order-item" data-id="${id}" data-bulk-size="${bulkSize}" data-sale-mode="${mode}">
+            <td>
+                <strong>${name}</strong>
+                <div class="text-muted total-pieces-hint" style="font-size:12px;">0 حبة</div>
+            </td>
+            <td colspan="2">${unitBlocksHtml(id, price, bulkSize, mode)}</td>
+            <td>
+                <span class="product-price" style="color:#01941f;font-weight:bold;">${formatMoney(0)}</span>
+                <input type="hidden" name="products[${id}][total_price]" value="0">
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm remove-product-btn" data-id="${id}">
+                    <span class="fa fa-trash"></span>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+$(document).ready(function () {
+    $('.add-product-btn').on('click', function (e) {
         e.preventDefault();
-        var name = $(this).data('name');
-        var id = $(this).data('id');
-        var price = parseFloat($(this).data('price')); // سعر الوحدة
-        var formattedPrice = $.number(price, 2);
+
+        const name = $(this).data('name');
+        const id = $(this).data('id');
+        const price = $(this).data('price');
+        const bulkSize = $(this).data('bulk-size') || $(this).data('carton-size') || 12;
+        const saleMode = $(this).data('sale-mode') || 'flexible';
+
+        if ($('.order-list tr.order-item[data-id="' + id + '"]').length) {
+            return;
+        }
 
         $(this).removeClass('btn-success').addClass('btn-default disabled');
 
-        var html =
-            `<tr>
-        <td>${name}</td>
-        <td>
-            <input type="number" name="products[${id}][quantity]" data-price="${price}" class="form-control input-sm product-quantity" min="1" value="1">
-        </td>
-        <td>
-            <input type="number" step="1" name="products[${id}][sale_price]" class="form-control input-sm product-unit-price" value="${price}">
-        </td>
-        <td>
-            <span class="product-price">${formattedPrice}</span>
-            <input type="hidden" name="products[${id}][total_price]" value="${price}">
-        </td>
-        <td>
-            <button class="btn btn-danger btn-sm remove-product-btn" data-id="${id}"><span class="fa fa-trash"></span></button>
-        </td>
-    </tr>`;
-
-
-        $('.order-list').append(html);
+        $('.order-list').append(buildOrderRow(name, id, price, bulkSize, saleMode));
         $('#add-order-form-btn').prop('disabled', false).removeClass('disabled');
         calculateTotal();
     });
 
-    // تحديث الإجمالي عند تغيير الكمية
-    $('body').on('keyup change', '.product-quantity', function() {
-        var quantity = Number($(this).val());
-        var unitPrice = parseFloat($(this).data('price'));
-        var total = quantity * unitPrice;
-
-        $(this).closest('tr').find('.product-price').text($.number(total, 2));
-        $(this).closest('tr').find('input[name$="[total_price]"]').val(total); // تحديث حقل المخفي للإجمالي
-
+    $('body').on('input', '.unit-qty, .unit-price', function () {
+        const $row = $(this).closest('tr.order-item');
+        calculateRowTotal($row);
         calculateTotal();
     });
 
-    // إزالة منتج
-    $('body').on('click', '.remove-product-btn', function(e) {
+    $('body').on('focusout', '.unit-price-master', function () {
+        const $row = $(this).closest('tr.order-item');
+        syncUnitPricesFromMaster($row);
+        calculateRowTotal($row);
+        calculateTotal();
+    });
+
+    $('body').on('click', '.remove-product-btn', function (e) {
         e.preventDefault();
-        var id = $(this).data('id');
+        const id = $(this).data('id');
 
         $(this).closest('tr').remove();
         $('#product-' + id).removeClass('btn-default disabled').addClass('btn-success');
 
         calculateTotal();
 
-        // إذا لم يبق أي منتجات، أعد تعطيل الزر
-        if ($('.order-list tr').length == 0) {
+        if ($('.order-list tr.order-item').length === 0) {
             $('#add-order-form-btn').prop('disabled', true).addClass('disabled');
         }
     });
 
-    //disabled btn
-    $('body').on('click', '.disabled', function(e) {
-
+    $('body').on('click', '.disabled', function (e) {
         e.preventDefault();
-
-    }); //end of disabled
-
-    $('body').on('keyup change', '.product-quantity', function() {
-
-        var quantity = Number($(this).val()); //2
-        var unitPrice = parseFloat($(this).data('price').replace(/,/g, '')); //150
-        console.log(unitPrice);
-        $(this).closest('tr').find('.product-price').html($.number(quantity * unitPrice, 2));
-        calculateTotal();
-
-    }); //end of product quantity change
-
-    //list all order products
-    $('.order-products').on('click', function(e) {
-
-        e.preventDefault();
-
-        $('#loading').css('display', 'flex');
-
-        var url = $(this).data('url');
-        var method = $(this).data('method');
-        $.ajax({
-            url: url,
-            method: method,
-            success: function(data) {
-
-                $('#loading').css('display', 'none');
-                $('#order-product-list').empty();
-                $('#order-product-list').append(data);
-
-            }
-        })
-
-    }); //end of order products click
-
-
-
-}); //end of document ready
-
-
-
-
-// function calculateTotal() {
-//     let total = 0;
-
-//     $('.order-list tr').each(function() {
-//         let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
-//         let unitPrice = parseFloat($(this).find('.product-unit-price').val()) || 0;
-
-//         let productTotal = quantity * unitPrice;
-//         $(this).find('.product-price').text(productTotal.toFixed(2));
-//         $(this).find('input[name$="[total_price]"]').val(productTotal);
-
-//         total += productTotal;
-//     });
-
-//     // إجمالي قبل الخصم
-//     $('.total-price').text(total.toFixed(2));
-
-//     // حساب الخصم
-//     let invoiceDiscount = parseFloat($('#invoice_discount').val()) || 0;
-//     let discountedTotal = total - invoiceDiscount;
-//     if (discountedTotal < 0) discountedTotal = 0;
-
-//     // المدفوع العام
-//     let paid = parseFloat($('#discount').val()) || 0;
-
-//     // المتبقي
-//     let remaining = discountedTotal - paid;
-//     if (remaining < 0) remaining = 0;
-
-//     $('#remaining').val(remaining.toFixed(2));
-// }
-
-function calculateTotal() {
-    let total = 0;
-
-    $('.order-list tr').each(function() {
-        let quantity = parseFloat($(this).find('.product-quantity').val()) || 0;
-        let unitPrice = parseFloat($(this).find('.product-unit-price').val()) || 0;
-
-        let productTotal = quantity * unitPrice;
-        $(this).find('.product-price').text(productTotal.toFixed(2));
-        $(this).find('input[name$="[total_price]"]').val(productTotal);
-
-        total += productTotal;
     });
 
-    // إجمالي قبل الخصم
-    $('.total-price').text(total.toFixed(2));
+    $(document).on('input', '#invoice_discount, #paid_at_sale', function () {
+        calculateTotal();
+    });
 
-    // حساب الخصم
-    let invoiceDiscount = parseFloat($('#invoice_discount').val()) || 0;
-    let discountedTotal = total - invoiceDiscount;
-    if (discountedTotal < 0) discountedTotal = 0;
+    $('body').on('click', '.order-products', function (e) {
+        e.preventDefault();
+        const $btn = $(this);
+        const $row = $btn.closest('tr.orders-row');
 
-    // ✅ تحديث "الإجمالي بعد الخصم"
-    $('#discounted-total').text(discountedTotal.toFixed(2));
+        $('.orders-row').removeClass('active');
+        if ($row.length) {
+            $row.addClass('active');
+        }
 
-    // المدفوع العام
-    let paid = parseFloat($('#discount').val()) || 0;
+        const $loading = $('#loading');
+        const $list = $('#order-product-list');
 
-    // المتبقي
-    let remaining = discountedTotal - paid;
-    if (remaining < 0) remaining = 0;
+        if ($loading.length) {
+            $loading.css('display', 'flex');
+        }
+        if ($list.length) {
+            $list.find('#orders-preview-placeholder').remove();
+        }
 
-    $('#remaining').val(remaining.toFixed(2));
-}
-
-// تحديث عند تغيير الكمية أو السعر
-// $(document).on('input', '.product-quantity, .product-unit-price', function() {
-//     calculateTotal();
-// });
-$(document).on('input', '.product-quantity, .product-unit-price, #invoice_discount, #discount', function() {
-    calculateTotal();
-});
-
-
-// تحديث المتبقي عند تغيير الخصم
-$('#discount').on('keyup change', function() {
-    calculateTotal();
+        $.ajax({
+            url: $btn.data('url'),
+            method: $btn.data('method') || 'get',
+            success: function (data) {
+                if ($loading.length) {
+                    $loading.css('display', 'none');
+                }
+                if ($list.length) {
+                    $list.html(data);
+                }
+            },
+            error: function () {
+                if ($loading.length) {
+                    $loading.css('display', 'none');
+                }
+                if ($list.length) {
+                    $list.html(
+                        '<div class="orders-preview-empty"><i class="fa fa-exclamation-triangle"></i><p>تعذّر تحميل المعاينة</p></div>'
+                    );
+                }
+            },
+        });
+    });
 });

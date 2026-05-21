@@ -1,6 +1,11 @@
 <div class="content-wrapper">
 
     <section class="content-header mb-3">
+        @if(isset($totalReturnsOut) && $totalReturnsOut > 0)
+        <small class="text-muted" style="display:block;margin-top:4px;">
+            مرتجعات الطلبات (مسحوبة من الخزينة): <strong class="text-danger">{{ number_format($totalReturnsOut, 2) }} ج.س</strong>
+        </small>
+        @endif
         <h1>الصندوق :
             <span class="d-inline-flex align-items-center px-3 py-1 text-white font-weight-bold" style="background:#28a745; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.2); font-size:1em;">
                 <i class="fa fa-money-bill-wave mr-1"></i>
@@ -59,6 +64,7 @@
                                 <tr>
                                     <th>تاريخ الحركة</th>
                                     <th>الوصف</th>
+                                    <th>الطلب</th>
                                     <th class="text-success">إضافة مبلغ</th>
                                     <th class="text-danger">سحب مبلغ</th>
                                 </tr>
@@ -68,24 +74,45 @@
                                 <tr>
                                     <td>{{ $trx->transaction_date }}</td>
                                     <td>{{ $trx->description ?? 'تمت اضافة مباشرة من الخزينة' }}</td>
+                                    <td style="font-size:12px;white-space:nowrap;">
+                                        @if($trx->order)
+                                            <span class="label label-default">{{ $trx->order->order_number }}</span>
+                                        @elseif($trx->orderReturn?->order)
+                                            <span class="label label-info">{{ $trx->orderReturn->return_number }}</span>
+                                            <br><small>{{ $trx->orderReturn->order->order_number }}</small>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td class="text-success">{{ $trx->type == 'add' ? number_format($trx->amount, 2) : '-' }}</td>
                                     <td class="text-danger">{{ $trx->type == 'deduct' ? number_format($trx->amount, 2) : '-' }}</td>
                                 </tr>
                                 @endforeach
-                                <tr style="background:#f1f3f5; font-weight:bold;">
-                                    <td colspan="2" class="text-right">الإجمالي مضاف:</td>
-                                    <td class="text-success">{{number_format($totalAdded, 2) }}</td></tr>
-
-                                    <td colspan="2" class="text-right">الإجمالي الخصم:</td>
-<td></td>
-                                    <td class="text-danger">{{ number_format($totalDeducted, 2)  }}</td></tr>
-                                <tr style="background:#f1f3f5; font-weight:bold;">
-
-                                    <td colspan="2" class="text-right">الإجمالي الحالي:</td>
-                                    <td class="text-success">{{ $totalAmount >= 0 ? number_format($totalAmount, 2) : '-' }}</td>
-                                    <td class="text-danger">{{ $totalAmount < 0 ? number_format(abs($totalAmount), 2) : '-' }}</td>
-                                </tr>
                             </tbody>
+                            <tfoot style="background:#f1f3f5; font-weight:bold;">
+                                <tr>
+                                    <td colspan="3" class="text-right">إجمالي مضاف (نتائج الفلتر):</td>
+                                    <td class="text-success">{{ number_format($totalAdded, 2) }}</td>
+                                    <td>—</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-right">إجمالي مسحوب (نتائج الفلتر):</td>
+                                    <td>—</td>
+                                    <td class="text-danger">{{ number_format($totalDeducted, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-right">صافي الحركات (مضاف − مسحوب):</td>
+                                    <td colspan="2" class="text-center">
+                                        {{ number_format($totalAmount, 2) }} ج.س
+                                    </td>
+                                </tr>
+                                <tr style="background:#e8f5e9;">
+                                    <td colspan="3" class="text-right">رصيد الصندوق الفعلي:</td>
+                                    <td colspan="2" class="text-center text-success">
+                                        {{ number_format($cash->balance, 2) }} ج.س
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
                         <div class="text-center mt-2">
                             {{ $transactions->links() }}

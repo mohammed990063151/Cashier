@@ -7,29 +7,71 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
+    public const DEFAULT_IMAGE = 'default.svg';
+
+    public const LEGACY_DEFAULT_IMAGE = 'default.png';
+
     // use \Dimsav\Translatable\Translatable;
-  use SoftDeletes;
+    use SoftDeletes;
+
     protected $guarded = ['id'];
+
+    protected $fillable = [
+        'category_id',
+        'name',
+        'description',
+        'purchase_price',
+        'sale_price',
+        'stock',
+        'pieces_per_carton',
+        'sale_mode',
+        'image',
+    ];
 
     public $translatedAttributes = ['name', 'description'];
     protected $appends = ['image_path', 'profit_percent'];
 
 
-  public function getImagePathAttribute()
-{
-    if ($this->image && file_exists(public_path('uploads/product_images/' . $this->image))) {
-        return asset('uploads/product_images/' . $this->image);
+    public static function defaultImageUrl(): string
+    {
+        $uploaded = public_path('uploads/product_images/'.self::DEFAULT_IMAGE);
+        if (file_exists($uploaded)) {
+            return asset('uploads/product_images/'.self::DEFAULT_IMAGE);
+        }
+
+        return asset('images/product-default.svg');
     }
-    return asset('uploads/product_images/default.png');
-}
+
+    public function getImagePathAttribute(): string
+    {
+        $directory = public_path('uploads/product_images/');
+        $filename = $this->image;
+
+        if ($filename && ! $this->usesDefaultImage()) {
+            if (file_exists($directory.$filename)) {
+                return asset('uploads/product_images/'.$filename);
+            }
+        }
+
+        return self::defaultImageUrl();
+    }
+
+    public function usesDefaultImage(): bool
+    {
+        return in_array($this->image, [null, '', self::DEFAULT_IMAGE, self::LEGACY_DEFAULT_IMAGE], true);
+    }
 
     public function getProfitPercentAttribute()
     {
-        $profit = $this->sale_price - $this->purchase_price;
-        $profit_percent = $profit * 100 / $this->purchase_price;
-        return number_format($profit_percent, 2);
+        $purchase = (float) $this->purchase_price;
+        if ($purchase <= 0) {
+            return '0.00';
+        }
 
-    }//end of get profit attribute
+        $profit = (float) $this->sale_price - $purchase;
+
+        return number_format(($profit * 100) / $purchase, 2);
+    }
 
     public function category()
     {

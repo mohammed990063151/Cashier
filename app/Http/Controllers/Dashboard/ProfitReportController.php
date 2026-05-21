@@ -4,66 +4,54 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Product;
+use App\Services\OrderFinancialService;
+use App\Services\OrderReportsService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class ProfitReportController extends Controller
 {
-    // تقرير أرباح مفصل
-    public function detailed()
+    public function detailed(Request $request)
     {
-        $orders = Order::with('client', 'products')->get();
+        $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
+        $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        return view('reports.profit.profit_detailed', compact('orders'));
+        $orders = Order::with(['client', 'products', 'returns'])
+            ->when($from && $to, fn ($q) => $q->whereBetween('created_at', [$from, $to]))
+            ->latest()
+            ->get();
+
+        $totals = OrderReportsService::ordersProfitTotals($from, $to);
+        $fin = app(OrderFinancialService::class);
+
+        return view('reports.profit.profit_detailed', compact('orders', 'totals', 'fin', 'from', 'to'));
     }
 
-    // تقرير أرباح مجمل
-    public function summary()
+    public function summary(Request $request)
     {
-        $orders = Order::with('products')->get();
+        $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
+        $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        $totalSales = 0;
-        $totalCost  = 0;
+        $totals = OrderReportsService::ordersProfitTotals($from, $to);
+        $snapshot = OrderReportsService::snapshot($from, $to);
 
-        foreach ($orders as $order) {
-            foreach ($order->products as $product) {
-                $totalSales += $product->pivot->sale_price * $product->pivot->quantity;
-                $totalCost  += $product->pivot->cost_price * $product->pivot->quantity;
-            }
-        }
-
-        $totalProfit = $totalSales - $totalCost;
-
-        return view('reports.profit.profit_summary', compact('totalSales', 'totalCost', 'totalProfit'));
+        return view('reports.profit.profit_summary', [
+            'totalSales' => $totals['sales'],
+            'totalCost' => $totals['cost'],
+            'totalProfit' => $totals['profit'],
+            'snapshot' => $snapshot,
+            'from' => $request->from,
+            'to' => $request->to,
+        ]);
     }
 
-    // نسبة أرباح المنتجات
-    public function productRatio()
+    public function productRatio(Request $request)
     {
-        $products = Product::with('orders')->get();
+        $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
+        $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        $productProfits = [];
+        $productProfits = OrderReportsService::productProfitBreakdown($from, $to);
 
-        foreach ($products as $product) {
-            $totalSales = $product->orders->sum(function ($order) use ($product) {
-                return $order->products->find($product->id)->pivot->sale_price *
-                    $order->products->find($product->id)->pivot->quantity;
-            });
-
-            $totalCost = $product->orders->sum(function ($order) use ($product) {
-                return   $order->products->find($product->id)->pivot->cost_price *
-                    $order->products->find($product->id)->pivot->quantity;
-            });
-            //  return    $totalSales;
-            $profit = $totalSales - $totalCost;
-            $ratio = $totalSales ? ($profit  * 100 / $totalCost) : 0;
-
-            $productProfits[] = [
-                'product' => $product->name,
-                'profit' => $profit,
-                'ratio'  => round($ratio, 2)
-            ];
-        }
-
-        return view('reports.profit.profit_ratio', compact('productProfits'));
+        return view('reports.profit.profit_ratio', compact('productProfits', 'from', 'to'));
     }
 }

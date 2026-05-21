@@ -10,8 +10,8 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Expense;
-use App\Models\Cash;
 use App\Models\CashTransaction;
+use App\Services\CashService;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -57,9 +57,8 @@ class DashboardController extends Controller
         ];
 
         // الخزينة
-        $cash = Cash::first();
         $cashOverview = [
-            'balance' => $cash->balance ?? 0
+            'balance' => app(CashService::class)->getBalance(),
         ];
 
         // حركة الخزينة اليومية
@@ -103,5 +102,10 @@ class DashboardController extends Controller
             'dailyDeducted',
             'topProducts'
         ));
+    }
+
+    public function cashFlow()
+    {
+        return redirect()->route('dashboard.cash.index');
     }
 }

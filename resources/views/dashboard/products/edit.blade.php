@@ -2,89 +2,51 @@
 
 @section('content')
 
-    <div class="content-wrapper">
-        <section class="content-header">
-            <h1>المنتجات</h1>
+@include('dashboard.products._products_styles')
 
-            <ol class="breadcrumb">
-                <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
-                <li><a href="{{ route('dashboard.products.index') }}">المنتجات</a></li>
-                <li class="active">تعديل</li>
-            </ol>
-        </section>
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>تعديل منتج</h1>
+        <ol class="breadcrumb">
+            <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
+            <li><a href="{{ route('dashboard.products.index') }}">المنتجات</a></li>
+            <li class="active">{{ $product->name }}</li>
+        </ol>
+    </section>
 
-        <section class="content">
+    <section class="content">
+        <div class="box box-primary">
+            <div class="box-header with-border">
+                <h3 class="box-title"><i class="fa fa-pencil"></i> {{ $product->name }}</h3>
+                <div class="box-tools pull-left">
+                    <a href="{{ route('dashboard.products.show', $product->id) }}" class="btn btn-default btn-sm">
+                        <i class="fa fa-eye"></i> عرض
+                    </a>
+                </div>
+            </div>
+            <div class="box-body">
+                @include('partials._errors')
+                <form action="{{ route('dashboard.products.update', $product->id) }}" method="post" enctype="multipart/form-data">
+                    @csrf
+                    @method('put')
+                    @include('dashboard.products._form', ['categories' => $categories, 'product' => $product])
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
 
-            <div class="box box-primary">
-
-                <div class="box-header">
-                    <h3 class="box-title">تعديل المنتج</h3>
-                </div><!-- end of box header -->
-                <div class="box-body">
-
-                    @include('partials._errors')
-
-                    <form action="{{ route('dashboard.products.update', $product->id) }}" method="post" enctype="multipart/form-data">
-
-                        {{ csrf_field() }}
-                        {{ method_field('put') }}
-
-                        <div class="form-group">
-                            <label>القسم</label>
-                            <select name="category_id" class="form-control">
-                                <option value="">كل الأقسام</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}" {{ $product->category_id == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>الاسم</label>
-                            <input type="text" name="name" class="form-control" value="{{ $product->name }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>الوصف</label>
-                            <textarea name="description" class="form-control ckeditor">{{ $product->description }}</textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>الصورة</label>
-                            <input type="file" name="image" class="form-control image">
-                        </div>
-
-                        <div class="form-group">
-                            <img src="{{ $product->image_path }}" style="width: 100px" class="img-thumbnail image-preview" alt="صورة المنتج">
-                        </div>
-
-                        <div class="form-group">
-                            <label>سعر الشراء</label>
-                            <input type="number" name="purchase_price" step="0.01" class="form-control" value="{{ $product->purchase_price }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>سعر البيع</label>
-                            <input type="number" name="sale_price" step="0.01" class="form-control" value="{{ $product->sale_price }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>المخزون</label>
-                            <input type="number" name="stock" class="form-control" value="{{ $product->stock }}">
-                        </div>
-
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary"><i class="fa fa-edit"></i> تعديل</button>
-                        </div>
-
-                    </form><!-- end of form -->
-
-                </div><!-- end of box body -->
-
-            </div><!-- end of box -->
-
-        </section><!-- end of content -->
-
-    </div><!-- end of content wrapper -->
-
+@include('dashboard.products._sale_mode_script')
+@push('scripts')
+<script>
+$('body').on('change', 'input.image', function() {
+    if (this.files && this.files[0]) {
+        var reader = new FileReader();
+        var $preview = $(this).closest('form').find('.image-preview');
+        reader.onload = function(e) { $preview.attr('src', e.target.result); };
+        reader.readAsDataURL(this.files[0]);
+    }
+});
+</script>
+@endpush
 @endsection

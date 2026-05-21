@@ -1,41 +1,59 @@
 <?php
 
 namespace App\Http\Controllers\Dashboard;
+
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\CashTransaction;
-use App\Models\CashSetting;
+use App\Services\CashService;
+use App\Services\OrderReportsService;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class CashReportController extends Controller
 {
-   public function index(Request $request)
-{
-    $from = $request->get('from');
-    $to   = $request->get('to');
+    public function index(Request $request)
+    {
+        $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
+        $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-    $transactions = CashTransaction::when($from && $to, fn($q)=>$q->whereBetween('transaction_date', [$from,$to]))
-        ->with(['order','payment'])
-        ->orderBy('transaction_date','asc')
-        ->get();
+        $transactions = CashTransaction::query()
+            ->when($from && $to, fn ($q) => $q->whereBetween('transaction_date', [$from, $to]))
+            ->with(['order.client', 'payment.order', 'orderReturn.order.client'])
+            ->orderByDesc('transaction_date')
+            ->orderByDesc('id')
+            ->get();
 
-    $totalAdded = $transactions->whereIn('type', ['add_sales','add_client_payments'])->sum('amount');
-    $totalDeducted = $transactions->whereIn('type', ['deduct_purchases','deduct_supplier_payments','deduct_expenses'])->sum('amount');
+        $totalAdded = (float) $transactions->where('type', 'add')->sum('amount');
+        $totalDeducted = (float) $transactions->where('type', 'deduct')->sum('amount');
+        $netFiltered = $totalAdded - $totalDeducted;
+        $totalReturnsOut = (float) $transactions->where('category', 'returns')->where('type', 'deduct')->sum('amount');
+        $cashBalance = app(CashService::class)->getBalance();
 
-    // بيانات مجملة يومية لكل نوع
-    $dates = $transactions->pluck('transaction_date')->unique()->sort();
-    $dailyAdded = [];
-    $dailyDeducted = [];
+        $dates = $transactions->pluck('transaction_date')->unique()->sort()->values();
+        $dailyAdded = [];
+        $dailyDeducted = [];
 
-    foreach($dates as $date){
-        $dailyAdded[] = $transactions->where('transaction_date', $date)
-                                     ->whereIn('type', ['add_sales','add_client_payments'])
-                                     ->sum('amount');
-        $dailyDeducted[] = $transactions->where('transaction_date', $date)
-                                        ->whereIn('type', ['deduct_purchases','deduct_supplier_payments','deduct_expenses'])
-                                        ->sum('amount');
+        foreach ($dates as $date) {
+            $day = $transactions->where('transaction_date', $date);
+            $dailyAdded[] = (float) $day->where('type', 'add')->sum('amount');
+            $dailyDeducted[] = (float) $day->where('type', 'deduct')->sum('amount');
+        }
+
+        $cashSnapshot = OrderReportsService::snapshot($from, $to);
+
+        return view('reports.cash.cash', compact(
+            'transactions',
+            'totalAdded',
+            'totalDeducted',
+            'netFiltered',
+            'totalReturnsOut',
+            'cashBalance',
+            'dates',
+            'dailyAdded',
+            'dailyDeducted',
+            'cashSnapshot',
+            'from',
+            'to'
+        ));
     }
-
-    return view('reports.cash.cash', compact('transactions','totalAdded','totalDeducted','dates','dailyAdded','dailyDeducted'));
-}
-
 }
