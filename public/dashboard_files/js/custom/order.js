@@ -1,8 +1,8 @@
 const SALE_UNITS = {
-    piece: { label: 'حبة', multiplier: 1 },
-    pack_3: { label: '3 قطع', multiplier: 3 },
-    pack_6: { label: '6 قطع', multiplier: 6 },
-    dozen: { label: 'دستة (12)', multiplier: 12 },
+    piece: { label: 'حبة', multiplier: 1, step: '1' },
+    pack_3: { label: '3 قطع', multiplier: 3, step: '1' },
+    pack_6: { label: '6 قطع', multiplier: 6, step: '1' },
+    dozen: { label: 'دستة (12)', multiplier: 12, step: '1' },
 };
 
 function parseNumber(value) {
@@ -14,14 +14,26 @@ function parseNumber(value) {
     return Number.isFinite(num) ? num : 0;
 }
 
+function round3(value) {
+    return Math.round(parseNumber(value) * 1000) / 1000;
+}
+
 function formatMoney(value) {
-    const n = Math.round(parseNumber(value) * 100) / 100;
-    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const n = round3(value);
+    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
 function formatPriceInput(value) {
-    const n = parseNumber(value);
-    return n > 0 ? String(Math.round(n * 100) / 100) : '0';
+    const n = round3(value);
+    return n > 0 ? String(n) : '0';
+}
+
+function displayQty(value) {
+    return String(round3(value));
+}
+
+function halfCartonPieces(bulkSize) {
+    return round3(Math.max(1, parseInt(bulkSize, 10) || 12) / 2);
 }
 
 function bulkLabel(bulkSize) {
@@ -29,19 +41,37 @@ function bulkLabel(bulkSize) {
     if (size <= 1) {
         return 'حبة';
     }
-    return 'عبوة (' + size + ' حبة)';
+    return 'كرتونة كاملة (' + size + ' حبة)';
 }
 
-function unitsForProduct(bulkSize, saleMode) {
+function halfCartonLabel(bulkSize) {
+    return 'نصف كرتونة (' + displayQty(halfCartonPieces(bulkSize)) + ' حبة)';
+}
+
+function unitsForProduct(bulkSize, saleMode, measureUnit) {
     const bulk = Math.max(1, parseInt(bulkSize, 10) || 12);
     const mode = saleMode || 'flexible';
+    const measure = measureUnit || 'piece';
+
+    if (measure === 'kilo') {
+        return [{ key: 'kilo', label: 'كيلو', multiplier: 1, step: '0.001', isMaster: true }];
+    }
 
     if (mode === 'piece_only') {
         return [{ key: 'piece', ...SALE_UNITS.piece, isMaster: true }];
     }
 
     if (mode === 'bulk_only') {
-        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, isMaster: true }];
+        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true }];
+    }
+
+    // بيع مرن — للكرتونة أو أي منتج له عبوة
+    if (measure === 'carton' && bulk > 1) {
+        return [
+            { key: 'piece', ...SALE_UNITS.piece, isMaster: true },
+            { key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' },
+            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' },
+        ];
     }
 
     const units = [
@@ -50,13 +80,9 @@ function unitsForProduct(bulkSize, saleMode) {
         { key: 'pack_6', ...SALE_UNITS.pack_6 },
     ];
 
-    if (bulk === 12) {
-        units.push({ key: 'dozen', ...SALE_UNITS.dozen });
-    } else if (bulk > 1) {
-        if (bulk % 12 === 0 && bulk > 12) {
-            units.push({ key: 'dozen', ...SALE_UNITS.dozen });
-        }
-        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk });
+    if (bulk > 1) {
+        units.push({ key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' });
+        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' });
     } else {
         units.push({ key: 'dozen', ...SALE_UNITS.dozen });
     }
@@ -67,6 +93,8 @@ function unitsForProduct(bulkSize, saleMode) {
 function unitBlockHtml(productId, unit, unitPrice) {
     const priceVal = formatPriceInput(unitPrice);
     const masterClass = unit.isMaster ? ' unit-price-master' : '';
+    const step = unit.step || '1';
+    const hintUnit = unit.key === 'kilo' ? 'كيلو' : (unit.multiplier + ' حبة');
 
     return `
         <div class="order-unit-block" data-unit="${unit.key}" data-multiplier="${unit.multiplier}">
@@ -74,29 +102,29 @@ function unitBlockHtml(productId, unit, unitPrice) {
             <div class="row" style="margin:0 -5px;">
                 <div class="col-xs-6" style="padding:0 5px;">
                     <label class="order-unit-label">الكمية</label>
-                    <input type="number" min="0" step="1" value="0"
+                    <input type="number" min="0" step="${step}" value="0"
                         name="products[${productId}][${unit.key}][qty]"
                         class="form-control input-sm unit-qty">
                 </div>
                 <div class="col-xs-6" style="padding:0 5px;">
                     <label class="order-unit-label">السعر</label>
-                    <input type="number" min="0" step="1" value="${priceVal}"
+                    <input type="number" min="0" step="0.001" value="${priceVal}"
                         name="products[${productId}][${unit.key}][price]"
                         class="form-control input-sm unit-price${masterClass}">
                 </div>
             </div>
-            <small class="text-muted unit-hint">= ${unit.multiplier} حبة</small>
+            <small class="text-muted unit-hint">= ${hintUnit}</small>
         </div>
     `;
 }
 
-function unitBlocksHtml(productId, piecePrice, bulkSize, saleMode) {
-    const price = parseNumber(piecePrice);
-    const units = unitsForProduct(bulkSize, saleMode);
+function unitBlocksHtml(productId, piecePrice, bulkSize, saleMode, measureUnit) {
+    const price = round3(piecePrice);
+    const units = unitsForProduct(bulkSize, saleMode, measureUnit);
     let html = '<div class="order-unit-grid">';
 
     units.forEach(function (unit) {
-        html += unitBlockHtml(productId, unit, price * unit.multiplier);
+        html += unitBlockHtml(productId, unit, round3(price * unit.multiplier));
     });
 
     html += '</div>';
@@ -109,15 +137,15 @@ function getPiecePriceFromRow($row) {
     const bulkSize = Math.max(1, parseInt($row.data('bulk-size'), 10) || 12);
 
     if ($master.length) {
-        const masterPrice = parseNumber($master.val());
+        const masterPrice = round3($master.val());
         const masterUnit = $master.closest('.order-unit-block').data('unit');
         if (masterUnit === 'bulk') {
-            return masterPrice / bulkSize;
+            return round3(masterPrice / bulkSize);
         }
         return masterPrice;
     }
 
-    return parseNumber($row.find('.order-unit-block[data-unit="piece"] .unit-price').val());
+    return round3($row.find('.order-unit-block[data-unit="piece"] .unit-price').val());
 }
 
 function syncUnitPricesFromMaster($row) {
@@ -127,8 +155,7 @@ function syncUnitPricesFromMaster($row) {
     }
 
     $row.find('.order-unit-block').each(function () {
-        const multiplier = parseInt($(this).data('multiplier'), 10) || 1;
-        const unitKey = $(this).data('unit');
+        const multiplier = parseFloat($(this).data('multiplier')) || 1;
         const $priceInput = $(this).find('.unit-price');
         $priceInput.val(formatPriceInput(piecePrice * multiplier));
     });
@@ -137,19 +164,31 @@ function syncUnitPricesFromMaster($row) {
 function calculateRowTotal($row) {
     let lineTotal = 0;
     let totalPieces = 0;
+    const measure = $row.data('measure-unit') || 'piece';
+    const available = round3($row.data('stock'));
 
     $row.find('.order-unit-block').each(function () {
-        const qty = parseNumber($(this).find('.unit-qty').val());
-        const price = parseNumber($(this).find('.unit-price').val());
-        const multiplier = parseInt($(this).data('multiplier'), 10) || 1;
+        const qty = round3($(this).find('.unit-qty').val());
+        const price = round3($(this).find('.unit-price').val());
+        const multiplier = parseFloat($(this).data('multiplier')) || 1;
 
-        lineTotal += qty * price;
-        totalPieces += qty * multiplier;
+        lineTotal = round3(lineTotal + round3(qty * price));
+        totalPieces = round3(totalPieces + round3(qty * multiplier));
     });
 
     $row.find('.product-price').text(formatMoney(lineTotal));
-    $row.find('.total-pieces-hint').text(totalPieces > 0 ? totalPieces + ' حبة' : '0 حبة');
-    $row.find('input[name$="[total_price]"]').val(lineTotal.toFixed(2));
+    const unitLabel = measure === 'kilo' ? ' كيلو' : ' حبة';
+    $row.find('.total-pieces-hint').text(totalPieces > 0 ? displayQty(totalPieces) + unitLabel : '0' + unitLabel);
+    $row.find('input[name$="[total_price]"]').val(round3(lineTotal).toFixed(3));
+
+    const $warn = $row.find('.stock-warning');
+    if ($warn.length) {
+        if (totalPieces > available + 0.0005) {
+            $warn.text('تجاوز المخزون! المتاح ' + displayQty(available) + unitLabel).show();
+        } else {
+            $warn.hide().text('');
+        }
+    }
 
     return lineTotal;
 }
@@ -158,21 +197,21 @@ function calculateTotal() {
     let total = 0;
 
     $('.order-list tr.order-item').each(function () {
-        total += calculateRowTotal($(this));
+        total = round3(total + calculateRowTotal($(this)));
     });
 
     $('.total-price').text(formatMoney(total));
 
-    const invoiceDiscount = parseNumber($('#invoice_discount').val());
-    let discountedTotal = total - invoiceDiscount;
+    const invoiceDiscount = round3($('#invoice_discount').val());
+    let discountedTotal = round3(total - invoiceDiscount);
     if (discountedTotal < 0) {
         discountedTotal = 0;
     }
 
     $('#discounted-total').text(formatMoney(discountedTotal));
 
-    const paid = parseNumber($('#paid_at_sale').val());
-    let remaining = discountedTotal - paid;
+    const paid = round3($('#paid_at_sale').val());
+    let remaining = round3(discountedTotal - paid);
     if (remaining < 0) {
         remaining = 0;
     }
@@ -185,17 +224,26 @@ function calculateTotal() {
     }
 }
 
-function buildOrderRow(name, id, piecePrice, bulkSize, saleMode) {
-    const price = parseNumber(piecePrice);
+function buildOrderRow(name, id, piecePrice, bulkSize, saleMode, measureUnit, stock) {
+    const price = round3(piecePrice);
     const mode = saleMode || 'flexible';
+    const measure = measureUnit || 'piece';
+    const available = round3(stock);
+    const zeroHint = measure === 'kilo' ? '0 كيلو' : '0 حبة';
+    const stockHint = measure === 'kilo'
+        ? ('المتاح: ' + displayQty(available) + ' كيلو')
+        : ('المتاح: ' + displayQty(available) + ' حبة'
+            + (bulkSize > 1 ? ' ≈ ' + displayQty(available / bulkSize) + ' كرتونة' : ''));
 
     return `
-        <tr class="order-item" data-id="${id}" data-bulk-size="${bulkSize}" data-sale-mode="${mode}">
+        <tr class="order-item" data-id="${id}" data-bulk-size="${bulkSize}" data-sale-mode="${mode}" data-measure-unit="${measure}" data-stock="${available}">
             <td>
                 <strong>${name}</strong>
-                <div class="text-muted total-pieces-hint" style="font-size:12px;">0 حبة</div>
+                <div class="text-muted total-pieces-hint" style="font-size:12px;">${zeroHint}</div>
+                <div class="text-info" style="font-size:11px;">${stockHint}</div>
+                <div class="text-danger stock-warning" style="font-size:11px;display:none;"></div>
             </td>
-            <td colspan="2">${unitBlocksHtml(id, price, bulkSize, mode)}</td>
+            <td colspan="2">${unitBlocksHtml(id, price, bulkSize, mode, measure)}</td>
             <td>
                 <span class="product-price" style="color:#01941f;font-weight:bold;">${formatMoney(0)}</span>
                 <input type="hidden" name="products[${id}][total_price]" value="0">
@@ -218,6 +266,8 @@ $(document).ready(function () {
         const price = $(this).data('price');
         const bulkSize = $(this).data('bulk-size') || $(this).data('carton-size') || 12;
         const saleMode = $(this).data('sale-mode') || 'flexible';
+        const measureUnit = $(this).data('measure-unit') || 'piece';
+        const stock = $(this).data('stock');
 
         if ($('.order-list tr.order-item[data-id="' + id + '"]').length) {
             return;
@@ -225,7 +275,7 @@ $(document).ready(function () {
 
         $(this).removeClass('btn-success').addClass('btn-default disabled');
 
-        $('.order-list').append(buildOrderRow(name, id, price, bulkSize, saleMode));
+        $('.order-list').append(buildOrderRow(name, id, price, bulkSize, saleMode, measureUnit, stock));
         $('#add-order-form-btn').prop('disabled', false).removeClass('disabled');
         calculateTotal();
     });

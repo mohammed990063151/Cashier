@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Support\DecimalMath;
 use App\Support\SaleUnits;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -25,6 +26,9 @@ class ProductService
             ->when($request->filled('sale_mode'), function ($query) use ($request) {
                 $query->where('sale_mode', $request->sale_mode);
             })
+            ->when($request->filled('measure_unit'), function ($query) use ($request) {
+                $query->where('measure_unit', $request->measure_unit);
+            })
             ->orderByDesc('id')
             ->get();
     }
@@ -35,31 +39,19 @@ class ProductService
      */
     public function preparePayload(array $data): array
     {
-        $mode = SaleUnits::normalizeSaleMode($data['sale_mode'] ?? null);
+        $normalized = SaleUnits::normalizeProductEntry($data);
 
         return [
             'category_id' => (int) $data['category_id'],
             'name' => trim((string) $data['name']),
             'description' => $data['description'] ?? null,
-            'purchase_price' => (float) $data['purchase_price'],
-            'sale_price' => (float) $data['sale_price'],
-            'stock' => (int) $data['stock'],
-            'sale_mode' => $mode,
-            'pieces_per_carton' => $this->resolvePiecesPerCarton($mode, $data['pieces_per_carton'] ?? 12),
+            'purchase_price' => $normalized['purchase_price'],
+            'sale_price' => $normalized['sale_price'],
+            'stock' => $normalized['stock'],
+            'sale_mode' => $normalized['sale_mode'],
+            'measure_unit' => $normalized['measure_unit'],
+            'pieces_per_carton' => $normalized['pieces_per_carton'],
         ];
-    }
-
-    public function resolvePiecesPerCarton(string $mode, mixed $value): int
-    {
-        if ($mode === SaleUnits::MODE_PIECE_ONLY) {
-            return 1;
-        }
-
-        if ($mode === SaleUnits::MODE_BULK_ONLY) {
-            return max(2, (int) $value);
-        }
-
-        return max(1, (int) $value);
     }
 
     public function canDelete(Product $product): bool
@@ -76,7 +68,16 @@ class ProductService
         };
     }
 
-    public function stockBadgeClass(int $stock): string
+    public function measureUnitBadgeClass(string $unit): string
+    {
+        return match (SaleUnits::normalizeMeasureUnit($unit)) {
+            SaleUnits::UNIT_CARTON => 'label-warning',
+            SaleUnits::UNIT_KILO => 'label-success',
+            default => 'label-info',
+        };
+    }
+
+    public function stockBadgeClass(float|int $stock): string
     {
         if ($stock <= 0) {
             return 'label-danger';
@@ -91,13 +92,43 @@ class ProductService
 
     public function cartonSummary(Product $product): string
     {
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+        if ($measure === SaleUnits::UNIT_KILO) {
+            return 'بالكيلو';
+        }
+
         $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
         $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
 
-        if ($mode === SaleUnits::MODE_PIECE_ONLY) {
+        if ($mode === SaleUnits::MODE_PIECE_ONLY && $measure === SaleUnits::UNIT_PIECE) {
             return '—';
         }
 
-        return $bulk.' حبة / عبوة';
+        return $bulk.' حبة / كرتونة';
+    }
+
+    public function stockDisplay(Product $product): string
+    {
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+        $stock = DecimalMath::round($product->stock);
+        $unit = SaleUnits::measureUnitShort($measure);
+
+        if ($measure === SaleUnits::UNIT_CARTON) {
+            $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+            $cartons = $bulk > 0 ? DecimalMath::div($stock, $bulk) : 0;
+
+            return DecimalMath::display($cartons).' كرتونة ('.DecimalMath::display($stock).' حبة)';
+        }
+
+        return DecimalMath::display($stock).' '.$unit;
+    }
+
+    public function priceDisplay(Product $product, string $type = 'sale'): string
+    {
+        $entry = SaleUnits::toEntryValues($product);
+        $value = $type === 'purchase' ? $entry['purchase_price'] : $entry['sale_price'];
+        $unit = SaleUnits::measureUnitShort($product->measure_unit ?? SaleUnits::UNIT_PIECE);
+
+        return DecimalMath::display($value).' / '.$unit;
     }
 }

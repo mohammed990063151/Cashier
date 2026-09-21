@@ -26,7 +26,12 @@ class OrderLineNormalizer
             }
 
             $piecesPerCarton = max(1, (int) ($product->pieces_per_carton ?? 12));
-            $converted = SaleUnits::toPieceLine($line, $piecesPerCarton, $product->sale_mode);
+            $converted = SaleUnits::toPieceLine(
+                $line,
+                $piecesPerCarton,
+                $product->sale_mode,
+                $product->measure_unit ?? null
+            );
 
             if ($converted['quantity'] > 0) {
                 $normalized[(int) $productId] = $converted;

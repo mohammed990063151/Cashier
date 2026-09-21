@@ -38,14 +38,16 @@ class ProductController extends Controller
             'name' => 'required|string|max:255|unique:products,name',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
-            'stock' => 'nullable|integer|min:0',
+            'stock' => 'nullable|numeric|min:0',
             'pieces_per_carton' => 'nullable|integer|min:1',
             'sale_mode' => 'nullable|in:piece_only,bulk_only,flexible',
+            'measure_unit' => 'nullable|in:piece,carton,kilo',
         ], $this->messages());
 
         $validated['sale_price'] = $validated['sale_price']
-            ?? round((float) $validated['purchase_price'] * 1.15, 2);
+            ?? round((float) $validated['purchase_price'] * 1.15, 3);
         $validated['stock'] = $validated['stock'] ?? 0;
+        $validated['measure_unit'] = $validated['measure_unit'] ?? 'piece';
         $validated['sale_mode'] = $validated['sale_mode'] ?? 'flexible';
 
         $product = Product::create(
@@ -58,8 +60,10 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'purchase_price' => (float) $product->purchase_price,
+                'sale_price' => (float) $product->sale_price,
                 'pieces_per_carton' => max(1, (int) $product->pieces_per_carton),
                 'sale_mode' => $product->sale_mode,
+                'measure_unit' => $product->measure_unit,
             ],
         ]);
     }
@@ -146,9 +150,10 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'pieces_per_carton' => 'required|integer|min:1',
-            'sale_mode' => 'required|in:piece_only,bulk_only,flexible',
+            'stock' => 'required|numeric|min:0',
+            'pieces_per_carton' => 'nullable|integer|min:1',
+            'sale_mode' => 'nullable|in:piece_only,bulk_only,flexible',
+            'measure_unit' => 'required|in:piece,carton,kilo',
             'image' => 'nullable|image|max:2048',
         ];
     }
@@ -166,7 +171,8 @@ class ProductController extends Controller
             'purchase_price.required' => 'سعر الشراء مطلوب.',
             'sale_price.required' => 'سعر البيع مطلوب.',
             'stock.required' => 'المخزون مطلوب.',
-            'sale_mode.required' => 'طريقة البيع مطلوبة.',
+            'measure_unit.required' => 'وحدة القياس مطلوبة.',
+            'measure_unit.in' => 'وحدة القياس غير صالحة.',
             'sale_mode.in' => 'طريقة البيع غير صالحة.',
             'image.image' => 'الملف يجب أن يكون صورة.',
             'image.max' => 'حجم الصورة كبير جداً (الحد 2 ميجا).',

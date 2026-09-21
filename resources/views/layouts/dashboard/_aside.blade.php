@@ -19,6 +19,11 @@
                     <i class="fa fa-dashboard"></i> <span>لوحة التحكم</span>
                 </a>
             </li>
+            <li>
+                <a href="javascript:void(0)" id="ai-assistant-menu-link">
+                    <i class="fa fa-magic"></i> <span>المساعد الذكي</span>
+                </a>
+            </li>
 
             {{-- التصنيفات --}}
             @if (auth()->user()->hasPermission('read_categories'))

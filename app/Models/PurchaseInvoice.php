@@ -58,9 +58,10 @@ class PurchaseInvoice extends Model
         $unitLabel = $item->purchase_unit_label ?? 'حبة';
 
         return $unitLabel.' × '.$item->entered_qty.' — '.SaleUnits::formatQuantityLabel(
-            (int) $item->quantity,
+            (float) $item->quantity,
             $bulk,
-            $mode
+            $mode,
+            $product->measure_unit ?? null
         );
     }
 }

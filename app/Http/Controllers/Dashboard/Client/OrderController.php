@@ -13,7 +13,8 @@ use App\Http\Controllers\Controller;
 use App\Services\CashService;
 use App\Services\OrderLineNormalizer;
 use App\Services\OrderFinancialService;
-use Illuminate\Support\Facades\Log;
+use App\Support\DecimalMath;
+use App\Support\SaleUnits;
 
 
 class OrderController extends Controller
@@ -70,20 +71,20 @@ class OrderController extends Controller
 
         $total_price = 0;
 
-        // تحقق إضافي من الكمية وحساب الإجمالي بالسعر الجديد
-        foreach ($request->products as $productId => $data) {
+        // تحقق من المخزون باستخدام الكميات المحوّلة للحبة (أو الكيلو)
+        foreach ($products as $productId => $data) {
             $product = Product::findOrFail($productId);
 
-            $quantity = max(0, $data['quantity']);
-            $sale_price = max(0, $data['sale_price']); // السعر الجديد المدخل
+            $quantity = DecimalMath::round($data['quantity'] ?? 0);
+            $sale_price = max(0, DecimalMath::round($data['sale_price'] ?? 0));
 
-            if ($quantity > $product->stock) {
+            if ($stockError = $this->stockShortageMessage($product, $quantity)) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', __("الكمية المطلوبة للمنتج '{$product->name}' أكبر من المخزون المتاح ({$product->stock})"));
+                    ->with('error', $stockError);
             }
 
-            $total_price += $sale_price * $quantity;
+            $total_price += DecimalMath::mul($sale_price, $quantity);
         }
 
         $paidAtSale = (float) ($request->paid_at_sale ?? 0);
@@ -111,8 +112,14 @@ class OrderController extends Controller
         }
 
         $orderNumber = $this->generateUniqueOrderNumber();
-        $order = $this->attach_order($request, $client, $orderNumber, $paidAtSale, $invoiceDiscount);
 
+        try {
+            $order = $this->attach_order($request, $client, $orderNumber, $paidAtSale, $invoiceDiscount);
+        } catch (\RuntimeException $e) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $e->getMessage());
+        }
 
         return redirect()->route('dashboard.orders.index')
             ->with('success', __('تم الإضافة بنجاح'))
@@ -169,26 +176,26 @@ public function update(Request $request, Client $client, Order $order, CashServi
     $total_profit = 0;
     $productData = [];
 
-    foreach ($request->products as $productId => $data) {
-        $quantity = max(0, $data['quantity']);
-        $unitPrice = max(0, $data['sale_price']);
+    foreach ($products as $productId => $data) {
+        $quantity = DecimalMath::round($data['quantity'] ?? 0);
+        $unitPrice = max(0, DecimalMath::round($data['sale_price'] ?? 0));
         $product = Product::findOrFail($productId);
-        $oldQuantity = $order->products->find($productId)?->pivot->quantity ?? 0;
-        $available_stock = $product->stock + $oldQuantity;
+        $oldQuantity = (float) ($order->products->find($productId)?->pivot->quantity ?? 0);
+        $available_stock = DecimalMath::add((float) $product->stock, $oldQuantity);
 
-        if ($quantity > $available_stock) {
+        if ($stockError = $this->stockShortageMessage($product, $quantity, $available_stock)) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', __("الكمية المطلوبة للمنتج '{$product->name}' أكبر من المخزون المتاح ({$available_stock})"));
+                ->with('error', $stockError);
         }
 
         $productData[$productId] = [
             'quantity'   => $quantity,
             'sale_price' => $unitPrice,
-            'cost_price' => $product->purchase_price, // نحفظ سعر الشراء في pivot
+            'cost_price' => $product->purchase_price,
         ];
 
-        $total_price  += $unitPrice * $quantity;
+        $total_price  += DecimalMath::mul($unitPrice, $quantity);
         $total_profit += ($unitPrice - $product->purchase_price) * $quantity;
     }
      if ($invoiceDiscount > $total_price) {
@@ -215,13 +222,24 @@ public function update(Request $request, Client $client, Order $order, CashServi
         'profit' => floor($total_profit),
     ]);
 
-    // ✅ تحديث المخزون
+    // ✅ تحديث المخزون: أعد كل الكميات القديمة ثم اخصم الجديدة
+    foreach ($order->products as $product) {
+        $product->update([
+            'stock' => \App\Support\DecimalMath::add(
+                (float) $product->stock,
+                (float) $product->pivot->quantity
+            ),
+        ]);
+    }
+
     foreach ($productData as $productId => $data) {
         $product = Product::findOrFail($productId);
-        $oldQuantity = $order->products->find($productId)?->pivot->quantity ?? 0;
-        $product->stock += $oldQuantity;
-        $product->stock -= $data['quantity'];
-        $product->save();
+        $product->update([
+            'stock' => \App\Support\DecimalMath::sub(
+                (float) $product->stock,
+                (float) $data['quantity']
+            ),
+        ]);
     }
 
     $order->products()->sync($productData);
@@ -302,27 +320,25 @@ public function update(Request $request, Client $client, Order $order, CashServi
         $productData = [];
         $total_profit = 0;
 
-        // تحقق من الكميات وصلاحية الطلب
+        // المنتجات مفترضة مُطبَّعة مسبقاً في store() — لا نُرجع RedirectResponse من هنا
         foreach ($request->products as $productId => $data) {
-            $quantity = max(0, $data['quantity']); // لا يقبل كمية سالبة
-            $unitPrice = max(0, $data['sale_price']); // السعر المعدل من المستخدم
+            $quantity = DecimalMath::round($data['quantity'] ?? 0);
+            $unitPrice = max(0, DecimalMath::round($data['sale_price'] ?? 0));
 
             $product = Product::findOrFail($productId);
 
-            if ($quantity > $product->stock) {
-                session()->flash('error', "الكمية المطلوبة للمنتج '{$product->name}' أكبر من المخزون المتاح ({$product->stock})");
-                return redirect()->back()->withInput();
+            if ($stockError = $this->stockShortageMessage($product, $quantity)) {
+                throw new \RuntimeException($stockError);
             }
 
             $productData[$productId] = [
                 'quantity' => $quantity,
-                'sale_price' => $unitPrice
+                'sale_price' => $unitPrice,
+                'cost_price' => (float) $product->purchase_price,
             ];
 
-            $total_price += $unitPrice * $quantity;
-            $total_profit += ($unitPrice - $product->purchase_price) * $quantity;
-
-            // $total_profit = floor($total_profit);
+            $total_price += DecimalMath::mul($unitPrice, $quantity);
+            $total_profit += ($unitPrice - (float) $product->purchase_price) * $quantity;
         }
         $total_after_discount = max($total_price - $invoiceDiscount, 0);
         $remaining = max($total_after_discount - $paidAtSale, 0);
@@ -344,12 +360,12 @@ public function update(Request $request, Client $client, Order $order, CashServi
             $order->products()->attach($productId, [
                 'quantity' => $data['quantity'],
                 'sale_price' => $data['sale_price'],
-                'cost_price' => $product->purchase_price,
+                'cost_price' => $data['cost_price'],
             ]);
 
             $product = Product::findOrFail($productId);
             $product->update([
-                'stock' => $product->stock - $data['quantity'],
+                'stock' => DecimalMath::sub((float) $product->stock, (float) $data['quantity']),
             ]);
         }
         // ======================
@@ -371,6 +387,38 @@ public function update(Request $request, Client $client, Order $order, CashServi
 
         session()->flash('success', __('تم إضافة الطلب بنجاح'));
         return $order;
+    }
+
+    /**
+     * رسالة نقص مخزون واضحة (حبة/كرتونة) أو null إذا المتاح يكفي.
+     */
+    protected function stockShortageMessage(Product $product, float $requested, ?float $available = null): ?string
+    {
+        $available ??= (float) $product->stock;
+        $requested = DecimalMath::round($requested);
+        $available = DecimalMath::round($available);
+
+        // نسمح بالمساواة مع هامش كسور بسيط
+        if ($requested <= $available + 0.0005) {
+            return null;
+        }
+
+        $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+        $mode = $product->sale_mode ?? null;
+        $measure = $product->measure_unit ?? null;
+
+        $requestedLabel = SaleUnits::formatQuantityLabel($requested, $bulk, $mode, $measure);
+        $availableLabel = SaleUnits::formatQuantityLabel($available, $bulk, $mode, $measure);
+
+        $hint = '';
+        if (SaleUnits::normalizeMeasureUnit($measure) !== SaleUnits::UNIT_KILO && $bulk > 1) {
+            $maxCartons = DecimalMath::div($available, $bulk);
+            $hint = ' — أقصى كراتين يمكن بيعها الآن: '.DecimalMath::display($maxCartons);
+        }
+
+        return "الكمية المطلوبة للمنتج «{$product->name}» أكبر من المتاح.\n"
+            ."طلبت: {$requestedLabel}\n"
+            ."المتاح: {$availableLabel}{$hint}";
     }
 
     // =================== استرجاع المخزون عند حذف الطلب ===================

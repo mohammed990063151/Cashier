@@ -81,7 +81,7 @@ class Products extends Component
     public function getImagePathAttribute()
     {
         if (!$this->image) {
-            return asset('dashboard_files/img/logo.png');
+            return Product::defaultImageUrl();
         }
 
         $localPath = public_path('uploads/product_images/' . $this->image);
@@ -89,7 +89,7 @@ class Products extends Component
             return asset('uploads/product_images/' . $this->image);
         }
 
-        return asset('dashboard_files/img/logo.png');
+        return Product::defaultImageUrl();
     }
 
     public function render()

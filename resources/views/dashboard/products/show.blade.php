@@ -53,15 +53,24 @@
                         <hr>
                         @endif
 
-                        <div class="info-row"><span>سعر الشراء</span><strong>{{ number_format($product->purchase_price, 2) }} ج.س</strong></div>
-                        <div class="info-row"><span>سعر البيع (للحبة)</span><strong class="text-success">{{ number_format($product->sale_price, 2) }} ج.س</strong></div>
-                        @if(\App\Support\SaleUnits::normalizeSaleMode($product->sale_mode) === \App\Support\SaleUnits::MODE_BULK_ONLY)
-                        <div class="info-row"><span>سعر العبوة ({{ $bulk }} حبة)</span><strong>{{ number_format($product->sale_price * $bulk, 2) }} ج.س</strong></div>
+                        <div class="info-row"><span>وحدة القياس</span>
+                            <span class="label {{ $productService->measureUnitBadgeClass($product->measure_unit ?? 'piece') }}">
+                                {{ \App\Support\SaleUnits::measureUnitLabel($product->measure_unit ?? 'piece') }}
+                            </span>
+                        </div>
+                        <div class="info-row"><span>سعر الشراء</span><strong>{{ $productService->priceDisplay($product, 'purchase') }} ج.س</strong></div>
+                        <div class="info-row"><span>سعر البيع</span><strong class="text-success">{{ $productService->priceDisplay($product, 'sale') }} ج.س</strong></div>
+                        @php
+                            $measure = \App\Support\SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+                            $entry = \App\Support\SaleUnits::toEntryValues($product);
+                        @endphp
+                        @if($measure === \App\Support\SaleUnits::UNIT_CARTON)
+                        <div class="info-row"><span>سعر الحبة (محسوب)</span><strong>{{ \App\Support\DecimalMath::display($product->sale_price) }} ج.س</strong></div>
                         @endif
                         <div class="info-row"><span>نسبة الربح</span><strong>{{ $product->profit_percent }}%</strong></div>
                         <div class="info-row">
                             <span>المخزون</span>
-                            <span class="label {{ $productService->stockBadgeClass((int) $product->stock) }}">{{ $product->stock }} حبة</span>
+                            <span class="label {{ $productService->stockBadgeClass((float) $product->stock) }}">{{ $productService->stockDisplay($product) }}</span>
                         </div>
                         <div class="info-row"><span>حبات العبوة</span><strong>{{ $productService->cartonSummary($product) }}</strong></div>
                         <div class="info-row">

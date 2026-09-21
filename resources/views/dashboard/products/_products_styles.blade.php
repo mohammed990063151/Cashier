@@ -63,6 +63,47 @@
     font-size: 13px;
     color: #475569;
 }
+.unit-switch {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.unit-switch-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    border: 2px solid #dbe3ee;
+    border-radius: 10px;
+    background: #fff;
+    color: #334155;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+.unit-switch-btn i { font-size: 18px; color: #64748b; }
+.unit-switch-btn strong { font-size: 14px; }
+.unit-switch-btn small { color: #94a3b8; font-size: 11px; }
+.unit-switch-btn:hover { border-color: #3c8dbc; background: #f0f7fc; }
+.unit-switch-btn.is-active {
+    border-color: #3c8dbc;
+    background: linear-gradient(180deg, #e8f4fc 0%, #d9eef9 100%);
+    box-shadow: 0 0 0 3px rgba(60,141,188,.12);
+}
+.unit-switch-btn.is-active i,
+.unit-switch-btn.is-active strong { color: #1e5f8a; }
+.unit-live-preview {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    font-size: 13px;
+}
+@media (max-width: 767px) {
+    .unit-switch { grid-template-columns: 1fr; }
+}
 .product-show-card .info-row {
     display: flex;
     justify-content: space-between;
@@ -70,4 +111,35 @@
     border-bottom: 1px dashed #eee;
 }
 .product-show-card .info-row:last-child { border-bottom: none; }
+.product-image-box {
+    text-align: center;
+}
+.product-image-box .image-preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.product-image-actions {
+    margin-top: 12px;
+    display: grid;
+    gap: 8px;
+}
+.product-image-actions .btn {
+    border-radius: 8px;
+    font-weight: 600;
+}
+.product-image-hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.6;
+}
+.product-image-filename {
+    margin-top: 6px;
+    font-size: 12px;
+    word-break: break-all;
+}
 </style>

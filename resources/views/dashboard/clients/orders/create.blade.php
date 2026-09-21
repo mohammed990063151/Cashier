@@ -61,14 +61,26 @@
                                             </tr>
 
                                             @foreach ($category->products as $product)
+                                            @php
+                                                $stockLabel = app(\App\Services\ProductService::class)->stockDisplay($product);
+                                                $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
+                                            @endphp
                                             <tr>
                                                 <td>{{ $product->name }}</td>
                                                 <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
-                                                <td>{{ $product->stock }}</td>
-                                                <td>{{ number_format($product->sale_price, 2) }}</td>
+                                                <td><small>{{ $stockLabel }}</small></td>
+                                                <td>{{ \App\Support\DecimalMath::display($product->sale_price) }}</td>
 
                                                 <td>
-                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" data-bulk-size="{{ $product->pieces_per_carton ?? 12 }}" data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}" class="btn btn-success btn-sm add-product-btn">
+                                                    <a href="" id="product-{{ $product->id }}"
+                                                       data-name="{{ $product->name }}"
+                                                       data-id="{{ $product->id }}"
+                                                       data-price="{{ $product->sale_price }}"
+                                                       data-stock="{{ $product->stock }}"
+                                                       data-bulk-size="{{ $bulkSize }}"
+                                                       data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}"
+                                                       data-measure-unit="{{ $product->measure_unit ?? 'piece' }}"
+                                                       class="btn btn-success btn-sm add-product-btn">
                                                         <i class="fa fa-plus"></i>
                                                     </a>
                                                 </td>
@@ -114,7 +126,7 @@
                             {{ csrf_field() }}
                             {{ method_field('post') }}
                             @if(session('error'))
-                            <div id="error-alert" class="alert alert-danger text-center">
+                            <div id="error-alert" class="alert alert-danger text-center" style="white-space:pre-line;">
                                 {{ session('error') }}
                             </div>
                             @endif
@@ -122,7 +134,9 @@
                             @include('partials._errors')
 
                             <p class="text-muted" style="margin-bottom:10px;">
-                                تظهر وحدات البيع حسب إعداد كل منتج: <strong>حبة فقط</strong>، <strong>عبوة/كرتون فقط</strong>، أو <strong>مرن</strong> (حبة + 3 + 6 + دستة + عبوة).
+                                تظهر وحدات البيع حسب إعداد المنتج:
+                                <strong>حبة</strong> / <strong>نصف كرتونة</strong> / <strong>كرتونة كاملة</strong>.
+                                المخزون يُحسب بالحبة (أو الكيلو) — إذا أدخلت كراتين يتم تحويلها تلقائياً.
                             </p>
 
                             <table class="table table-hover order-list-table">

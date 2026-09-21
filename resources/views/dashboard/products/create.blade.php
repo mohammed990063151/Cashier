@@ -31,16 +31,5 @@
 </div>
 
 @include('dashboard.products._sale_mode_script')
-@push('scripts')
-<script>
-$('body').on('change', 'input.image', function() {
-    if (this.files && this.files[0]) {
-        var reader = new FileReader();
-        var $preview = $(this).closest('form').find('.image-preview');
-        reader.onload = function(e) { $preview.attr('src', e.target.result); };
-        reader.readAsDataURL(this.files[0]);
-    }
-});
-</script>
-@endpush
+@include('dashboard.products._image_capture_script')
 @endsection

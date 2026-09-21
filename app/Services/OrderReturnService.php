@@ -57,15 +57,17 @@ class OrderReturnService
                 /** @var Product $product */
                 $product = $item['product'];
                 $pivot = $order->products->find($product->id)->pivot;
-                $newQty = (int) $pivot->quantity - $item['quantity'];
+                $newQty = \App\Support\DecimalMath::sub((float) $pivot->quantity, (float) $item['quantity']);
 
-                if ($newQty > 0) {
+                if ($newQty > 0.0005) {
                     $order->products()->updateExistingPivot($product->id, ['quantity' => $newQty]);
                 } else {
                     $order->products()->detach($product->id);
                 }
 
-                $product->update(['stock' => $product->stock + $item['quantity']]);
+                $product->update([
+                    'stock' => \App\Support\DecimalMath::add((float) $product->stock, (float) $item['quantity']),
+                ]);
             }
 
             $orderReturn = OrderReturn::create([
@@ -136,7 +138,7 @@ class OrderReturnService
         $names = [];
 
         foreach ($lines as $productId => $qty) {
-            $qty = (int) $qty;
+            $qty = \App\Support\DecimalMath::round($qty);
             if ($qty <= 0) {
                 continue;
             }
@@ -148,15 +150,15 @@ class OrderReturnService
                 ]);
             }
 
-            $maxQty = (int) $product->pivot->quantity;
-            if ($qty > $maxQty) {
+            $maxQty = \App\Support\DecimalMath::round($product->pivot->quantity);
+            if ($qty > $maxQty + 0.0005) {
                 throw ValidationException::withMessages([
                     "lines.{$productId}" => "الكمية المرتجعة أكبر من المباعة ({$maxQty}).",
                 ]);
             }
 
             $unitPrice = (float) $product->pivot->sale_price;
-            $subtotal = round($unitPrice * $qty, 2);
+            $subtotal = \App\Support\DecimalMath::mul($unitPrice, $qty);
             $total += $subtotal;
             $names[] = $product->name.' ×'.$qty;
 
@@ -170,7 +172,7 @@ class OrderReturnService
 
         return [
             'items' => $items,
-            'items_total' => round($total, 2),
+            'items_total' => \App\Support\DecimalMath::round($total),
             'summary' => implode('، ', array_slice($names, 0, 3)).(count($names) > 3 ? '…' : ''),
         ];
     }

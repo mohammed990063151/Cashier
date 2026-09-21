@@ -25,24 +25,34 @@
                         <div class="col-sm-6">
                             <div class="form-group">
                                 <label>سعر الشراء <span class="text-danger">*</span></label>
-                                <input type="number" step="0.01" min="0" name="purchase_price" id="qpPurchasePrice" class="form-control" required>
+                                <input type="number" step="0.001" min="0" name="purchase_price" id="qpPurchasePrice" class="form-control" required>
                             </div>
                         </div>
                         <div class="col-sm-6">
                             <div class="form-group">
                                 <label>سعر البيع</label>
-                                <input type="number" step="0.01" min="0" name="sale_price" id="qpSalePrice" class="form-control" placeholder="يُحسب تلقائياً">
+                                <input type="number" step="0.001" min="0" name="sale_price" id="qpSalePrice" class="form-control" placeholder="يُحسب تلقائياً">
                             </div>
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
+                            <div class="form-group">
+                                <label>وحدة القياس</label>
+                                <select name="measure_unit" id="qpMeasureUnit" class="form-control">
+                                    <option value="piece">بالحبة</option>
+                                    <option value="carton">بالكرتونة</option>
+                                    <option value="kilo">بالكيلو</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
                             <div class="form-group">
                                 <label>حبات العبوة</label>
                                 <input type="number" min="1" name="pieces_per_carton" id="qpBulk" class="form-control" value="12">
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <div class="form-group">
                                 <label>طريقة البيع</label>
                                 <select name="sale_mode" id="qpSaleMode" class="form-control">

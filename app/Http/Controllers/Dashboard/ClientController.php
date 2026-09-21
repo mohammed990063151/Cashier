@@ -98,7 +98,10 @@ class ClientController extends Controller
         // إذا لديك تعديل على المنتجات كما في مثالك، ضعه هنا
         foreach ($order->products as $product) {
             $product->update([
-                'stock' => $product->stock - $product->pivot->quantity
+                'stock' => \App\Support\DecimalMath::sub(
+                    (float) $product->stock,
+                    (float) $product->pivot->quantity
+                ),
             ]);
         }
     }

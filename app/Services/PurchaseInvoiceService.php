@@ -160,7 +160,9 @@ class PurchaseInvoiceService
             foreach ($invoice->items as $oldItem) {
                 $product = Product::find($oldItem->product_id);
                 if ($product) {
-                    $product->update(['stock' => max(0, $product->stock - $oldItem->quantity)]);
+                    $product->update([
+                        'stock' => max(0, \App\Support\DecimalMath::sub((float) $product->stock, (float) $oldItem->quantity)),
+                    ]);
                 }
             }
             $invoice->items()->delete();
@@ -211,27 +213,27 @@ class PurchaseInvoiceService
     {
         /** @var Product $product */
         $product = $line['product'];
-        $pieces = (int) $line['quantity'];
-        $subtotal = (float) $line['subtotal'];
-        $pricePerPiece = $pieces > 0 ? $subtotal / $pieces : 0;
+        $pieces = \App\Support\DecimalMath::round($line['quantity']);
+        $subtotal = \App\Support\DecimalMath::round($line['subtotal']);
+        $pricePerPiece = $pieces > 0 ? \App\Support\DecimalMath::div($subtotal, $pieces) : 0;
 
         $invoice->items()->create([
             'product_id' => $product->id,
             'purchase_unit' => $line['purchase_unit'],
-            'entered_qty' => $line['entered_qty'],
+            'entered_qty' => \App\Support\DecimalMath::round($line['entered_qty']),
             'quantity' => $pieces,
-            'price' => $line['price'],
+            'price' => \App\Support\DecimalMath::round($line['price']),
             'subtotal' => $subtotal,
         ]);
 
-        $oldQuantity = (int) $product->stock;
+        $oldQuantity = \App\Support\DecimalMath::round($product->stock);
         $oldPrice = (float) ($product->purchase_price ?? 0);
-        $totalQuantity = $oldQuantity + $pieces;
+        $totalQuantity = \App\Support\DecimalMath::add($oldQuantity, $pieces);
         $avgPrice = $totalQuantity > 0
-            ? floor((($oldQuantity * $oldPrice) + ($pieces * $pricePerPiece)) / $totalQuantity)
-            : floor($pricePerPiece);
+            ? \App\Support\DecimalMath::round((($oldQuantity * $oldPrice) + ($pieces * $pricePerPiece)) / $totalQuantity)
+            : $pricePerPiece;
 
-        if ($avgPrice != $oldPrice) {
+        if (abs($avgPrice - $oldPrice) > 0.0005) {
             PriceHistory::create([
                 'product_id' => $product->id,
                 'old_price' => $oldPrice,

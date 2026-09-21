@@ -21,10 +21,10 @@ class PurchaseInvoiceItem extends Model
     ];
 
     protected $casts = [
-        'entered_qty' => 'integer',
-        'quantity' => 'integer',
-        'price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'entered_qty' => 'float',
+        'quantity' => 'float',
+        'price' => 'decimal:3',
+        'subtotal' => 'decimal:3',
     ];
 
     public function invoice(): BelongsTo
@@ -46,9 +46,10 @@ class PurchaseInvoiceItem extends Model
 
         $units = SaleUnits::unitsForOrderForm(
             max(1, (int) ($product->pieces_per_carton ?? 12)),
-            $product->sale_mode
+            $product->sale_mode,
+            $product->measure_unit ?? null
         );
 
-        return $units[$this->purchase_unit]['label'] ?? 'حبة';
+        return $units[$this->purchase_unit]['label'] ?? ($product->measure_unit === 'kilo' ? 'كيلو' : 'حبة');
     }
 }

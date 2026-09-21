@@ -111,7 +111,7 @@ class OrderController extends Controller
 
         foreach ($order->products as $product) {
             $product->update([
-                'stock' => $product->stock + $product->pivot->quantity,
+                'stock' => \App\Support\DecimalMath::add((float) $product->stock, (float) $product->pivot->quantity),
             ]);
         }
 
@@ -150,7 +150,7 @@ class OrderController extends Controller
 
         foreach ($order->products as $product) {
             $product->update([
-                'stock' => $product->stock - $product->pivot->quantity,
+                'stock' => \App\Support\DecimalMath::sub((float) $product->stock, (float) $product->pivot->quantity),
             ]);
         }
 
@@ -202,7 +202,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'lines' => 'required|array',
-            'lines.*' => 'nullable|integer|min:0',
+            'lines.*' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'return_date' => 'nullable|date',
         ]);

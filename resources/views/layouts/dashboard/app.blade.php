@@ -162,15 +162,41 @@
                         </li>
 
                         {{--<!-- Notifications: style can be found in dropdown.less -->--}}
+                        @php $headerAlertsTotal = (int) ($collectionAlertsCount ?? 0) + (int) ($stockAlertsCount ?? 0); @endphp
                         <li class="dropdown notifications-menu">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-bell-o"></i>
-                                @if(($collectionAlertsCount ?? 0) > 0)
-                                    <span class="label label-warning">{{ $collectionAlertsCount }}</span>
+                                @if($headerAlertsTotal > 0)
+                                    <span class="label label-warning" id="header-alerts-badge">{{ $headerAlertsTotal }}</span>
                                 @endif
                             </a>
-                            <ul class="dropdown-menu">
+                            <ul class="dropdown-menu" style="width:320px;">
                                 <li class="header">
+                                    تنبيهات المخزون
+                                    @if(($stockAlertsCount ?? 0) > 0)
+                                        ({{ $stockAlertsCount }})
+                                    @endif
+                                </li>
+                                <li>
+                                    <ul class="menu" id="stock-alerts-menu">
+                                        @forelse($stockAlerts ?? [] as $stockAlert)
+                                            <li>
+                                                <a href="{{ $stockAlert['url'] }}">
+                                                    <i class="fa fa-cube text-{{ ($stockAlert['level'] ?? '') === 'out' ? 'red' : 'yellow' }}"></i>
+                                                    {{ $stockAlert['name'] }}
+                                                    <br>
+                                                    <small>
+                                                        {{ $stockAlert['level_label'] }} —
+                                                        المتاح: {{ $stockAlert['stock_display'] }}
+                                                    </small>
+                                                </a>
+                                            </li>
+                                        @empty
+                                            <li><a href="#"><small class="text-muted">لا توجد منتجات منخفضة المخزون</small></a></li>
+                                        @endforelse
+                                    </ul>
+                                </li>
+                                <li class="header" style="border-top:1px solid #f4f4f4;">
                                     تنبيهات السداد
                                     @if(($collectionAlertsCount ?? 0) > 0)
                                         ({{ $collectionAlertsCount }})
@@ -198,12 +224,14 @@
                                                 </a>
                                             </li>
                                         @empty
-                                            <li><a href="#"><small class="text-muted">لا توجد تنبيهات حالياً</small></a></li>
+                                            <li><a href="#"><small class="text-muted">لا توجد تنبيهات سداد حالياً</small></a></li>
                                         @endforelse
                                     </ul>
                                 </li>
                                 <li class="footer">
-                                    <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}">عرض الكل</a>
+                                    <a href="{{ route('dashboard.products.index') }}">المنتجات</a>
+                                    ·
+                                    <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}">السداد</a>
                                 </li>
                             </ul>
                         </li>
@@ -275,6 +303,9 @@
 
         @include('partials._session')
         {{-- @include('partials._errors') --}}
+
+        @include('dashboard.ai._styles')
+        @include('dashboard.ai._widget')
 
         <footer class="main-footer">
 
@@ -371,8 +402,10 @@
         }); //end of ready
 
     </script>
-     @livewireScripts
+    @livewireScripts
     @stack('scripts')
+    @include('dashboard.ai._script')
+    @include('dashboard.stock._alerts_script')
 
 </body>
 </html>

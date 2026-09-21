@@ -61,13 +61,26 @@
                                             </tr>
 
                                             @foreach ($category->products as $product)
+                                            @php
+                                                $stockLabel = app(\App\Services\ProductService::class)->stockDisplay($product);
+                                                $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
+                                                $alreadyInOrder = in_array($product->id, $order->products->pluck('id')->toArray());
+                                            @endphp
                                             <tr>
                                                 <td>{{ $product->name }}</td>
                                                 <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
-                                                <td>{{ $product->stock }}</td>
-                                                <td>{{ $product->sale_price }}</td>
+                                                <td><small>{{ $stockLabel }}</small></td>
+                                                <td>{{ \App\Support\DecimalMath::display($product->sale_price) }}</td>
                                                 <td>
-                                                    <a href="" id="product-{{ $product->id }}" data-name="{{ $product->name }}" data-id="{{ $product->id }}" data-price="{{ $product->sale_price }}" data-bulk-size="{{ $product->pieces_per_carton ?? 12 }}" data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}" class="btn {{ in_array($product->id, $order->products->pluck('id')->toArray()) ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
+                                                    <a href="" id="product-{{ $product->id }}"
+                                                       data-name="{{ $product->name }}"
+                                                       data-id="{{ $product->id }}"
+                                                       data-price="{{ $product->sale_price }}"
+                                                       data-stock="{{ $product->stock }}"
+                                                       data-bulk-size="{{ $bulkSize }}"
+                                                       data-sale-mode="{{ $product->sale_mode ?? 'flexible' }}"
+                                                       data-measure-unit="{{ $product->measure_unit ?? 'piece' }}"
+                                                       class="btn {{ $alreadyInOrder ? 'btn-default disabled' : 'btn-success add-product-btn' }} btn-sm">
                                                         <i class="fa fa-plus"></i>
                                                     </a>
                                                 </td>
@@ -108,7 +121,7 @@
 
                     <div class="box-body">
                         @if(session('error'))
-                        <div id="error-alert" class="alert alert-danger text-center">
+                        <div id="error-alert" class="alert alert-danger text-center" style="white-space:pre-line;">
                             {{ session('error') }}
                         </div>
                         @endif

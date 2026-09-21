@@ -30,6 +30,8 @@ use App\Http\Controllers\Dashboard\CashReportController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
+use App\Http\Controllers\Dashboard\AiAssistantController;
+use App\Http\Controllers\Dashboard\StockAlertController;
 
 // Home route (optional)
 Route::get('/home', function () {
@@ -50,6 +52,12 @@ Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])-
     // Dashboard welcome
     Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
 
+    // AI Assistant
+    Route::get('ai-assistant/bootstrap', [AiAssistantController::class, 'bootstrap'])->name('ai.bootstrap');
+    Route::post('ai-assistant/chat', [AiAssistantController::class, 'chat'])->name('ai.chat');
+
+    // Stock alerts (mobile / online notifications)
+    Route::get('stock-alerts', [StockAlertController::class, 'index'])->name('stock-alerts');
     // Category routes
     Route::resource('categories', CategoryController::class)->except(['show']);
 

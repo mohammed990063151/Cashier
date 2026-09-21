@@ -84,7 +84,7 @@
                                 <th>سعر البيع</th>
                                 <th>الربح %</th>
                                 <th>المخزون</th>
-                                <th>طريقة البيع</th>
+                                <th>الوحدة / البيع</th>
                                 <th>العبوة</th>
                                 <th>إجراءات</th>
                             </tr>
@@ -100,18 +100,23 @@
                                     {{ $product->name }}
                                 </td>
                                 <td>{{ $product->category->name ?? '—' }}</td>
-                                <td><span class="money">{{ number_format($product->purchase_price, 2) }}</span></td>
-                                <td><span class="money text-success">{{ number_format($product->sale_price, 2) }}</span></td>
+                                <td><span class="money">{{ $productService->priceDisplay($product, 'purchase') }}</span></td>
+                                <td><span class="money text-success">{{ $productService->priceDisplay($product, 'sale') }}</span></td>
                                 <td>{{ $product->profit_percent }}%</td>
                                 <td>
-                                    <span class="label {{ $productService->stockBadgeClass((int) $product->stock) }}">
-                                        {{ $product->stock }} حبة
+                                    <span class="label {{ $productService->stockBadgeClass((float) $product->stock) }}">
+                                        {{ $productService->stockDisplay($product) }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
-                                        {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                                    <span class="label {{ $productService->measureUnitBadgeClass($product->measure_unit ?? 'piece') }}">
+                                        {{ \App\Support\SaleUnits::measureUnitLabel($product->measure_unit ?? 'piece') }}
                                     </span>
+                                    <div style="margin-top:4px;">
+                                        <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
+                                            {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                                        </span>
+                                    </div>
                                 </td>
                                 <td><small>{{ $productService->cartonSummary($product) }}</small></td>
                                 <td>

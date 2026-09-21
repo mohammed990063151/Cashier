@@ -167,10 +167,15 @@ class OrderFinancialService
 
     public function formatProductQuantity($product): string
     {
-        $pieces = (int) $product->pivot->quantity;
+        $pieces = (float) $product->pivot->quantity;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
 
-        return SaleUnits::formatQuantityLabel($pieces, $bulkSize, $product->sale_mode ?? null);
+        return SaleUnits::formatQuantityLabel(
+            $pieces,
+            $bulkSize,
+            $product->sale_mode ?? null,
+            $product->measure_unit ?? null
+        );
     }
 
     /**
@@ -178,40 +183,48 @@ class OrderFinancialService
      */
     public function formatProductSaleLine($product): array
     {
-        $pieces = (int) $product->pivot->quantity;
+        $pieces = (float) $product->pivot->quantity;
         $piecePrice = (float) $product->pivot->sale_price;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
         $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
-        $quantityText = SaleUnits::formatQuantityLabel($pieces, $bulkSize, $mode);
+        $quantityText = SaleUnits::formatQuantityLabel($pieces, $bulkSize, $mode, $measure);
 
-        if ($mode === SaleUnits::MODE_BULK_ONLY && $bulkSize > 1) {
-            $priceText = number_format($piecePrice * $bulkSize, 2).' ج.س / عبوة';
+        if ($measure === SaleUnits::UNIT_KILO) {
+            $priceText = \App\Support\DecimalMath::display($piecePrice).' ج.س / كيلو';
+        } elseif ($mode === SaleUnits::MODE_BULK_ONLY && $bulkSize > 1) {
+            $priceText = \App\Support\DecimalMath::display(\App\Support\DecimalMath::mul($piecePrice, $bulkSize)).' ج.س / كرتونة';
         } else {
-            $priceText = number_format($piecePrice, 2).' ج.س / حبة';
+            $priceText = \App\Support\DecimalMath::display($piecePrice).' ج.س / حبة';
         }
 
         return [
             'quantity' => $quantityText,
             'price' => $priceText,
-            'line_total' => $pieces * $piecePrice,
+            'line_total' => \App\Support\DecimalMath::mul($pieces, $piecePrice),
         ];
     }
 
     /**
-     * @return array<int, array{label: string, count: int, pieces: int, piece_price: float, line_total: float}>
+     * @return array<int, array{label: string, count: float|int, pieces: float|int, piece_price: float, line_total: float}>
      */
     public function productUnitBreakdown($product): array
     {
-        $pieces = (int) $product->pivot->quantity;
+        $pieces = (float) $product->pivot->quantity;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
         $piecePrice = (float) $product->pivot->sale_price;
-        $lines = SaleUnits::breakdownLines($pieces, $bulkSize, $product->sale_mode ?? null);
+        $lines = SaleUnits::breakdownLines(
+            $pieces,
+            $bulkSize,
+            $product->sale_mode ?? null,
+            $product->measure_unit ?? null
+        );
 
         return array_map(function ($line) use ($piecePrice) {
             return array_merge($line, [
                 'piece_price' => $piecePrice,
-                'line_total' => $line['pieces'] * $piecePrice,
+                'line_total' => \App\Support\DecimalMath::mul($line['pieces'], $piecePrice),
             ]);
         }, $lines);
     }

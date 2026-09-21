@@ -25,7 +25,15 @@ class Product extends Model
         'stock',
         'pieces_per_carton',
         'sale_mode',
+        'measure_unit',
         'image',
+    ];
+
+    protected $casts = [
+        'purchase_price' => 'float',
+        'sale_price' => 'float',
+        'stock' => 'float',
+        'pieces_per_carton' => 'integer',
     ];
 
     public $translatedAttributes = ['name', 'description'];
