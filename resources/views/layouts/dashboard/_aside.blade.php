@@ -61,7 +61,9 @@
                 </a>
                 <ul class="treeview-menu">
                     <li><a href="{{ route('dashboard.clients.index') }}"><i class="fa fa-circle-o"></i> قائمة العملاء</a></li>
+                    @if (\Illuminate\Support\Facades\Route::has('dashboard.clients.history'))
                     <li><a href="{{ route('dashboard.clients.history') }}"><i class="fa fa-history"></i> سجل معاملات العملاء</a></li>
+                    @endif
                 </ul>
             </li>
             @endif
