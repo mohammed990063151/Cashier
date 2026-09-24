@@ -48,32 +48,52 @@
         @media (max-width: 767px) {
             .content-wrapper {
                 padding-bottom: 80px;
+                margin-left: 0 !important;
+            }
+            .main-header .logo {
+                width: 100%;
+            }
+            .content {
+                padding: 10px;
+            }
+            .box {
+                border-radius: 8px;
+            }
+            .box-header .btn {
+                margin-bottom: 6px;
             }
             .table-responsive,
             .mobile-card-table {
                 border: 0;
+                overflow-x: visible !important;
             }
             .mobile-card-table table,
-            .box-body > .table-responsive > table.table {
+            .box-body .table-responsive > table.table,
+            .box-body > table.table {
                 display: block;
                 width: 100%;
             }
             .mobile-card-table thead,
-            .box-body > .table-responsive > table.table thead {
+            .box-body .table-responsive > table.table thead,
+            .box-body > table.table thead {
                 display: none;
             }
             .mobile-card-table tbody,
             .mobile-card-table tr,
             .mobile-card-table td,
-            .box-body > .table-responsive > table.table tbody,
-            .box-body > .table-responsive > table.table tr,
-            .box-body > .table-responsive > table.table td {
+            .box-body .table-responsive > table.table tbody,
+            .box-body .table-responsive > table.table tr,
+            .box-body .table-responsive > table.table td,
+            .box-body > table.table tbody,
+            .box-body > table.table tr,
+            .box-body > table.table td {
                 display: block;
                 width: 100% !important;
                 text-align: right !important;
             }
             .mobile-card-table tr,
-            .box-body > .table-responsive > table.table > tbody > tr {
+            .box-body .table-responsive > table.table > tbody > tr,
+            .box-body > table.table > tbody > tr {
                 margin-bottom: 12px;
                 border: 1px solid #ddd;
                 border-radius: 8px;
@@ -82,19 +102,39 @@
                 box-shadow: 0 1px 2px rgba(0,0,0,.04);
             }
             .mobile-card-table td,
-            .box-body > .table-responsive > table.table > tbody > tr > td {
+            .box-body .table-responsive > table.table > tbody > tr > td,
+            .box-body > table.table > tbody > tr > td {
                 border: none !important;
-                padding: 6px 4px !important;
+                border-bottom: 1px solid #f0f0f0 !important;
+                padding: 8px 4px !important;
                 position: relative;
+                white-space: normal !important;
+                word-break: break-word;
+            }
+            .mobile-card-table td:last-child,
+            .box-body .table-responsive > table.table > tbody > tr > td:last-child,
+            .box-body > table.table > tbody > tr > td:last-child {
+                border-bottom: none !important;
             }
             .mobile-card-table td:before,
-            .box-body > .table-responsive > table.table > tbody > tr > td[data-label]:before {
+            .box-body .table-responsive > table.table > tbody > tr > td[data-label]:before,
+            .box-body > table.table > tbody > tr > td[data-label]:before {
                 content: attr(data-label);
                 font-weight: 700;
                 display: block;
                 color: #666;
                 margin-bottom: 2px;
                 font-size: 12px;
+            }
+            .mobile-card-table td .btn,
+            .box-body .table .btn {
+                display: inline-block;
+                margin: 3px 2px;
+            }
+            .mobile-card-table img,
+            .box-body .table img {
+                max-width: 72px !important;
+                height: auto !important;
             }
             .client-history-filters .form-group {
                 margin-bottom: 10px;
@@ -104,10 +144,15 @@
             }
             .box-header .box-title {
                 font-size: 16px;
+                display: block;
+                float: none !important;
             }
             #ai-assistant-toggle.ai-fab {
                 bottom: 16px;
                 left: 12px;
+            }
+            .breadcrumb {
+                display: none;
             }
         }
 
@@ -465,6 +510,33 @@
             // });
 
             // CKEDITOR.config.language = "{{ app()->getLocale() }}";
+
+            // تسمية أعمدة الجداول تلقائياً للجوال
+            function labelMobileTables() {
+                $('.box-body table.table').each(function () {
+                    var $table = $(this);
+                    var labels = [];
+                    $table.find('thead th').each(function () {
+                        labels.push($.trim($(this).text()));
+                    });
+                    if (!labels.length) {
+                        return;
+                    }
+                    $table.find('tbody tr').each(function () {
+                        $(this).children('td').each(function (i) {
+                            if (!$(this).attr('data-label') && labels[i]) {
+                                $(this).attr('data-label', labels[i]);
+                            }
+                        });
+                    });
+                    if (!$table.parent().hasClass('table-responsive') && !$table.parent().hasClass('mobile-card-table')) {
+                        $table.wrap('<div class="table-responsive mobile-card-table"></div>');
+                    } else {
+                        $table.parent().addClass('mobile-card-table');
+                    }
+                });
+            }
+            labelMobileTables();
 
         }); //end of ready
 
