@@ -124,7 +124,9 @@ $user->permissions()->syncWithPivotValues($permissionIds, ['user_type' => User::
 
         $user->update($request_data);
 
-        $user->syncPermissions($request->permissions);
+        $permissionIds = Permission::whereIn('name', (array) $request->permissions)->pluck('id')->toArray();
+        $user->permissions()->syncWithPivotValues($permissionIds, ['user_type' => User::class]);
+
         session()->flash('success', __('تم التعديل بنجاح'));
         return redirect()->route('dashboard.users.index');
 
