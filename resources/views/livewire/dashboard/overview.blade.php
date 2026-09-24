@@ -130,7 +130,9 @@
                     <div class="box-header with-border">
                         <h3 class="box-title"><i class="fa fa-exclamation-circle"></i> عملاء عليهم مبالغ (من الأقدم للأحدث)</h3>
                         <div class="box-tools pull-left">
+                            @if (\Illuminate\Support\Facades\Route::has('dashboard.clients.history'))
                             <a href="{{ route('dashboard.clients.history', ['unpaid_only' => 1]) }}" class="btn btn-sm btn-danger">سجل المتأخرات</a>
+                            @endif
                         </div>
                     </div>
                     <div class="box-body table-responsive mobile-card-table">
@@ -154,7 +156,9 @@
                                         <td data-label="أقدم طلب">{{ $due['oldest_order'] }}</td>
                                         <td data-label="التاريخ">{{ $due['oldest_date'] }}</td>
                                         <td>
+                                            @if (\Illuminate\Support\Facades\Route::has('dashboard.clients.history'))
                                             <a class="btn btn-xs btn-primary" href="{{ route('dashboard.clients.history', ['client_id' => $due['id'], 'unpaid_only' => 1]) }}">التفاصيل</a>
+                                            @endif
                                             <a class="btn btn-xs btn-success" href="{{ route('dashboard.payments.index', ['client_id' => $due['id']]) }}">سداد</a>
                                         </td>
                                     </tr>
