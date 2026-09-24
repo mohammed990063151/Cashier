@@ -14,15 +14,19 @@
             <div class="box-header with-border d-flex flex-wrap justify-content-between align-items-center mb-3">
                 <h3 class="box-title">العملاء <small class="text-muted">{{ $clients->total() }}</small></h3>
 
-                <div class="d-flex flex-wrap gap-2">
-                     <br /> <br />
-                    <input type="text" id="searchInput" wire:model.debounce.500ms="search" class="form-control" placeholder="بحث في كل الأعمدة">
-                    <br /><br />
-                    @if(auth()->user()->hasPermission('create_clients'))
-                        <a href="{{ route('dashboard.clients.create') }}" class="btn btn-primary"><i class="fa fa-plus"></i> إضافة عميل</a>
-                    @else
-                        <a href="#" class="btn btn-primary disabled"><i class="fa fa-plus"></i> إضافة عميل</a>
-                    @endif
+                <div class="mobile-filter-panel" style="width:100%;">
+                    <div class="row">
+                        <div class="col-xs-12" style="margin-bottom:8px;">
+                            <input type="text" id="searchInput" wire:model.debounce.500ms="search" class="form-control" placeholder="بحث في كل الأعمدة">
+                        </div>
+                        <div class="col-xs-12">
+                            @if(auth()->user()->hasPermission('create_clients'))
+                                <a href="{{ route('dashboard.clients.create') }}" class="btn btn-primary btn-block"><i class="fa fa-plus"></i> إضافة عميل</a>
+                            @else
+                                <a href="#" class="btn btn-primary btn-block disabled"><i class="fa fa-plus"></i> إضافة عميل</a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </div>
 

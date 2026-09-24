@@ -23,14 +23,17 @@
 
                     <div class="box-header">
                         <h3 class="box-title">قائمة الطلبات</h3>
-                        <div class="row mb-3">
-                            <div class="col-md-3">
+                        <div class="row mb-3 mobile-filter-panel" style="margin-top:10px;">
+                            <div class="col-md-3 col-xs-12" style="margin-bottom:8px;">
+                                <label class="visible-xs">من تاريخ</label>
                                 <input type="date" id="fromDate" class="form-control" placeholder="من تاريخ">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-xs-12" style="margin-bottom:8px;">
+                                <label class="visible-xs">إلى تاريخ</label>
                                 <input type="date" id="toDate" class="form-control" placeholder="إلى تاريخ">
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-3 col-xs-12" style="margin-bottom:8px;">
+                                <label class="visible-xs">بحث</label>
                                 <input type="text" id="searchInput" class="form-control" placeholder="بحث باسم العميل">
                             </div>
                         </div>

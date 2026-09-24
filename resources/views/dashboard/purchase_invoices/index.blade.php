@@ -22,7 +22,7 @@
                     قائمة الفواتير <small>{{ $purchaseInvoices->total() }}</small>
                 </h3>
 
-                <form action="{{ route('dashboard.purchase-invoices.index') }}" method="get">
+                <form action="{{ route('dashboard.purchase-invoices.index') }}" method="get" class="mobile-filter-panel">
                     <div class="row" style="margin-top: 10px">
 
                         <div class="col-md-4 col-sm-6 col-xs-12" style="margin-bottom:10px">

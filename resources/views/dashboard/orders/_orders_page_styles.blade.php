@@ -154,4 +154,42 @@
         min-width: auto;
     }
 }
+@media (max-width: 767px) {
+    .orders-toolbar {
+        padding: 10px;
+        border-radius: 12px;
+    }
+    .orders-toolbar .form-control {
+        height: 46px !important;
+        font-size: 16px !important;
+    }
+    .orders-toolbar .payment-status-filter {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .orders-toolbar .payment-status-filter .btn {
+        width: 100%;
+        min-height: 42px;
+        margin: 0 !important;
+    }
+    .orders-table {
+        font-size: 14px;
+    }
+    .orders-actions {
+        width: 100%;
+    }
+    .orders-actions .btn {
+        flex: 1 1 45%;
+        min-height: 42px;
+        font-size: 13px !important;
+    }
+    .orders-preview-body {
+        max-height: none;
+        padding: 12px;
+    }
+    .orders-preview-empty {
+        padding: 28px 14px;
+    }
+}
 </style>

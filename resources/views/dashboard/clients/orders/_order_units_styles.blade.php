@@ -43,4 +43,26 @@
     text-align: center;
     margin-top: 4px;
 }
+@media (max-width: 767px) {
+    .order-unit-grid {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .order-unit-block {
+        min-width: 100%;
+        flex: 1 1 100%;
+        padding: 12px;
+        border-radius: 10px;
+    }
+    .order-unit-title {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    .order-unit-block .unit-qty,
+    .order-unit-block .unit-price {
+        height: 46px !important;
+        font-size: 16px !important;
+        border-radius: 8px;
+    }
+}
 </style>

@@ -42,13 +42,15 @@
             </div>
 
             <div class="box-body">
-                <form action="{{ route('dashboard.products.index') }}" method="get" class="products-toolbar">
+                <form action="{{ route('dashboard.products.index') }}" method="get" class="products-toolbar mobile-filter-panel">
                     <div class="row">
                         <div class="col-md-4 col-sm-12" style="margin-bottom:8px;">
+                            <label class="visible-xs">اسم المنتج</label>
                             <input type="text" name="search" class="form-control"
                                    placeholder="بحث باسم المنتج" value="{{ request('search') }}">
                         </div>
                         <div class="col-md-3 col-sm-6" style="margin-bottom:8px;">
+                            <label class="visible-xs">القسم</label>
                             <select name="category_id" class="form-control">
                                 <option value="">كل الأقسام</option>
                                 @foreach ($categories as $category)
@@ -59,6 +61,7 @@
                             </select>
                         </div>
                         <div class="col-md-3 col-sm-6" style="margin-bottom:8px;">
+                            <label class="visible-xs">طريقة البيع</label>
                             <select name="sale_mode" class="form-control">
                                 <option value="">كل طرق البيع</option>
                                 <option value="piece_only" {{ request('sale_mode') === 'piece_only' ? 'selected' : '' }}>بالحبة فقط</option>
@@ -162,19 +165,35 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
+    var isPhone = window.innerWidth <= 767;
     if ($.fn.DataTable && $('#products-table').length) {
         $('#products-table').DataTable({
-            responsive: true,
+            responsive: false,
             paging: true,
-            searching: true,
-            ordering: true,
+            searching: !isPhone,
+            ordering: !isPhone,
             order: [[0, 'asc']],
             info: true,
             autoWidth: false,
+            pageLength: isPhone ? 8 : 25,
             columnDefs: [{ orderable: false, targets: [9] }],
             language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json' },
-            dom: 'Bfrtip',
-            buttons: ['copy', 'excel', 'csv', 'print']
+            dom: isPhone ? 'tip' : 'Bfrtip',
+            buttons: isPhone ? [] : ['copy', 'excel', 'csv', 'print'],
+            drawCallback: function () {
+                if (typeof labelMobileTables === 'function') {
+                    labelMobileTables();
+                } else {
+                    $('#products-table tbody tr').each(function () {
+                        var labels = ['#','المنتج','القسم','سعر الشراء','سعر البيع','الربح %','المخزون','الوحدة / البيع','العبوة','إجراءات'];
+                        $(this).children('td').each(function (i) {
+                            if (!$(this).attr('data-label') && labels[i]) {
+                                $(this).attr('data-label', labels[i]);
+                            }
+                        });
+                    });
+                }
+            }
         });
     }
 
