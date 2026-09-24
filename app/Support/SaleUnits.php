@@ -231,6 +231,50 @@ class SaleUnits
         return $units;
     }
 
+    /**
+     * وحدات الشراء حسب نوع المنتج (حبة / كرتونة / كيلو)
+     * غير مقيدة بـ sale_mode — يمكن شراء كرتونة حتى لو البيع بالحبة.
+     *
+     * @return array<string, array{label: string, multiplier: float|int, step: string}>
+     */
+    public static function unitsForPurchaseForm(int $piecesPerBulk, ?string $measureUnit = null): array
+    {
+        $measure = self::normalizeMeasureUnit($measureUnit);
+        $bulk = max(1, $piecesPerBulk);
+
+        if ($measure === self::UNIT_KILO) {
+            return [
+                'kilo' => [
+                    'label' => 'كيلو',
+                    'multiplier' => 1,
+                    'step' => '0.001',
+                ],
+            ];
+        }
+
+        if ($measure === self::UNIT_CARTON || $bulk > 1) {
+            $bulk = max(2, $bulk);
+
+            return [
+                'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
+                'half_carton' => [
+                    'label' => self::halfCartonLabel($bulk),
+                    'multiplier' => self::halfCartonPieces($bulk),
+                    'step' => '1',
+                ],
+                'bulk' => [
+                    'label' => self::bulkLabel($bulk),
+                    'multiplier' => $bulk,
+                    'step' => '0.001',
+                ],
+            ];
+        }
+
+        return [
+            'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
+        ];
+    }
+
     public static function masterUnitKey(?string $saleMode, ?string $measureUnit = null): string
     {
         $measure = self::normalizeMeasureUnit($measureUnit);

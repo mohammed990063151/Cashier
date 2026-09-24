@@ -15,29 +15,33 @@ class PurchaseLineNormalizer
     {
         $unit = (string) ($item['purchase_unit'] ?? 'piece');
         $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
-        $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
-        $allowed = array_keys(SaleUnits::unitsForOrderForm($bulk, $mode, $measure));
+        $labels = SaleUnits::unitsForPurchaseForm($bulk, $measure);
+        $allowed = array_keys($labels);
 
         if ($measure === SaleUnits::UNIT_KILO) {
             $unit = 'kilo';
         }
 
+        // قبول مرادفات قديمة
+        if ($unit === 'carton') {
+            $unit = 'bulk';
+        }
+
         if (! in_array($unit, $allowed, true)) {
-            throw new InvalidArgumentException("وحدة الشراء غير مسموحة للمنتج «{$product->name}».");
+            throw new InvalidArgumentException("وحدة الشراء غير مسموحة للمنتج «{$product->name}». المتاح: ".implode('، ', array_column($labels, 'label')));
         }
 
         $enteredQty = max(0.001, DecimalMath::round($item['entered_qty'] ?? $item['quantity'] ?? 1));
         $unitPrice = max(0, DecimalMath::round($item['price'] ?? 0));
         $multiplier = SaleUnits::multiplier($unit, $bulk);
-        $pieces = DecimalMath::mul($enteredQty, $multiplier);
+        $baseQty = DecimalMath::mul($enteredQty, $multiplier);
         $subtotal = DecimalMath::mul($enteredQty, $unitPrice);
-        $labels = SaleUnits::unitsForOrderForm($bulk, $mode, $measure);
 
         return [
             'purchase_unit' => $unit,
             'entered_qty' => $enteredQty,
-            'quantity' => $pieces,
+            'quantity' => $baseQty, // أساس المخزون: حبة أو كيلو
             'price' => $unitPrice,
             'subtotal' => $subtotal,
             'unit_label' => $labels[$unit]['label'] ?? $unit,

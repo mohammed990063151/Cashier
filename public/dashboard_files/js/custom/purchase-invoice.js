@@ -10,11 +10,16 @@
 
     function unitsForProduct(product) {
         if (!product || !window.SaleUnitsHelper) {
-            return [{ key: 'piece', label: 'حبة', multiplier: 1 }];
+            return window.SaleUnitsHelper
+                ? window.SaleUnitsHelper.unitsForPurchase(12, 'carton')
+                : [
+                    { key: 'piece', label: 'حبة', multiplier: 1 },
+                    { key: 'half_carton', label: 'نصف كرتونة', multiplier: 6 },
+                    { key: 'bulk', label: 'كرتونة', multiplier: 12 },
+                ];
         }
-        return window.SaleUnitsHelper.unitsForProduct(
+        return window.SaleUnitsHelper.unitsForPurchase(
             product.pieces_per_carton,
-            product.sale_mode,
             product.measure_unit
         );
     }
@@ -34,25 +39,33 @@
 
     function updateUnitSelect($row, product) {
         var $select = $row.find('.unit-select');
+        var $qty = $row.find('.entered-qty');
         var preferred = 'piece';
         if (product && product.measure_unit === 'carton') {
             preferred = 'bulk';
         } else if (product && product.measure_unit === 'kilo') {
             preferred = 'kilo';
-        } else if (product && product.sale_mode === 'bulk_only') {
+        } else if (product && parseInt(product.pieces_per_carton, 10) > 1) {
             preferred = 'bulk';
         }
         var current = $select.val() || preferred;
         $select.empty();
         unitsForProduct(product).forEach(function (u) {
             $select.append(
-                $('<option></option>').val(u.key).text(u.label).attr('data-multiplier', u.multiplier)
+                $('<option></option>').val(u.key).text(u.label)
+                    .attr('data-multiplier', u.multiplier)
+                    .attr('data-step', u.step || '1')
             );
         });
         if ($select.find('option[value="' + current + '"]').length) {
             $select.val(current);
         } else if ($select.find('option[value="' + preferred + '"]').length) {
             $select.val(preferred);
+        }
+        var step = $select.find('option:selected').data('step') || '1';
+        $qty.attr('step', step);
+        if (step === '0.001') {
+            $qty.attr('min', '0.001');
         }
         applyUnitPrice($row, product);
         updatePiecesHint($row);
@@ -190,43 +203,29 @@
     }
 
     window.SaleUnitsHelper = {
-        unitsForProduct: function (bulk, mode, measure) {
+        unitsForPurchase: function (bulk, measure) {
             bulk = Math.max(1, parseInt(bulk, 10) || 12);
-            mode = mode || 'flexible';
             measure = measure || 'piece';
 
             if (measure === 'kilo') {
-                return [{ key: 'kilo', label: 'كيلو', multiplier: 1 }];
+                return [{ key: 'kilo', label: 'كيلو', multiplier: 1, step: '0.001' }];
             }
 
-            if (mode === 'piece_only') {
-                return [{ key: 'piece', label: 'حبة', multiplier: 1 }];
-            }
-
-            if (mode === 'bulk_only') {
-                return [{ key: 'bulk', label: 'كرتونة (' + bulk + ' حبة)', multiplier: bulk }];
-            }
-
-            if (measure === 'carton' && bulk > 1) {
+            if (measure === 'carton' || bulk > 1) {
+                bulk = Math.max(2, bulk);
+                var half = Math.floor(bulk / 2) || 1;
                 return [
-                    { key: 'piece', label: 'حبة', multiplier: 1 },
-                    { key: 'half_carton', label: 'نصف كرتونة (' + Math.floor(bulk / 2) + ' حبة)', multiplier: Math.floor(bulk / 2) },
-                    { key: 'bulk', label: 'كرتونة كاملة (' + bulk + ' حبة)', multiplier: bulk },
+                    { key: 'piece', label: 'حبة', multiplier: 1, step: '1' },
+                    { key: 'half_carton', label: 'نصف كرتونة (' + half + ' حبة)', multiplier: half, step: '1' },
+                    { key: 'bulk', label: 'كرتونة كاملة (' + bulk + ' حبة)', multiplier: bulk, step: '0.001' },
                 ];
             }
 
-            var units = [
-                { key: 'piece', label: 'حبة', multiplier: 1 },
-                { key: 'pack_3', label: '3 قطع', multiplier: 3 },
-                { key: 'pack_6', label: '6 قطع', multiplier: 6 },
-            ];
-            if (bulk > 1) {
-                units.push({ key: 'half_carton', label: 'نصف كرتونة (' + Math.floor(bulk / 2) + ' حبة)', multiplier: Math.floor(bulk / 2) });
-                units.push({ key: 'bulk', label: 'عبوة (' + bulk + ' حبة)', multiplier: bulk });
-            } else {
-                units.push({ key: 'dozen', label: 'دستة (12)', multiplier: 12 });
-            }
-            return units;
+            return [{ key: 'piece', label: 'حبة', multiplier: 1, step: '1' }];
+        },
+        // توافق مع الاستدعاءات القديمة
+        unitsForProduct: function (bulk, mode, measure) {
+            return this.unitsForPurchase(bulk, measure);
         },
     };
 

@@ -44,9 +44,8 @@ class PurchaseInvoiceItem extends Model
             return $this->purchase_unit ?? 'حبة';
         }
 
-        $units = SaleUnits::unitsForOrderForm(
+        $units = SaleUnits::unitsForPurchaseForm(
             max(1, (int) ($product->pieces_per_carton ?? 12)),
-            $product->sale_mode,
             $product->measure_unit ?? null
         );
 

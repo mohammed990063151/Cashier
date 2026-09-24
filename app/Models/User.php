@@ -59,6 +59,40 @@ class User extends Authenticatable
 
     }//end of get image path
 
+    /**
+     * سوبر أدمن يرى كل شيء بغض النظر عن قائمة الصلاحيات المخزّنة.
+     */
+    public function hasPermission(
+        string|array|\BackedEnum $permission,
+        mixed $team = null,
+        bool $requireAll = false
+    ): bool {
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        return $this->laratrustUserChecker()->currentUserHasPermission(
+            $permission,
+            $team,
+            $requireAll
+        );
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        try {
+            if ($this->roles()->where('name', 'super_admin')->exists()) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        $email = strtolower((string) ($this->attributes['email'] ?? ''));
+
+        return str_starts_with($email, 'super_admin@');
+    }
+
     // علاقة User مع Role
     public function roles()
     {
