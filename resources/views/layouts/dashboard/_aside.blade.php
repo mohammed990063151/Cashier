@@ -1,10 +1,12 @@
 <aside class="main-sidebar">
     <section class="sidebar">
 
-        <div class="user-panel">
-            <div class="pull-left image"></div>
+            <div class="user-panel phone-user-panel">
+            <div class="pull-left image">
+                <span class="phone-user-avatar"><i class="fa fa-user"></i></span>
+            </div>
             <div class="pull-left info">
-                <p>{{ auth()->user()->name }}</p>
+                <p>{{ auth()->user()->first_name ?? auth()->user()->name }}</p>
                 <a href="#"><i class="fa fa-circle text-success"></i> متصل</a>
             </div>
         </div>

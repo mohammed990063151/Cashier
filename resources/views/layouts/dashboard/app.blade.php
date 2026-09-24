@@ -55,10 +55,18 @@
                 line-height: 1.45;
             }
 
-            /* رأس وشريط جانبي */
+            /* رأس وشريط جانبي — درج جوال */
+            .main-header {
+                position: fixed !important;
+                top: 0;
+                right: 0;
+                left: 0;
+                width: 100% !important;
+                z-index: 1040;
+            }
             .main-header .logo {
                 width: auto !important;
-                max-width: 58%;
+                max-width: 52%;
                 padding: 0 8px;
                 font-size: 14px !important;
                 overflow: hidden;
@@ -67,43 +75,163 @@
             }
             .main-header .navbar {
                 min-height: 50px;
+                margin: 0 !important;
             }
             .main-header .sidebar-toggle {
                 padding: 14px 16px !important;
                 font-size: 18px;
             }
             .navbar-custom-menu > .nav > li > a {
-                padding: 14px 12px !important;
-                min-width: 44px;
+                padding: 14px 10px !important;
+                min-width: 40px;
                 text-align: center;
             }
-            .main-sidebar {
+
+            .content-wrapper,
+            .right-side,
+            .main-footer {
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+                transform: none !important;
+            }
+            .content-wrapper {
                 padding-top: 50px;
+                padding-bottom: 96px;
+            }
+
+            .main-sidebar {
+                position: fixed !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                right: 0 !important;
+                left: auto !important;
+                width: min(82vw, 300px) !important;
+                height: 100% !important;
+                max-height: 100vh !important;
+                padding-top: 50px !important;
+                z-index: 1050 !important;
+                overflow: hidden !important;
+                box-shadow: -6px 0 24px rgba(0,0,0,.28);
+                -webkit-transform: translate3d(105%, 0, 0) !important;
+                transform: translate3d(105%, 0, 0) !important;
+                -webkit-transition: -webkit-transform .22s ease !important;
+                transition: transform .22s ease !important;
+            }
+            body.sidebar-open .main-sidebar,
+            body.sidebar-open .main-sidebar.sidebar-open {
+                -webkit-transform: translate3d(0, 0, 0) !important;
+                transform: translate3d(0, 0, 0) !important;
+            }
+            body.sidebar-open .content-wrapper,
+            body.sidebar-open .main-footer,
+            body.sidebar-open .right-side {
+                -webkit-transform: none !important;
+                -ms-transform: none !important;
+                -o-transform: none !important;
+                transform: none !important;
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+            }
+
+            .main-sidebar .sidebar {
+                height: calc(100vh - 50px) !important;
+                max-height: calc(100vh - 50px) !important;
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior: contain;
+                padding-bottom: 28px;
+            }
+            .main-sidebar .user-panel {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 14px 14px 12px !important;
+                border-bottom: 1px solid rgba(255,255,255,.08);
+                min-height: auto;
+                overflow: visible;
+            }
+            .main-sidebar .phone-user-avatar {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: rgba(255,255,255,.12);
+                color: #fff;
+                font-size: 16px;
+            }
+            .main-sidebar .user-panel .pull-left.image {
+                float: none !important;
+                padding: 0 !important;
+            }
+            .main-sidebar .user-panel .info {
+                position: static !important;
+                left: auto !important;
+                padding: 0 !important;
+                font-size: 14px;
+                line-height: 1.35;
+                float: none !important;
+            }
+            .main-sidebar .user-panel .info > p {
+                margin: 0 0 2px;
+                font-weight: 700;
+                color: #fff;
+            }
+            .sidebar-menu {
+                padding-bottom: 40px !important;
             }
             .sidebar-menu > li > a {
                 min-height: 48px;
                 display: flex !important;
                 align-items: center;
-                gap: 8px;
+                gap: 10px;
                 font-size: 15px !important;
-                padding: 12px 15px !important;
+                padding: 12px 16px !important;
+                border-radius: 0;
             }
             .sidebar-menu > li > a > .fa {
                 font-size: 16px;
                 width: 22px;
                 text-align: center;
+                flex-shrink: 0;
             }
-            .user-panel {
-                padding: 14px 10px;
+            .sidebar-menu > li > a > span {
+                flex: 1;
+                line-height: 1.3;
             }
-            .user-panel .info {
-                font-size: 14px;
+            .sidebar-menu > li > a > .pull-right-container {
+                margin: 0 !important;
+                position: static !important;
             }
-            .content-wrapper,
-            .right-side {
-                margin-right: 0 !important;
-                margin-left: 0 !important;
-                padding-bottom: 96px;
+            .sidebar-menu .treeview-menu > li > a {
+                min-height: 42px;
+                display: flex !important;
+                align-items: center;
+                gap: 8px;
+                padding: 10px 18px 10px 12px !important;
+                font-size: 14px !important;
+            }
+            .sidebar-menu .treeview-menu > li > a > .fa {
+                width: 16px;
+                text-align: center;
+            }
+
+            /* طبقة تعتيم خلف السايدبار */
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, .45);
+                z-index: 1045;
+                -webkit-tap-highlight-color: transparent;
+            }
+            body.sidebar-open .sidebar-backdrop {
+                display: block;
+            }
+            body.sidebar-open {
+                overflow: hidden;
             }
             .content-header {
                 padding: 10px 12px 4px !important;
@@ -869,6 +997,7 @@
         @include('dashboard.partials.collection-due-banner')
 
         @include('layouts.dashboard._aside')
+        <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
 
         @yield('content')
 
@@ -920,6 +1049,33 @@
         $(document).ready(function() {
 
             $('.sidebar-menu').tree();
+
+            // سايدبار الجوال: إغلاق بالضغط خارجاً / بعد اختيار رابط
+            function closeMobileSidebar() {
+                $('body').removeClass('sidebar-open').trigger('collapsed.pushMenu');
+            }
+            $(document).on('click', '#sidebar-backdrop', function () {
+                closeMobileSidebar();
+            });
+            $(document).on('click', '.main-sidebar .sidebar-menu > li > a', function () {
+                if (window.innerWidth > 767) {
+                    return;
+                }
+                // اترك القوائم الفرعية مفتوحة؛ أغلق عند الرابط الحقيقي فقط
+                if ($(this).attr('href') && $(this).attr('href') !== '#') {
+                    setTimeout(closeMobileSidebar, 120);
+                }
+            });
+            $(document).on('click', '.main-sidebar .treeview-menu a', function () {
+                if (window.innerWidth <= 767) {
+                    setTimeout(closeMobileSidebar, 120);
+                }
+            });
+            $(document).on('click', '#ai-assistant-menu-link', function () {
+                if (window.innerWidth <= 767) {
+                    setTimeout(closeMobileSidebar, 80);
+                }
+            });
 
             //icheck
             $('input[type="checkbox"].minimal, input[type="radio"].minimal').iCheck({
