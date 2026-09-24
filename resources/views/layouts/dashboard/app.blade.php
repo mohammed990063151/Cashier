@@ -56,35 +56,170 @@
             }
 
             /* رأس وشريط جانبي — درج جوال */
-            .main-header {
+            .main-header.phone-header {
                 position: fixed !important;
                 top: 0;
                 right: 0;
                 left: 0;
                 width: 100% !important;
+                height: 56px !important;
+                min-height: 56px !important;
                 z-index: 1040;
+                display: flex !important;
+                align-items: stretch;
+                background: linear-gradient(135deg, #1e5f8a 0%, #3c8dbc 55%, #367fa9 100%) !important;
+                box-shadow: 0 2px 10px rgba(15, 23, 42, .18);
+                border: 0 !important;
             }
-            .main-header .logo {
-                width: auto !important;
-                max-width: 52%;
+            .main-header.phone-header .logo {
+                display: none !important;
+            }
+            .main-header.phone-header .navbar {
+                flex: 1 1 auto;
+                width: 100% !important;
+                margin: 0 !important;
+                min-height: 56px !important;
+                background: transparent !important;
+                display: flex !important;
+                align-items: center;
+                float: none !important;
+                position: relative;
+                padding: 0 6px 0 4px;
+            }
+            .main-header.phone-header .sidebar-toggle {
+                float: none !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                padding: 0 !important;
+                margin: 0 2px 0 0 !important;
+                border-radius: 10px;
+                background: rgba(255,255,255,.12) !important;
+                color: #fff !important;
+            }
+            .main-header.phone-header .sidebar-toggle:hover,
+            .main-header.phone-header .sidebar-toggle:focus {
+                background: rgba(255,255,255,.2) !important;
+                color: #fff !important;
+            }
+            .main-header.phone-header .sidebar-toggle .icon-bar {
+                display: block;
+                width: 18px;
+                height: 2px;
+                background: #fff;
+                border-radius: 2px;
+                margin: 3px auto;
+            }
+            .phone-header-brand {
+                display: flex !important;
+                align-items: center;
+                flex: 1 1 auto;
+                min-width: 0;
                 padding: 0 8px;
-                font-size: 14px !important;
+                color: #fff !important;
+                text-decoration: none !important;
+            }
+            .phone-header-brand-text {
+                display: block;
+                font-size: 15px;
+                font-weight: 700;
+                line-height: 1.25;
+                white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                white-space: nowrap;
+                color: #fff;
             }
-            .main-header .navbar {
-                min-height: 50px;
+            .main-header.phone-header .navbar-custom-menu {
+                float: none !important;
                 margin: 0 !important;
+                flex: 0 0 auto;
             }
-            .main-header .sidebar-toggle {
-                padding: 14px 16px !important;
+            .main-header.phone-header .navbar-custom-menu > .nav {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                margin: 0;
+            }
+            .main-header.phone-header .navbar-custom-menu > .nav > li {
+                float: none !important;
+            }
+            .main-header.phone-header .navbar-custom-menu > .nav > li > a {
+                padding: 0 !important;
+                background: transparent !important;
+                color: #fff !important;
+            }
+            .phone-header-icon,
+            .phone-header-user {
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 44px !important;
+                height: 44px !important;
+                border-radius: 10px !important;
+                position: relative;
+                background: rgba(255,255,255,.1) !important;
+            }
+            .phone-header-icon > i {
                 font-size: 18px;
             }
-            .navbar-custom-menu > .nav > li > a {
-                padding: 14px 10px !important;
-                min-width: 40px;
+            .phone-header-badge {
+                position: absolute !important;
+                top: 4px !important;
+                left: 4px !important;
+                right: auto !important;
+                min-width: 18px;
+                height: 18px;
+                line-height: 18px !important;
+                padding: 0 5px !important;
+                border-radius: 999px !important;
+                font-size: 11px !important;
+                font-weight: 700 !important;
+                background: #f59e0b !important;
+                color: #fff !important;
                 text-align: center;
+            }
+            .phone-header-avatar {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                background: rgba(255,255,255,.22);
+                color: #fff;
+                font-size: 14px;
+            }
+            .phone-header-avatar-lg {
+                width: 64px;
+                height: 64px;
+                font-size: 26px;
+                margin: 12px auto 8px;
+                background: rgba(255,255,255,.2);
+            }
+            .phone-header-dropdown {
+                width: min(320px, 92vw) !important;
+                max-width: 92vw;
+                right: auto !important;
+                left: 8px !important;
+                border-radius: 12px !important;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(15,23,42,.2) !important;
+            }
+            .main-header.phone-header .user-menu > .dropdown-menu {
+                left: 8px !important;
+                right: auto !important;
+                width: min(260px, 90vw);
+                border-radius: 12px;
+            }
+            .main-header.phone-header .user-header {
+                background: linear-gradient(135deg, #1e5f8a, #3c8dbc) !important;
+                height: auto !important;
+                padding: 16px 12px !important;
+            }
+            .main-header.phone-header .user-header img {
+                display: none;
             }
 
             .content-wrapper,
@@ -95,7 +230,7 @@
                 transform: none !important;
             }
             .content-wrapper {
-                padding-top: 50px;
+                padding-top: 56px !important;
                 padding-bottom: 96px;
             }
 
@@ -108,7 +243,7 @@
                 width: min(82vw, 300px) !important;
                 height: 100% !important;
                 max-height: 100vh !important;
-                padding-top: 50px !important;
+                padding-top: 56px !important;
                 z-index: 1050 !important;
                 overflow: hidden !important;
                 box-shadow: -6px 0 24px rgba(0,0,0,.28);
@@ -134,8 +269,8 @@
             }
 
             .main-sidebar .sidebar {
-                height: calc(100vh - 50px) !important;
-                max-height: calc(100vh - 50px) !important;
+                height: calc(100vh - 56px) !important;
+                max-height: calc(100vh - 56px) !important;
                 overflow-y: auto !important;
                 overflow-x: hidden !important;
                 -webkit-overflow-scrolling: touch;
@@ -741,6 +876,17 @@
                 display: block !important;
             }
             .visible-phone-block { display: none !important; }
+            .phone-header-brand { display: none !important; }
+            .phone-header-avatar {
+                display: none;
+            }
+            .main-header.phone-header .user-menu .user-image {
+                display: inline-block;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                margin-top: -3px;
+            }
         }
 
         .loader {
@@ -805,194 +951,7 @@
 
     <div class="wrapper">
 
-        <header class="main-header">
-
-            {{--<!-- Logo -->--}}
-            <a href="{{ asset($setting->logo) }}" class="logo">
-                {{--<!-- mini logo for sidebar mini 50x50 pixels -->--}}
-                <span class="logo-mini">A<b>T</b>B</span>
-                <span class="logo-lg"><b>{{ $setting->name ?? '' }}</b></span>
-            </a>
-
-            <nav class="navbar navbar-static-top">
-                <!-- Sidebar toggle button-->
-                <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-                    {{-- <span class="sr-only">Toggle navigation</span> --}}
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </a>
-
-                <div class="navbar-custom-menu">
-                    <ul class="nav navbar-nav">
-
-                        <!-- Messages: style can be found in dropdown.less-->
-                        <li class="dropdown messages-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="fa fa-envelope-o"></i>
-                                <span class="label label-success">4</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                {{-- <li class="header">You have 4 messages</li> --}}
-                                {{-- <li>
-                                    <!-- inner menu: contains the actual data -->
-                                    <ul class="menu">
-                                        <li>
-                                            <!-- start message -->
-                                            <a href="#">
-                                                <div class="pull-left">
-                                                    {{-- <img src="{{ asset('dashboard_files/img/user2-160x160.jpg') }}" class="img-circle" alt="User Image"> --}
-                                                </div>
-                                                <h4>
-                                                    Support Team
-                                                    <small>
-                                                        <i class="fa fa-clock-o"></i> 5 mins
-                                                    </small>
-                                                </h4>
-                                                <p>Why not buy a new awesome theme?</p>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li> --}}
-                                <li class="footer">
-                                    {{-- <a href="#">See All Messages</a> --}}
-                                </li>
-                            </ul>
-                        </li>
-
-                        {{--<!-- Notifications: style can be found in dropdown.less -->--}}
-                        @php $headerAlertsTotal = (int) ($collectionAlertsCount ?? 0) + (int) ($stockAlertsCount ?? 0); @endphp
-                        <li class="dropdown notifications-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <i class="fa fa-bell-o"></i>
-                                @if($headerAlertsTotal > 0)
-                                    <span class="label label-warning" id="header-alerts-badge">{{ $headerAlertsTotal }}</span>
-                                @endif
-                            </a>
-                            <ul class="dropdown-menu" style="width:320px;">
-                                <li class="header">
-                                    تنبيهات المخزون
-                                    @if(($stockAlertsCount ?? 0) > 0)
-                                        ({{ $stockAlertsCount }})
-                                    @endif
-                                </li>
-                                <li>
-                                    <ul class="menu" id="stock-alerts-menu">
-                                        @forelse($stockAlerts ?? [] as $stockAlert)
-                                            <li>
-                                                <a href="{{ $stockAlert['url'] }}">
-                                                    <i class="fa fa-cube text-{{ ($stockAlert['level'] ?? '') === 'out' ? 'red' : 'yellow' }}"></i>
-                                                    {{ $stockAlert['name'] }}
-                                                    <br>
-                                                    <small>
-                                                        {{ $stockAlert['level_label'] }} —
-                                                        المتاح: {{ $stockAlert['stock_display'] }}
-                                                    </small>
-                                                </a>
-                                            </li>
-                                        @empty
-                                            <li><a href="#"><small class="text-muted">لا توجد منتجات منخفضة المخزون</small></a></li>
-                                        @endforelse
-                                    </ul>
-                                </li>
-                                <li class="header" style="border-top:1px solid #f4f4f4;">
-                                    تنبيهات السداد
-                                    @if(($collectionAlertsCount ?? 0) > 0)
-                                        ({{ $collectionAlertsCount }})
-                                    @endif
-                                </li>
-                                <li>
-                                    <ul class="menu">
-                                        @forelse($collectionAlerts ?? [] as $alert)
-                                            @php
-                                                $alertSchedule = app(\App\Services\CollectionScheduleService::class);
-                                                $alertStatus = $alert['status'] ?? 'due_soon';
-                                                $alertOrder = $alert['order'];
-                                                $alertInst = $alert['installment'];
-                                            @endphp
-                                            <li>
-                                                <a href="{{ route('dashboard.payments.index', ['client_id' => $alertOrder->client_id, 'order_id' => $alertOrder->id]) }}">
-                                                    <i class="fa fa-warning text-{{ $alertStatus === 'overdue' ? 'red' : 'yellow' }}"></i>
-                                                    {{ $alertOrder->client->name }} — {{ $alertOrder->order_number }}
-                                                    <br>
-                                                    <small>
-                                                        قسط {{ number_format($alertInst->amount, 2) }} ج.س —
-                                                        {{ $alertSchedule->scheduleStatusLabel($alertStatus) }}
-                                                        ({{ $alertInst->due_at->format('d/m/Y') }})
-                                                    </small>
-                                                </a>
-                                            </li>
-                                        @empty
-                                            <li><a href="#"><small class="text-muted">لا توجد تنبيهات سداد حالياً</small></a></li>
-                                        @endforelse
-                                    </ul>
-                                </li>
-                                <li class="footer">
-                                    <a href="{{ route('dashboard.products.index') }}">المنتجات</a>
-                                    ·
-                                    <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}">السداد</a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        {{--<!-- Tasks: style can be found in dropdown.less -->--}}
-                        <li class="dropdown tasks-menu">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="fa fa-flag-o"></i></a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    {{--<!-- inner menu: contains the actual data -->--}}
-                                    <ul class="menu">
-                                        {{-- @foreach(LaravelLocalization::getSupportedLocales() as $localeCode => $properties)
-                                        <li>
-                                            <a rel="alternate" hreflang="{{ $localeCode }}" href="{{ LaravelLocalization::getLocalizedURL($localeCode, null, [], true) }}">
-                                        {{ $properties['native'] }}
-                                        </a>
-                                </li>
-                                @endforeach --}}
-                            </ul>
-                        </li>
-                    </ul>
-                    </li>
-
-                    {{--<!-- User Account: style can be found in dropdown.less -->--}}
-                    <li class="dropdown user user-menu">
-
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            <img src="{{ asset($setting->logo) }}" class="user-image" alt="User Image">
-                             {{-- <img src="{{ asset('dashboard_files/img/' . $setting->logo) }}" alt="POS Image"> --}}
-                            <span class="hidden-xs">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
-                        </a>
-                        <ul class="dropdown-menu">
-
-                            {{--<!-- User image -->--}}
-                            <li class="user-header">
-                                <img src="{{ asset($setting->logo) }}" class="img-circle" alt="User Image">
-
-                                <p>
-                                    {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}
-                                    {{-- <small>Member since 2 days</small> --}}
-                                </p>
-                            </li>
-
-                            {{--<!-- Menu Footer-->--}}
-                            <li class="user-footer">
-
-
-                                <a href="{{ route('logout') }}" class="btn btn-default btn-flat" onclick="event.preventDefault();
-                                                 document.getElementById('logout-form').submit();">تسجيل خروج</a>
-
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                    @csrf
-                                </form>
-
-                            </li>
-                        </ul>
-                    </li>
-                    </ul>
-                </div>
-            </nav>
-
-        </header>
+        @include('layouts.dashboard._header')
 
         @include('dashboard.partials.collection-due-banner')
 
