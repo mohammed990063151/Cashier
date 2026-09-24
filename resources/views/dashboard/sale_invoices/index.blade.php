@@ -39,11 +39,11 @@
                         </div>
                     </div>
 
-                    <div class="box-body table-responsive">
+                    <div class="box-body table-responsive mobile-card-table">
                         <table id="ordersTable" class="table table-bordered table-hover text-center">
                             <thead>
                                 <tr>
-                                    <th></th>
+                                    <th class="hidden-xs"></th>
                                     <th>رقم الطلب</th>
                                     <th>اسم العميل</th>
                                     <th>إجمالي الطلب</th>
@@ -63,26 +63,30 @@
                                         $remaining = $finance['remaining'] ?? $order->remaining_amount ?? 0;
                                     @endphp
                                     <tr>
-                                        <td class="details-control"></td>
-                                        <td>{{ $order->order_number }}</td>
-                                        <td>{{ $order->client->name ?? '—' }}</td>
-                                        <td style="color: #01941f; font-weight: bold;">
+                                        <td class="details-control hidden-xs"></td>
+                                        <td data-label="رقم الطلب"><strong>{{ $order->order_number }}</strong></td>
+                                        <td data-label="العميل">{{ $order->client->name ?? '—' }}</td>
+                                        <td data-label="الإجمالي" style="color: #01941f; font-weight: bold;">
                                             {{ number_format($total, 2) }}
                                         </td>
-                                        <td style="color: rgb(192, 152, 9); font-weight: bold;">
+                                        <td data-label="الخصم" style="color: rgb(192, 152, 9); font-weight: bold;">
                                             {{ number_format($discount, 2) }}
                                         </td>
-                                        <td style="color: #2980b9; font-weight: bold;">
+                                        <td data-label="المدفوع" style="color: #2980b9; font-weight: bold;">
                                             {{ number_format($paid, 2) }}
                                         </td>
-                                        <td style="color: #e74c3c; font-weight: bold;">
+                                        <td data-label="المتبقي" style="color: #e74c3c; font-weight: bold;">
                                             {{ number_format($remaining, 2) }}
                                         </td>
-                                        <td>{{ $order->created_at->format('Y-m-d') }}</td>
+                                        <td data-label="التاريخ">{{ $order->created_at->format('Y-m-d') }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="products-pagination text-center">
+                        {{ $orders->appends(request()->query())->links() }}
                     </div>
 
                 </div>
@@ -133,12 +137,15 @@ $(document).ready(function () {
         return html;
     }
 
-    // DataTable الأساسي
+    // DataTable الأساسي (سطح المكتب فقط — الهاتف يعتمد على البطاقات)
+    if (window.innerWidth <= 767) {
+        return;
+    }
     var table = $('#ordersTable').DataTable({
         dom: 'Bfrtip',
         buttons: ['copy', 'excel', 'csv', 'pdf', 'print'],
         order: [[1, 'desc']],
-        pageLength: 50,
+        pageLength: 25,
         language: {
             url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json"
         }

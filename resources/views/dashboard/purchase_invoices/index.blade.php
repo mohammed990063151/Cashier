@@ -48,7 +48,7 @@
             <div class="box-body">
 
                 @if ($purchaseInvoices->count() > 0)
-                <div class="table-responsive">
+                <div class="table-responsive mobile-card-table">
                     <table id="purchaseInvoicesTable" class="table table-hover table-bordered text-center">
                         <thead>
                             <tr>
@@ -66,39 +66,32 @@
                         <tbody>
                             @foreach ($purchaseInvoices as $invoice)
                             <tr>
-                                <td>{{ $invoice->invoice_number  }}</td>
-                                <td>{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
-                                <td>
+                                <td data-label="رقم الفاتورة"><strong>{{ $invoice->invoice_number  }}</strong></td>
+                                <td data-label="المورد">{{ $invoice->supplier->name ?? 'غير معروف' }}</td>
+                                <td data-label="المنتجات">
                                     @foreach ($invoice->items as $item)
                                     {{ $item->product->name }}<br>
                                     @endforeach
                                 </td>
 
-                                <td>
+                                <td data-label="الكمية">
                                     @foreach ($invoice->items as $item)
                                     {{ $item->purchase_unit_label ?? 'حبة' }} × {{ $item->entered_qty ?? $item->quantity }}
                                     <small class="text-muted">({{ $item->quantity }} حبة)</small><br>
                                     @endforeach
                                 </td>
-                                <td>{{ number_format($invoice->total, 2) }}</td>
-                                <td>{{ number_format($invoice->paid, 2) }}</td>
-                                <td>{{ number_format($invoice->remaining, 2) }}</td>
-                                <td>{{ $invoice->created_at->format('Y-m-d') }}</td>
-                                <td>
-                                    <div class="btn-group" role="group" style="flex-wrap: wrap;">
-                                        <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info btn-sm">
+                                <td data-label="الإجمالي">{{ number_format($invoice->total, 2) }}</td>
+                                <td data-label="المدفوع">{{ number_format($invoice->paid, 2) }}</td>
+                                <td data-label="المتبقي">{{ number_format($invoice->remaining, 2) }}</td>
+                                <td data-label="التاريخ">{{ $invoice->created_at->format('Y-m-d') }}</td>
+                                <td data-label="الإجراءات">
+                                    <div class="phone-action-bar purchase-action-bar">
+                                        <a href="{{ route('dashboard.purchase-invoices.show', $invoice->id) }}" class="btn btn-info">
                                             <i class="fa fa-eye"></i> عرض
                                         </a>
-                                        <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary btn-sm">
+                                        <a href="{{ route('dashboard.purchase-invoices.edit', $invoice->id) }}" class="btn btn-primary">
                                             <i class="fa fa-edit"></i> تعديل
                                         </a>
-                                        {{-- <form action="{{ route('dashboard.purchase-invoices.destroy', $invoice->id) }}" method="post" style="display:inline-block">
-                                            @csrf
-                                            @method('delete')
-                                            <button type="submit" class="btn btn-danger btn-sm delete">
-                                                <i class="fa fa-trash"></i> حذف
-                                            </button>
-                                        </form> --}}
                                     </div>
                                 </td>
                             </tr>
@@ -107,7 +100,9 @@
                     </table>
                 </div>
 
-                {{ $purchaseInvoices->appends(request()->query())->links() }}
+                <div class="products-pagination text-center">
+                    {{ $purchaseInvoices->appends(request()->query())->links() }}
+                </div>
 
                 @else
                 <h4>لا توجد فواتير.</h4>
@@ -141,30 +136,37 @@
 
 <script>
     $(document).ready(function() {
+        // على الهاتف: لا DataTables حتى لا يتعارض مع ترقيم Laravel والبطاقات
+        if (window.innerWidth <= 767 || !$.fn.DataTable) {
+            return;
+        }
         var table = $('#purchaseInvoicesTable').DataTable({
             dom: 'Bfrtip'
+            , paging: false
+            , info: false
+            , searching: false
             , buttons: [{
                     extend: 'copy'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
-                    } // استبعاد عمود الإجراءات
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
+                    }
                 }
                 , {
                     extend: 'excel'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
                     }
                 }
                 , {
                     extend: 'csv'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
                     }
                 }
                 , {
                     extend: 'pdf'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
                     }
                     , orientation: 'landscape'
                     , pageSize: 'A4'
@@ -172,26 +174,15 @@
                 , {
                     extend: 'print'
                     , exportOptions: {
-                        columns: [0, 1, 2, 3, 4, 5, 6, 7,8]
+                        columns: [0, 1, 2, 3, 4, 5, 6, 7]
                     }
                 }
             ]
             , order: [
                 [0, 'desc']
             ]
-            , pageLength: 50
             , language: {
                 search: "بحث:"
-                , lengthMenu: "عرض _MENU_ سجل"
-                , info: "عرض _START_ إلى _END_ من _TOTAL_ سجل"
-                , infoEmpty: "لا توجد سجلات متاحة"
-                , zeroRecords: "لا توجد سجلات مطابقة"
-                , paginate: {
-                    first: "الأول"
-                    , last: "الأخير"
-                    , next: "التالي"
-                    , previous: "السابق"
-                }
                 , buttons: {
                     copy: "نسخ"
                     , excel: "تصدير Excel"
@@ -200,7 +191,6 @@
                     , print: "طباعة"
                 }
             }
-            , responsive: true
         });
     });
 

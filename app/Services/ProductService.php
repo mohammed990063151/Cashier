@@ -5,15 +5,15 @@ namespace App\Services;
 use App\Models\Product;
 use App\Support\DecimalMath;
 use App\Support\SaleUnits;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class ProductService
 {
     /**
-     * @return Collection<int, Product>
+     * @return LengthAwarePaginator<int, Product>
      */
-    public function listForIndex(Request $request): Collection
+    public function listForIndex(Request $request): LengthAwarePaginator
     {
         return Product::query()
             ->with('category')
@@ -30,7 +30,8 @@ class ProductService
                 $query->where('measure_unit', $request->measure_unit);
             })
             ->orderByDesc('id')
-            ->get();
+            ->paginate(12)
+            ->withQueryString();
     }
 
     /**

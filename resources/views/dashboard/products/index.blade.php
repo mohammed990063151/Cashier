@@ -7,7 +7,7 @@
 <div class="content-wrapper">
 
     <section class="content-header">
-        <h1>المنتجات <small>{{ $products->count() }}</small></h1>
+        <h1>المنتجات <small>{{ $products->total() }}</small></h1>
         <ol class="breadcrumb">
             <li><a href="{{ route('dashboard.welcome') }}"><i class="fa fa-dashboard"></i> لوحة التحكم</a></li>
             <li class="active">المنتجات</li>
@@ -76,8 +76,83 @@
                 </form>
 
                 @if ($products->count() > 0)
-                <div class="table-responsive">
-                    <table id="products-table" class="table table-bordered table-hover products-table" style="width:100%">
+                @php $productService = app(\App\Services\ProductService::class); @endphp
+
+                {{-- بطاقات الهاتف --}}
+                <div class="products-phone-list visible-xs">
+                    @foreach ($products as $product)
+                    <article class="phone-product-card">
+                        <div class="phone-product-head">
+                            <img src="{{ $product->image_path }}" class="phone-product-img" alt="{{ $product->name }}"
+                                 onerror="this.onerror=null;this.src='{{ \App\Models\Product::defaultImageUrl() }}';">
+                            <div class="phone-product-title">
+                                <strong>{{ $product->name }}</strong>
+                                <span>{{ $product->category->name ?? '—' }}</span>
+                            </div>
+                        </div>
+
+                        <div class="phone-product-meta">
+                            <div class="phone-meta-row">
+                                <span>سعر الشراء</span>
+                                <strong class="money">{{ $productService->priceDisplay($product, 'purchase') }}</strong>
+                            </div>
+                            <div class="phone-meta-row">
+                                <span>سعر البيع</span>
+                                <strong class="money text-success">{{ $productService->priceDisplay($product, 'sale') }}</strong>
+                            </div>
+                            <div class="phone-meta-row">
+                                <span>الربح</span>
+                                <strong>{{ $product->profit_percent }}%</strong>
+                            </div>
+                            <div class="phone-meta-row">
+                                <span>المخزون</span>
+                                <span class="label {{ $productService->stockBadgeClass((float) $product->stock) }}">
+                                    {{ $productService->stockDisplay($product) }}
+                                </span>
+                            </div>
+                            <div class="phone-meta-row">
+                                <span>البيع</span>
+                                <span>
+                                    <span class="label {{ $productService->measureUnitBadgeClass($product->measure_unit ?? 'piece') }}">
+                                        {{ \App\Support\SaleUnits::measureUnitLabel($product->measure_unit ?? 'piece') }}
+                                    </span>
+                                    <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
+                                        {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="phone-meta-row">
+                                <span>العبوة</span>
+                                <strong>{{ $productService->cartonSummary($product) }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="phone-action-bar">
+                            <a href="{{ route('dashboard.products.show', $product->id) }}" class="btn btn-default">
+                                <i class="fa fa-eye"></i> عرض
+                            </a>
+                            @if (auth()->user()->hasPermission('update_products'))
+                            <a href="{{ route('dashboard.products.edit', $product->id) }}" class="btn btn-warning">
+                                <i class="fa fa-pencil"></i> تعديل
+                            </a>
+                            @endif
+                            @if (auth()->user()->hasPermission('delete_products'))
+                            <form action="{{ route('dashboard.products.destroy', $product->id) }}" method="post" class="delete-form">
+                                @csrf
+                                @method('delete')
+                                <button type="button" class="btn btn-danger btn-block delete-product-btn">
+                                    <i class="fa fa-trash"></i> حذف
+                                </button>
+                            </form>
+                            @endif
+                        </div>
+                    </article>
+                    @endforeach
+                </div>
+
+                {{-- جدول سطح المكتب --}}
+                <div class="table-responsive hidden-xs">
+                    <table class="table table-bordered table-hover products-table" style="width:100%">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -93,10 +168,9 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $productService = app(\App\Services\ProductService::class); @endphp
                             @foreach ($products as $index => $product)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
+                                <td>{{ $products->firstItem() + $index }}</td>
                                 <td class="col-name">
                                     <img src="{{ $product->image_path }}" class="product-thumb" alt="{{ $product->name }}"
                                          onerror="this.onerror=null;this.src='{{ \App\Models\Product::defaultImageUrl() }}';">
@@ -148,6 +222,10 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="products-pagination text-center">
+                    {{ $products->links() }}
+                </div>
                 @else
                 <div class="alert alert-info text-center" style="margin:0;">
                     <i class="fa fa-info-circle"></i> لا توجد منتجات مطابقة.
@@ -165,38 +243,6 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 $(document).ready(function() {
-    var isPhone = window.innerWidth <= 767;
-    if ($.fn.DataTable && $('#products-table').length) {
-        $('#products-table').DataTable({
-            responsive: false,
-            paging: true,
-            searching: !isPhone,
-            ordering: !isPhone,
-            order: [[0, 'asc']],
-            info: true,
-            autoWidth: false,
-            pageLength: isPhone ? 8 : 25,
-            columnDefs: [{ orderable: false, targets: [9] }],
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json' },
-            dom: isPhone ? 'tip' : 'Bfrtip',
-            buttons: isPhone ? [] : ['copy', 'excel', 'csv', 'print'],
-            drawCallback: function () {
-                if (typeof labelMobileTables === 'function') {
-                    labelMobileTables();
-                } else {
-                    $('#products-table tbody tr').each(function () {
-                        var labels = ['#','المنتج','القسم','سعر الشراء','سعر البيع','الربح %','المخزون','الوحدة / البيع','العبوة','إجراءات'];
-                        $(this).children('td').each(function (i) {
-                            if (!$(this).attr('data-label') && labels[i]) {
-                                $(this).attr('data-label', labels[i]);
-                            }
-                        });
-                    });
-                }
-            }
-        });
-    }
-
     $('body').on('click', '.delete-product-btn', function(e) {
         e.preventDefault();
         var form = $(this).closest('.delete-form');

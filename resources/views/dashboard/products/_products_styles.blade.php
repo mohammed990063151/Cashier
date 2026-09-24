@@ -39,6 +39,115 @@
     gap: 4px;
     justify-content: center;
 }
+
+/* بطاقات المنتجات للهاتف */
+.products-phone-list { display: none; }
+.phone-product-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .06);
+}
+.phone-product-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+.phone-product-img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    flex-shrink: 0;
+    background: #fff;
+}
+.phone-product-title { min-width: 0; flex: 1; }
+.phone-product-title strong {
+    display: block;
+    font-size: 17px;
+    color: #0f172a;
+    line-height: 1.35;
+    margin-bottom: 4px;
+}
+.phone-product-title span {
+    display: block;
+    font-size: 13px;
+    color: #64748b;
+}
+.phone-product-meta { padding: 8px 14px; }
+.phone-meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 14px;
+}
+.phone-meta-row:last-child { border-bottom: none; }
+.phone-meta-row > span:first-child {
+    color: #64748b;
+    font-weight: 700;
+    flex: 0 0 34%;
+}
+.phone-meta-row > strong,
+.phone-meta-row > span:last-child {
+    text-align: left;
+    flex: 1;
+    min-width: 0;
+}
+.phone-action-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 14px 14px;
+    background: #fafbfc;
+    border-top: 1px solid #e2e8f0;
+}
+.phone-action-bar .delete-form {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+.phone-action-bar .btn {
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 0 !important;
+    width: 100%;
+}
+.products-pagination {
+    margin-top: 16px;
+    padding-top: 8px;
+}
+.products-pagination .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+.products-pagination .pagination > li > a,
+.products-pagination .pagination > li > span {
+    min-width: 42px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px !important;
+    font-size: 14px;
+    margin: 0 !important;
+}
+
 .product-form-section {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -101,42 +210,6 @@
     color: #166534;
     font-size: 13px;
 }
-@media (max-width: 767px) {
-    .unit-switch { grid-template-columns: 1fr; }
-    .products-toolbar { padding: 10px; }
-    .products-table td.col-name {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 8px !important;
-    }
-    .products-table td.col-name:before {
-        flex: none !important;
-        max-width: none !important;
-        margin-bottom: 2px;
-    }
-    .products-table .col-name {
-        text-align: right !important;
-        font-size: 16px;
-    }
-    .products-table .product-thumb {
-        width: 64px;
-        height: 64px;
-        flex-shrink: 0;
-    }
-    .products-actions {
-        width: 100%;
-    }
-    .products-actions .btn {
-        flex: 1 1 30%;
-    }
-    .product-form-section {
-        padding: 12px;
-        border-radius: 12px;
-    }
-    .product-image-actions .btn {
-        min-height: 46px;
-    }
-}
 .product-show-card .info-row {
     display: flex;
     justify-content: space-between;
@@ -144,9 +217,7 @@
     border-bottom: 1px dashed #eee;
 }
 .product-show-card .info-row:last-child { border-bottom: none; }
-.product-image-box {
-    text-align: center;
-}
+.product-image-box { text-align: center; }
 .product-image-box .image-preview {
     width: 100%;
     max-height: 220px;
@@ -174,5 +245,16 @@
     margin-top: 6px;
     font-size: 12px;
     word-break: break-all;
+}
+
+@media (max-width: 767px) {
+    .unit-switch { grid-template-columns: 1fr; }
+    .products-toolbar { padding: 10px; }
+    .products-phone-list { display: block !important; }
+    .product-form-section { padding: 12px; border-radius: 12px; }
+    .product-image-actions .btn { min-height: 46px; }
+}
+@media (min-width: 768px) {
+    .products-phone-list { display: none !important; }
 }
 </style>

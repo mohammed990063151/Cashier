@@ -541,6 +541,69 @@
             /* إخفاء عناصر سطح المكتب المزعجة */
             .hidden-xs-phone { display: none !important; }
             .visible-phone-block { display: block !important; }
+
+            /* أزرار الإجراءات المشتركة */
+            .phone-action-bar {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                width: 100%;
+            }
+            .phone-action-bar .btn,
+            .phone-action-bar .delete-form,
+            .phone-action-bar form {
+                width: 100%;
+                margin: 0 !important;
+            }
+            .phone-action-bar .delete-form .btn,
+            .phone-action-bar form .btn {
+                width: 100%;
+            }
+            .phone-action-bar .btn {
+                min-height: 46px !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                font-weight: 700 !important;
+            }
+            .clients-action-bar,
+            .purchase-action-bar {
+                background: transparent;
+                border: 0;
+                padding: 0;
+            }
+
+            /* ترقيم الصفحات واضح على الهاتف */
+            .products-pagination,
+            .box-body .pagination,
+            nav[role="navigation"] {
+                margin-top: 14px;
+            }
+            .pagination {
+                display: flex !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 6px;
+                padding-right: 0;
+            }
+            .pagination > li {
+                display: inline-block;
+                float: none !important;
+            }
+            .pagination > li > a,
+            .pagination > li > span,
+            .page-link {
+                min-width: 42px !important;
+                min-height: 42px !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px !important;
+                font-size: 14px !important;
+                margin: 0 !important;
+                padding: 8px 12px !important;
+            }
         }
 
         @media (min-width: 768px) {

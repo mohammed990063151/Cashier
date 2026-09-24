@@ -60,7 +60,7 @@
                                 <tbody>
                                 @foreach ($users as $index=>$user)
                                     <tr>
-                                        <td data-label="#">{{ $index + 1 }}</td>
+                                        <td data-label="#">{{ $users->firstItem() + $index }}</td>
                                         <td data-label="الاسم الأول">{{ $user->first_name }}</td>
                                         <td data-label="الاسم الأخير">{{ $user->last_name }}</td>
                                         <td data-label="البريد" style="word-break:break-all;">{{ $user->email }}</td>
@@ -68,29 +68,31 @@
                                             <img src="{{ $user->image_path }}" style="width: 64px; max-width:100%;" class="img-thumbnail" alt="">
                                         </td>
                                         <td data-label="الإجراءات">
+                                            <div class="phone-action-bar">
                                             @if (auth()->user()->hasPermission('update_users'))
-                                                <a href="{{ route('dashboard.users.edit', $user->id) }}" class="btn btn-info btn-sm" style="margin:2px;">
+                                                <a href="{{ route('dashboard.users.edit', $user->id) }}" class="btn btn-info">
                                                     <i class="fa fa-edit"></i> تعديل
                                                 </a>
                                             @else
-                                                <a href="#" class="btn btn-info btn-sm disabled" style="margin:2px;">
+                                                <a href="#" class="btn btn-info disabled">
                                                     <i class="fa fa-edit"></i> تعديل
                                                 </a>
                                             @endif
 
                                             @if (auth()->user()->hasPermission('delete_users'))
-                                                <form action="{{ route('dashboard.users.destroy', $user->id) }}" method="post" style="display: inline-block">
+                                                <form action="{{ route('dashboard.users.destroy', $user->id) }}" method="post">
                                                     {{ csrf_field() }}
                                                     {{ method_field('delete') }}
-                                                    <button type="submit" class="btn btn-danger delete btn-sm" style="margin:2px;">
+                                                    <button type="submit" class="btn btn-danger delete">
                                                         <i class="fa fa-trash"></i> حذف
                                                     </button>
                                                 </form>
                                             @else
-                                                <button class="btn btn-danger btn-sm disabled" style="margin:2px;">
+                                                <button class="btn btn-danger disabled">
                                                     <i class="fa fa-trash"></i> حذف
                                                 </button>
                                             @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -98,7 +100,9 @@
                             </table>
                         </div>
 
-                        {{ $users->appends(request()->query())->links() }}
+                        <div class="products-pagination text-center">
+                            {{ $users->appends(request()->query())->links() }}
+                        </div>
                     @else
                         <h2>لا توجد بيانات</h2>
                     @endif

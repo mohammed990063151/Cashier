@@ -30,7 +30,7 @@
                 </div>
             </div>
 
-            <div class="box-body table-responsive">
+            <div class="box-body table-responsive mobile-card-table">
                 @if($clients->count() > 0)
                     <table class="table table-hover table-striped table-bordered">
                         <thead class="thead-dark">
@@ -46,36 +46,38 @@
                         <tbody>
                             @foreach($clients as $index => $client)
                                 <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $client->name }}</td>
-                                    <td>{{ is_array($client->phone) ? implode('-', $client->phone) : $client->phone }}</td>
-                                    <td>{{ $client->address }}</td>
-                                    <td>
+                                    <td data-label="#">{{ $clients->firstItem() + $index }}</td>
+                                    <td data-label="الاسم"><strong>{{ $client->name }}</strong></td>
+                                    <td data-label="الهاتف">{{ is_array($client->phone) ? implode('-', $client->phone) : $client->phone }}</td>
+                                    <td data-label="العنوان">{{ $client->address }}</td>
+                                    <td data-label="طلب جديد">
                                         @if(auth()->user()->hasPermission('create_orders'))
-                                            <a href="{{ route('dashboard.clients.orders.create', $client->id) }}" class="btn btn-success btn-sm">إضافة طلب</a>
+                                            <a href="{{ route('dashboard.clients.orders.create', $client->id) }}" class="btn btn-success btn-block phone-list-btn"><i class="fa fa-plus"></i> إضافة طلب</a>
                                         @else
-                                            <a href="#" class="btn btn-success btn-sm disabled">إضافة طلب</a>
+                                            <a href="#" class="btn btn-success btn-block disabled"><i class="fa fa-plus"></i> إضافة طلب</a>
                                         @endif
                                     </td>
-                                    <td class="d-flex gap-1 flex-wrap">
-                                        @if(auth()->user()->hasPermission('update_clients'))
-                                            <a href="{{ route('dashboard.clients.edit', $client->id) }}" class="btn btn-info btn-sm"><i class="fa fa-edit"></i> تعديل</a>
-                                        @else
-                                            <a href="#" class="btn btn-info btn-sm disabled"><i class="fa fa-edit"></i> تعديل</a>
-                                        @endif
+                                    <td data-label="الإجراءات">
+                                        <div class="phone-action-bar clients-action-bar">
+                                            @if(auth()->user()->hasPermission('update_clients'))
+                                                <a href="{{ route('dashboard.clients.edit', $client->id) }}" class="btn btn-info"><i class="fa fa-edit"></i> تعديل</a>
+                                            @else
+                                                <a href="#" class="btn btn-info disabled"><i class="fa fa-edit"></i> تعديل</a>
+                                            @endif
 
-                                        @if(auth()->user()->hasPermission('delete_clients'))
-                                            <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
-                                        @else
-                                            <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
-                                        @endif
+                                            @if(auth()->user()->hasPermission('delete_clients'))
+                                                <button type="button" class="btn btn-danger" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
+                                            @else
+                                                <button type="button" class="btn btn-danger disabled"><i class="fa fa-trash"></i> حذف</button>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
 
-                    <div class="mt-3">
+                    <div class="products-pagination text-center">
                         {{ $clients->links() }}
                     </div>
                 @else

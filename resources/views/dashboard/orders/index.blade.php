@@ -114,39 +114,33 @@
                                             </span>
                                         </td>
                                         <td class="col-actions">
-                                            <div class="orders-actions">
+                                            <div class="orders-actions phone-action-bar">
                                                 <button type="button" class="btn btn-primary btn-sm order-products"
                                                         title="معاينة سريعة"
                                                         data-url="{{ route('dashboard.orders.products', $order->id) }}"
                                                         data-method="get">
                                                     <i class="fa fa-eye"></i> معاينة
                                                 </button>
-                                                <!-- <button type="button" class="btn btn-info btn-sm view-order-btn"
-                                                        title="تفاصيل كاملة"
-                                                        data-toggle="modal" data-target="#orderModal"
-                                                        data-order-id="{{ $order->id }}">
-                                                    <i class="fa fa-file-text-o"></i>
-                                                </button> -->
                                                 @if (auth()->user()->hasPermission('update_orders') && $order->products->count() > 0)
                                                 <button type="button"
-                                                        class="btn btn-warning btn-sm order-return-btn"
+                                                        class="btn btn-default btn-sm order-return-btn"
                                                         title="مرتجع"
                                                         data-url="{{ route('dashboard.orders.return', $order->id) }}">
-                                                    <i class="fa fa-undo"></i>
+                                                    <i class="fa fa-undo"></i> مرتجع
                                                 </button>
                                                 @endif
                                                 @if (auth()->user()->hasPermission('update_orders'))
                                                 <a href="{{ route('dashboard.clients.orders.edit', ['client' => $order->client->id, 'order' => $order->id]) }}"
                                                    class="btn btn-warning btn-sm" title="تعديل">
-                                                    <i class="fa fa-pencil"></i>
+                                                    <i class="fa fa-pencil"></i> تعديل
                                                 </a>
                                                 @endif
                                                 @if (auth()->user()->hasPermission('delete_orders'))
-                                                <form action="{{ route('dashboard.orders.destroy', $order->id) }}" method="post" class="delete-form" style="display:inline-block;">
+                                                <form action="{{ route('dashboard.orders.destroy', $order->id) }}" method="post" class="delete-form">
                                                     @csrf
                                                     @method('delete')
                                                     <button type="button" class="btn btn-danger btn-sm delete-btn" title="حذف">
-                                                        <i class="fa fa-trash"></i>
+                                                        <i class="fa fa-trash"></i> حذف
                                                     </button>
                                                 </form>
                                                 @endif
@@ -157,7 +151,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="text-center" style="margin-top:10px;">
+                        <div class="products-pagination text-center" style="margin-top:10px;">
                             {{ $orders->appends(request()->query())->links() }}
                         </div>
                     </div>

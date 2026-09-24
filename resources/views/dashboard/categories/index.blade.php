@@ -48,6 +48,7 @@
 
                 @if ($categories->count() > 0)
 
+                    <div class="table-responsive mobile-card-table">
                     <table class="table table-hover">
 
                         <thead>
@@ -63,41 +64,45 @@
                         <tbody>
                         @foreach ($categories as $index => $category)
                             <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $category->name }}</td>
-                                <td>{{ $category->products->count() }}</td>
-                                <td>
-                                    <a href="{{ route('dashboard.products.index', ['category_id' => $category->id]) }}" class="btn btn-info btn-sm">المنتجات المرتبطة</a>
+                                <td data-label="#">{{ $categories->firstItem() + $index }}</td>
+                                <td data-label="الاسم"><strong>{{ $category->name }}</strong></td>
+                                <td data-label="عدد المنتجات">{{ $category->products->count() }}</td>
+                                <td data-label="المنتجات">
+                                    <a href="{{ route('dashboard.products.index', ['category_id' => $category->id]) }}" class="btn btn-info btn-block">المنتجات المرتبطة</a>
                                 </td>
-                                <td>
+                                <td data-label="الإجراءات">
+                                    <div class="phone-action-bar">
                                     @if (auth()->user()->hasPermission('update_categories'))
-                                        <a href="{{ route('dashboard.categories.edit', $category->id) }}" class="btn btn-info btn-sm">
+                                        <a href="{{ route('dashboard.categories.edit', $category->id) }}" class="btn btn-info">
                                             <i class="fa fa-edit"></i> تعديل
                                         </a>
                                     @else
-                                        <a href="#" class="btn btn-info btn-sm disabled">
+                                        <a href="#" class="btn btn-info disabled">
                                             <i class="fa fa-edit"></i> تعديل
                                         </a>
                                     @endif
 
                                     @if (auth()->user()->hasPermission('delete_categories'))
-                                        <form action="{{ route('dashboard.categories.destroy', $category->id) }}" method="post" style="display: inline-block">
+                                        <form action="{{ route('dashboard.categories.destroy', $category->id) }}" method="post">
                                             {{ csrf_field() }}
                                             {{ method_field('delete') }}
-                                            <button type="submit" class="btn btn-danger delete btn-sm"><i class="fa fa-trash"></i> حذف</button>
+                                            <button type="submit" class="btn btn-danger delete"><i class="fa fa-trash"></i> حذف</button>
                                         </form>
                                     @else
-                                        <button class="btn btn-danger btn-sm disabled"><i class="fa fa-trash"></i> حذف</button>
+                                        <button class="btn btn-danger disabled"><i class="fa fa-trash"></i> حذف</button>
                                     @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
                         </tbody>
 
                     </table>
+                    </div>
 
-                    {{ $categories->appends(request()->query())->links() }}
-
+                    <div class="products-pagination text-center">
+                        {{ $categories->appends(request()->query())->links() }}
+                    </div>
                 @else
 
                     <h2>لا توجد بيانات</h2>

@@ -176,13 +176,27 @@
     .orders-table {
         font-size: 14px;
     }
-    .orders-actions {
+    .orders-actions.phone-action-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
         width: 100%;
     }
+    .orders-actions .btn,
+    .orders-actions .delete-form {
+        width: 100%;
+        margin: 0 !important;
+    }
     .orders-actions .btn {
-        flex: 1 1 45%;
-        min-height: 42px;
+        min-height: 44px;
         font-size: 13px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+    .orders-actions .delete-form {
+        grid-column: 1 / -1;
     }
     .orders-preview-body {
         max-height: none;
