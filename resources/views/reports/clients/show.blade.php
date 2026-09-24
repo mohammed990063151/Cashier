@@ -66,7 +66,7 @@
                                 <tr>
                                     <td>{{ $index+1 }}</td>
                                     <td>{{ $p->product_name }}</td>
-                                    <td>{{ $p->quantity }}</td>
+                                    <td>{{ $p->quantity_label ?? $p->quantity }}</td>
                                     <td>{{ number_format($p->total_sales,2) }} ج.س</td>
                                 </tr>
                                 @endforeach

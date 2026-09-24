@@ -12,12 +12,37 @@
         if (!product || !window.SaleUnitsHelper) {
             return [{ key: 'piece', label: 'حبة', multiplier: 1 }];
         }
-        return window.SaleUnitsHelper.unitsForProduct(product.pieces_per_carton, product.sale_mode);
+        return window.SaleUnitsHelper.unitsForProduct(
+            product.pieces_per_carton,
+            product.sale_mode,
+            product.measure_unit
+        );
+    }
+
+    function piecePurchasePrice(product) {
+        return parseFloat(product && product.purchase_price != null ? product.purchase_price : 0) || 0;
+    }
+
+    function applyUnitPrice($row, product) {
+        if (!product) {
+            return;
+        }
+        var mult = parseFloat($row.find('.unit-select option:selected').data('multiplier')) || 1;
+        var piecePrice = piecePurchasePrice(product);
+        $row.find('.unit-price').val((piecePrice * mult).toFixed(3));
     }
 
     function updateUnitSelect($row, product) {
         var $select = $row.find('.unit-select');
-        var current = $select.val() || 'piece';
+        var preferred = 'piece';
+        if (product && product.measure_unit === 'carton') {
+            preferred = 'bulk';
+        } else if (product && product.measure_unit === 'kilo') {
+            preferred = 'kilo';
+        } else if (product && product.sale_mode === 'bulk_only') {
+            preferred = 'bulk';
+        }
+        var current = $select.val() || preferred;
         $select.empty();
         unitsForProduct(product).forEach(function (u) {
             $select.append(
@@ -26,16 +51,20 @@
         });
         if ($select.find('option[value="' + current + '"]').length) {
             $select.val(current);
+        } else if ($select.find('option[value="' + preferred + '"]').length) {
+            $select.val(preferred);
         }
+        applyUnitPrice($row, product);
         updatePiecesHint($row);
     }
 
     function updatePiecesHint($row) {
         var product = findProduct($row.find('.product-select').val());
-        var mult = parseInt($row.find('.unit-select option:selected').data('multiplier'), 10) || 1;
-        var qty = parseInt($row.find('.entered-qty').val(), 10) || 0;
-        var pieces = qty * mult;
-        $row.find('.unit-pieces-hint').text(pieces > 0 ? '= ' + pieces + ' حبة في المخزون' : '');
+        var mult = parseFloat($row.find('.unit-select option:selected').data('multiplier')) || 1;
+        var qty = parseFloat($row.find('.entered-qty').val()) || 0;
+        var pieces = Math.round(qty * mult * 1000) / 1000;
+        var measure = product && product.measure_unit === 'kilo' ? 'كيلو' : 'حبة';
+        $row.find('.unit-pieces-hint').text(pieces > 0 ? '= ' + pieces + ' ' + measure + ' في المخزون' : '');
     }
 
     function rowSubtotal($row) {
@@ -87,15 +116,19 @@
     function bindRow($row) {
         $row.find('.product-select').on('change', function () {
             var product = findProduct($(this).val());
-            if (product) {
-                $row.find('.unit-price').val(parseFloat(product.purchase_price || 0).toFixed(2));
-            }
             updateUnitSelect($row, product);
             refreshRow($row);
             refreshTotals();
         });
 
-        $row.find('.unit-select, .entered-qty, .unit-price').on('change input', function () {
+        $row.find('.unit-select').on('change', function () {
+            var product = findProduct($row.find('.product-select').val());
+            applyUnitPrice($row, product);
+            refreshRow($row);
+            refreshTotals();
+        });
+
+        $row.find('.entered-qty, .unit-price').on('change input', function () {
             refreshRow($row);
             refreshTotals();
         });
@@ -157,23 +190,38 @@
     }
 
     window.SaleUnitsHelper = {
-        unitsForProduct: function (bulk, mode) {
+        unitsForProduct: function (bulk, mode, measure) {
             bulk = Math.max(1, parseInt(bulk, 10) || 12);
             mode = mode || 'flexible';
+            measure = measure || 'piece';
+
+            if (measure === 'kilo') {
+                return [{ key: 'kilo', label: 'كيلو', multiplier: 1 }];
+            }
+
             if (mode === 'piece_only') {
                 return [{ key: 'piece', label: 'حبة', multiplier: 1 }];
             }
+
             if (mode === 'bulk_only') {
-                return [{ key: 'bulk', label: bulk > 1 ? 'عبوة (' + bulk + ' حبة)' : 'حبة', multiplier: bulk }];
+                return [{ key: 'bulk', label: 'كرتونة (' + bulk + ' حبة)', multiplier: bulk }];
             }
+
+            if (measure === 'carton' && bulk > 1) {
+                return [
+                    { key: 'piece', label: 'حبة', multiplier: 1 },
+                    { key: 'half_carton', label: 'نصف كرتونة (' + Math.floor(bulk / 2) + ' حبة)', multiplier: Math.floor(bulk / 2) },
+                    { key: 'bulk', label: 'كرتونة كاملة (' + bulk + ' حبة)', multiplier: bulk },
+                ];
+            }
+
             var units = [
                 { key: 'piece', label: 'حبة', multiplier: 1 },
                 { key: 'pack_3', label: '3 قطع', multiplier: 3 },
                 { key: 'pack_6', label: '6 قطع', multiplier: 6 },
             ];
-            if (bulk === 12) {
-                units.push({ key: 'dozen', label: 'دستة (12)', multiplier: 12 });
-            } else if (bulk > 1) {
+            if (bulk > 1) {
+                units.push({ key: 'half_carton', label: 'نصف كرتونة (' + Math.floor(bulk / 2) + ' حبة)', multiplier: Math.floor(bulk / 2) });
                 units.push({ key: 'bulk', label: 'عبوة (' + bulk + ' حبة)', multiplier: bulk });
             } else {
                 units.push({ key: 'dozen', label: 'دستة (12)', multiplier: 12 });
@@ -240,6 +288,7 @@
                     sale_price: $('#qpSalePrice').val(),
                     pieces_per_carton: $('#qpBulk').val(),
                     sale_mode: $('#qpSaleMode').val(),
+                    measure_unit: $('#qpMeasureUnit').val() || 'piece',
                     stock: 0,
                 },
             })

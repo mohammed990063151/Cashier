@@ -1,11 +1,8 @@
 <aside class="main-sidebar">
     <section class="sidebar">
 
-        {{-- لوحة المستخدم --}}
         <div class="user-panel">
-            <div class="pull-left image">
-                {{-- أيقونة أو صورة المستخدم --}}
-            </div>
+            <div class="pull-left image"></div>
             <div class="pull-left info">
                 <p>{{ auth()->user()->name }}</p>
                 <a href="#"><i class="fa fa-circle text-success"></i> متصل</a>
@@ -13,19 +10,18 @@
         </div>
 
         <ul class="sidebar-menu" data-widget="tree">
-            {{-- لوحة التحكم --}}
             <li>
                 <a href="{{ route('dashboard.welcome') }}">
                     <i class="fa fa-dashboard"></i> <span>لوحة التحكم</span>
                 </a>
             </li>
+
             <li>
                 <a href="javascript:void(0)" id="ai-assistant-menu-link">
                     <i class="fa fa-magic"></i> <span>المساعد الذكي</span>
                 </a>
             </li>
 
-            {{-- التصنيفات --}}
             @if (auth()->user()->hasPermission('read_categories'))
             <li>
                 <a href="{{ route('dashboard.categories.index') }}">
@@ -34,7 +30,6 @@
             </li>
             @endif
 
-            {{-- المنتجات --}}
             @if (auth()->user()->hasPermission('read_products'))
             <li>
                 <a href="{{ route('dashboard.products.index') }}">
@@ -43,46 +38,54 @@
             </li>
             @endif
 
-            {{-- الموردين --}}
+            @if (auth()->user()->hasPermission('read_suppliers') || auth()->user()->hasPermission('read_purchases'))
             <li class="treeview {{ request()->routeIs('dashboard.suppliers.*', 'dashboard.supplier-schedules.*') ? 'active menu-open' : '' }}">
                 <a href="#">
                     <i class="fa fa-truck"></i> <span>الموردين</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
+                    @if (auth()->user()->hasPermission('read_suppliers'))
                     <li><a href="{{ route('dashboard.suppliers.index') }}"><i class="fa fa-circle-o"></i> قائمة الموردين</a></li>
                     <li><a href="{{ route('dashboard.supplier-schedules.index') }}"><i class="fa fa-calendar"></i> جدولة السداد</a></li>
+                    @endif
                 </ul>
-            </li>
-
-            {{-- العملاء --}}
-            @if (auth()->user()->hasPermission('read_clients'))
-            <li>
-                <a href="{{ route('dashboard.clients.index') }}">
-                    <i class="fa fa-user"></i> <span>العملاء</span>
-                </a>
             </li>
             @endif
 
-            {{-- الطلبات --}}
+            @if (auth()->user()->hasPermission('read_clients'))
+            <li class="treeview {{ request()->routeIs('dashboard.clients.*') ? 'active menu-open' : '' }}">
+                <a href="#">
+                    <i class="fa fa-user"></i> <span>العملاء</span>
+                    <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
+                </a>
+                <ul class="treeview-menu">
+                    <li><a href="{{ route('dashboard.clients.index') }}"><i class="fa fa-circle-o"></i> قائمة العملاء</a></li>
+                    <li><a href="{{ route('dashboard.clients.history') }}"><i class="fa fa-history"></i> سجل معاملات العملاء</a></li>
+                </ul>
+            </li>
+            @endif
+
             @if (auth()->user()->hasPermission('read_orders'))
-            <li class="treeview {{ request()->routeIs('orders.*') ? 'active menu-open' : '' }}">
+            <li class="treeview {{ request()->routeIs('dashboard.orders.*', 'dashboard.payments.*', 'dashboard.collection-schedules.*', 'dashboard.purchase-invoices.*', 'dashboard.sale-invoices.*', 'dashboard.direct-sale*') ? 'active menu-open' : '' }}">
                 <a href="#">
                     <i class="fa fa-shopping-cart"></i> <span>الطلبات</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
                     <li><a href="{{ route('dashboard.orders.index') }}"><i class="fa fa-circle-o"></i> الطلبات</a></li>
+                    <li><a href="{{ route('dashboard.direct-sale') }}"><i class="fa fa-bolt"></i> بيع مباشر</a></li>
                     <li><a href="{{ route('dashboard.payments.index') }}"><i class="fa fa-circle-o"></i> المدفوعات</a></li>
                     <li><a href="{{ route('dashboard.collection-schedules.index') }}"><i class="fa fa-calendar-check-o"></i> جدولة السداد</a></li>
+                    @if (auth()->user()->hasPermission('read_purchases') || auth()->user()->hasPermission('read_orders'))
                     <li><a href="{{ route('dashboard.purchase-invoices.index') }}"><i class="fa fa-file-text"></i> فواتير الشراء</a></li>
+                    @endif
                     <li><a href="{{ route('dashboard.sale-invoices.index') }}"><i class="fa fa-file-text"></i> فواتير البيع</a></li>
                     <li><a href="{{ route('dashboard.orders.trashed') }}"><i class="fa fa-trash"></i> الطلبات المحذوفة</a></li>
                 </ul>
             </li>
             @endif
 
-            {{-- المستخدمون --}}
             @if (auth()->user()->hasPermission('read_users'))
             <li>
                 <a href="{{ route('dashboard.users.index') }}">
@@ -91,43 +94,43 @@
             </li>
             @endif
 
-            {{-- المصروفات --}}
+            @if (auth()->user()->hasPermission('read_expenses'))
             <li>
                 <a href="{{ route('dashboard.expenses.index') }}">
                     <i class="fa fa-money"></i> <span>المصروفات</span>
                 </a>
             </li>
+            @endif
 
-            {{-- الخزينة --}}
-            <li class="treeview {{ request()->routeIs('cash.*') ? 'active menu-open' : '' }}">
+            @if (auth()->user()->hasPermission('read_cash'))
+            <li class="treeview {{ request()->routeIs('dashboard.cash.*') ? 'active menu-open' : '' }}">
                 <a href="#"><i class="fa fa-archive"></i> <span>الخزينة</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
-                    <li class="{{ request()->routeIs('cash.index') ? 'active' : '' }}">
+                    <li class="{{ request()->routeIs('dashboard.cash.index') ? 'active' : '' }}">
                         <a href="{{ route('dashboard.cash.index') }}"><i class="fa fa-circle-o"></i> حركة الخزينة</a>
                     </li>
-                    <li class="{{ request()->routeIs('cash.settings') ? 'active' : '' }}">
+                    <li class="{{ request()->routeIs('dashboard.cash.settings') ? 'active' : '' }}">
                         <a href="{{ route('dashboard.cash.settings') }}"><i class="fa fa-circle-o"></i> إعدادات الخزينة</a>
                     </li>
                 </ul>
             </li>
+            @endif
 
-            {{-- المخزون --}}
-            @if (auth()->user()->hasPermission('read_stock'))
-            <li class="treeview {{ request()->routeIs('stock.*') ? 'active menu-open' : '' }}">
+            @if (auth()->user()->hasPermission('read_stock') || auth()->user()->hasPermission('read_reports'))
+            <li class="treeview {{ request()->routeIs('dashboard.reports.inventory.*', 'dashboard.stock-alerts') ? 'active menu-open' : '' }}">
                 <a href="#"><i class="fa fa-cubes"></i> <span>المخزون</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
                 </a>
                 <ul class="treeview-menu">
-                    <li><a href="{{ route('stock.in') }}"><i class="fa fa-circle-o"></i> إدخال للمخزون</a></li>
-                    <li><a href="{{ route('stock.out') }}"><i class="fa fa-circle-o"></i> إخراج من المخزون</a></li>
-                    <li><a href="{{ route('stock.report') }}"><i class="fa fa-circle-o"></i> تقرير المخزون</a></li>
+                    <li><a href="{{ route('dashboard.reports.inventory.report') }}"><i class="fa fa-circle-o"></i> تقرير المخزون</a></li>
+                    <li><a href="{{ route('dashboard.products.index') }}"><i class="fa fa-circle-o"></i> قائمة المنتجات</a></li>
                 </ul>
             </li>
             @endif
 
-            {{-- التقارير --}}
+            @if (auth()->user()->hasPermission('read_reports'))
             <li class="treeview {{ request()->routeIs('dashboard.reports.*') ? 'active menu-open' : '' }}">
                 <a href="#"><i class="fa fa-line-chart"></i> <span>التقارير</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
@@ -150,22 +153,31 @@
                     <li><a href="{{ route('dashboard.reports.report.cash') }}"><i class="fa fa-archive"></i> تقرير الخزينة</a></li>
                 </ul>
             </li>
+            @endif
+
+            @if (auth()->user()->hasPermission('read_settings') || auth()->user()->hasPermission('update_settings'))
             <li>
                 <a href="{{ route('dashboard.settings.edit') }}">
-                    <i class="fa fa-cogs"></i> <span>اعدادات</span>
+                    <i class="fa fa-cogs"></i> <span>إعدادات</span>
                 </a>
             </li>
-            <li>
-<a href="{{ route('dashboard.database.backup') }}" >
-   <span> 📦 تحميل نسخة احتياطية </span>
-</a>
-            </li>
-               <li>
-    <a href="{{ route('dashboard.admin.trash') }}">
-        <span> 🗑️ سلة المحذوفات</span>
-    </a>
-  </li>
+            @endif
 
+            @if (auth()->user()->hasPermission('read_backup') || auth()->user()->hasPermission('create_backup'))
+            <li>
+                <a href="{{ route('dashboard.database.backup') }}">
+                    <i class="fa fa-database"></i> <span>نسخة احتياطية</span>
+                </a>
+            </li>
+            @endif
+
+            @if (auth()->user()->hasPermission('read_trash'))
+            <li>
+                <a href="{{ route('dashboard.admin.trash') }}">
+                    <i class="fa fa-trash"></i> <span>سلة المحذوفات</span>
+                </a>
+            </li>
+            @endif
         </ul>
     </section>
 </aside>

@@ -1,34 +1,49 @@
 <?php
+
 namespace App\Http\Controllers\Dashboard;
+
 use App\Http\Controllers\Controller;
-use App\Models\SaleInvoice;
-use Illuminate\Support\Facades\DB;
 use App\Models\Order;
+use App\Services\OrderFinancialService;
 use Barryvdh\DomPDF\Facade\Pdf;
-
-
 use App\Models\Client;
-
+use App\Models\SaleInvoice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SaleInvoiceController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, OrderFinancialService $finance)
     {
-       $search = $request->search;
+        $search = trim((string) $request->search);
 
-    $orders = Order::whereHas('client', function ($q) use ($search) {
-        $q->where('name', 'like', '%' . $search . '%');
-    })
-    ->orWhere('order_number', 'like', '%' . $search . '%')
-     ->orderBy('created_at', 'desc')
-    ->paginate(10);
+        $orders = Order::with(['client', 'products', 'payments', 'returns'])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('order_number', 'like', '%'.$search.'%')
+                        ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%'.$search.'%'));
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        $orders->getCollection()->transform(function (Order $order) use ($finance) {
+            $calc = $finance->calculate($order);
+            $order->setAttribute('finance', $calc);
+            $order->setAttribute('payment_status', $finance->paymentStatus($order));
+            $order->setAttribute('payment_status_label', $finance->paymentStatusLabel($finance->paymentStatus($order)));
+
+            return $order;
+        });
+
         return view('dashboard.sale_invoices.index', compact('orders'));
     }
 
     public function create()
     {
         $clients = Client::all();
+
         return view('sale_invoices.create', compact('clients'));
     }
 
@@ -42,7 +57,7 @@ class SaleInvoiceController extends Controller
             'items.*.unit_price' => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function() use ($request) {
+        DB::transaction(function () use ($request) {
             $invoice = SaleInvoice::create([
                 'invoice_number' => 'INV-'.time(),
                 'client_id' => $request->client_id,
@@ -51,7 +66,7 @@ class SaleInvoiceController extends Controller
             ]);
 
             $total = 0;
-            foreach($request->items as $item) {
+            foreach ($request->items as $item) {
                 $subtotal = $item['quantity'] * $item['unit_price'];
                 $invoice->items()->create([
                     'product_id' => $item['product_id'] ?? null,
@@ -66,7 +81,7 @@ class SaleInvoiceController extends Controller
             $invoice->update(['total_amount' => $total]);
         });
 
-        return redirect()->route('sale_invoices.index')->with('success','تم حفظ الفاتورة بنجاح');
+        return redirect()->route('sale_invoices.index')->with('success', 'تم حفظ الفاتورة بنجاح');
     }
 
     public function show(SaleInvoice $saleInvoice)
@@ -77,7 +92,7 @@ class SaleInvoiceController extends Controller
     public function print(SaleInvoice $saleInvoice)
     {
         $pdf = PDF::loadView('sale_invoices.print', compact('saleInvoice'));
+
         return $pdf->download("فاتورة-{$saleInvoice->invoice_number}.pdf");
     }
 }
-

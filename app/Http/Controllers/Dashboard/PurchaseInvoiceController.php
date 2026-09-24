@@ -141,6 +141,7 @@ class PurchaseInvoiceController extends Controller
             'purchase_price' => (float) ($p->purchase_price ?? 0),
             'pieces_per_carton' => max(1, (int) ($p->pieces_per_carton ?? 12)),
             'sale_mode' => $p->sale_mode,
+            'measure_unit' => $p->measure_unit ?? 'piece',
         ])->values()->all();
     }
 }

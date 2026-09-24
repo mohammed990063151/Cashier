@@ -61,7 +61,7 @@
                             <div class="nav-tabs-custom">
 
                                 @php
-                                    $models = ['users', 'categories', 'products', 'clients', 'orders'];
+                                    $models = ['users', 'categories', 'products', 'clients', 'orders', 'suppliers', 'expenses', 'cash', 'reports', 'settings', 'stock', 'purchases', 'backup', 'trash'];
                                     $maps = ['create', 'read', 'update', 'delete'];
                                 @endphp
 
@@ -74,6 +74,15 @@
                                                 @case('products') المنتجات @break
                                                 @case('clients') العملاء @break
                                                 @case('orders') الطلبات @break
+                                                @case('suppliers') الموردين @break
+                                                @case('expenses') المصروفات @break
+                                                @case('cash') الخزينة @break
+                                                @case('reports') التقارير @break
+                                                @case('settings') الإعدادات @break
+                                                @case('stock') المخزون @break
+                                                @case('purchases') المشتريات @break
+                                                @case('backup') النسخ @break
+                                                @case('trash') السلة @break
                                             @endswitch
                                         </a></li>
                                     @endforeach

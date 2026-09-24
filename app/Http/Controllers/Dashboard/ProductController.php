@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Services\ProductService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Intervention\Image\Facades\Image;
 
 class ProductController extends Controller
@@ -35,7 +36,12 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string|max:255|unique:products,name',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products', 'name')->whereNull('deleted_at'),
+            ],
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
             'stock' => 'nullable|numeric|min:0',
@@ -140,13 +146,14 @@ class ProductController extends Controller
      */
     protected function rules(?int $productId = null): array
     {
-        $uniqueName = $productId
-            ? 'required|string|max:255|unique:products,name,'.$productId
-            : 'required|string|max:255|unique:products,name';
+        $uniqueName = Rule::unique('products', 'name')->whereNull('deleted_at');
+        if ($productId) {
+            $uniqueName = $uniqueName->ignore($productId);
+        }
 
         return [
             'category_id' => 'required|exists:categories,id',
-            'name' => $uniqueName,
+            'name' => ['required', 'string', 'max:255', $uniqueName],
             'description' => 'nullable|string',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',

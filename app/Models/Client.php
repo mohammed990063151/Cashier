@@ -33,16 +33,12 @@ class Client extends Model
 
  public function getRemainingBalanceAttribute()
     {
-        // eager loaded relations better: orders, orders.products, orders.payments
-        $orders = $this->orders ?? $this->orders()->with(['products','payments'])->get();
+        $finance = app(\App\Services\OrderFinancialService::class);
+        $orders = $this->relationLoaded('orders')
+            ? $this->orders
+            : $this->orders()->with(['products', 'payments', 'returns'])->get();
 
-        return $orders->sum(function($order){
-            $total = $order->products->sum(fn($p) => $p->pivot->quantity * $p->pivot->sale_price);
-            $paid  = $order->payments->sum('amount') + $order->paid_at_sale;
-            // لو عندك عمود remaining في order ممكن تستخدمه بدل الحساب:
-            return $order->remaining ?? ($total - $paid);
-            // return ($total - $paid);
-        });
+        return $orders->sum(fn ($order) => (float) $finance->calculate($order)['remaining']);
     }
 
 

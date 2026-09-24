@@ -8,6 +8,7 @@ use App\Http\Controllers\Dashboard\WelcomeController;
 use App\Http\Controllers\Dashboard\CategoryController;
 use App\Http\Controllers\Dashboard\ProductController;
 use App\Http\Controllers\Dashboard\ClientController;
+use App\Http\Controllers\Dashboard\ClientHistoryController;
 use App\Http\Controllers\Dashboard\OrderController;
 use App\Http\Controllers\Dashboard\UserController;
 use App\Http\Controllers\Dashboard\ReportController;
@@ -67,6 +68,7 @@ Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])-
 
     // Client routes
     Route::resource('clients', ClientController::class)->except(['show']);
+    Route::get('clients-history', [ClientHistoryController::class, 'index'])->name('clients.history');
     // Route::get('clients', \App\Livewire\Dashboard\Clients::class)->name('clients.index');
 
 // استرجاع تصنيف

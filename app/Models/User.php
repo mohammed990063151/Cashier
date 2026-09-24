@@ -48,6 +48,11 @@ class User extends Authenticatable
 
     }//end of get last name
 
+    public function getNameAttribute(): string
+    {
+        return trim(($this->attributes['first_name'] ?? '').' '.($this->attributes['last_name'] ?? ''));
+    }
+
     public function getImagePathAttribute()
     {
         return asset('uploads/user_images/' . $this->image);

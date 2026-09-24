@@ -181,6 +181,49 @@
     </div>
 </div>
 
+        {{-- Orders --}}
+        <div class="box box-warning">
+            <div class="box-header with-border">
+                <h3 class="box-title">الطلبات المحذوفة <small>{{ ($orders ?? collect())->count() }}</small></h3>
+            </div>
+            <div class="box-body table-responsive">
+                @if(($orders ?? collect())->count() > 0)
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>رقم الطلب</th>
+                                <th>العميل</th>
+                                <th>الإجمالي</th>
+                                <th>المتبقي</th>
+                                <th>تاريخ الحذف</th>
+                                <th>الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($orders as $index => $order)
+                                <tr>
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>{{ $order->order_number }}</td>
+                                    <td>{{ $order->client->name ?? '—' }}</td>
+                                    <td>{{ number_format($order->total_after_discount ?? $order->total_price, 2) }}</td>
+                                    <td>{{ number_format($order->remaining ?? 0, 2) }}</td>
+                                    <td>{{ $order->deleted_at }}</td>
+                                    <td>
+                                        <a href="{{ route('dashboard.admin.restore', ['type'=>'orders', 'id'=>$order->id]) }}" class="btn btn-success btn-sm">
+                                            <i class="fa fa-undo"></i> استرجاع
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <h4 class="text-center">لا توجد طلبات محذوفة</h4>
+                @endif
+            </div>
+        </div>
+
     </section>
 </div>
 

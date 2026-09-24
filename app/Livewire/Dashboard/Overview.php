@@ -59,6 +59,8 @@ class Overview extends Component
 
     public $collectionAlertsCount = 0;
 
+    public $clientsWithDues = [];
+
     // تحديث عند تغيير النطاق الزمني
     public function updatedSelectedRange()
     {
@@ -124,6 +126,32 @@ class Overview extends Component
         // العملاء والموردين
         $this->clientsOverview = ['total_due' => Order::sum('remaining')];
         $this->suppliersOverview = ['total_due' => DB::table('suppliers')->sum('balance')];
+
+        // عملاء عليهم مبالغ — من أقدم طلب لأحدث
+        $this->clientsWithDues = Client::query()
+            ->whereHas('orders', fn ($q) => $q->where('remaining', '>', 0))
+            ->with(['orders' => function ($q) {
+                $q->where('remaining', '>', 0)
+                    ->with(['payments', 'products', 'returns'])
+                    ->orderBy('created_at');
+            }])
+            ->get()
+            ->map(function (Client $client) {
+                $orders = $client->orders;
+                $oldest = $orders->first();
+
+                return [
+                    'id' => $client->id,
+                    'name' => $client->name,
+                    'total_due' => round((float) $orders->sum('remaining'), 2),
+                    'orders_count' => $orders->count(),
+                    'oldest_order' => $oldest?->order_number,
+                    'oldest_date' => $oldest?->created_at?->format('Y-m-d'),
+                ];
+            })
+            ->sortBy('oldest_date')
+            ->values()
+            ->all();
 
         $collection = app(CollectionScheduleService::class);
         $this->collectionAlerts = $collection->dashboardAlerts(8)->values()->all();

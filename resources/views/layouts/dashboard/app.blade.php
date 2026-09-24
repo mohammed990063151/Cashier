@@ -44,6 +44,73 @@
             margin-right: 5px;
         }
 
+        /* جداول متجاوبة للجوال */
+        @media (max-width: 767px) {
+            .content-wrapper {
+                padding-bottom: 80px;
+            }
+            .table-responsive,
+            .mobile-card-table {
+                border: 0;
+            }
+            .mobile-card-table table,
+            .box-body > .table-responsive > table.table {
+                display: block;
+                width: 100%;
+            }
+            .mobile-card-table thead,
+            .box-body > .table-responsive > table.table thead {
+                display: none;
+            }
+            .mobile-card-table tbody,
+            .mobile-card-table tr,
+            .mobile-card-table td,
+            .box-body > .table-responsive > table.table tbody,
+            .box-body > .table-responsive > table.table tr,
+            .box-body > .table-responsive > table.table td {
+                display: block;
+                width: 100% !important;
+                text-align: right !important;
+            }
+            .mobile-card-table tr,
+            .box-body > .table-responsive > table.table > tbody > tr {
+                margin-bottom: 12px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                background: #fff;
+                padding: 8px 10px;
+                box-shadow: 0 1px 2px rgba(0,0,0,.04);
+            }
+            .mobile-card-table td,
+            .box-body > .table-responsive > table.table > tbody > tr > td {
+                border: none !important;
+                padding: 6px 4px !important;
+                position: relative;
+            }
+            .mobile-card-table td:before,
+            .box-body > .table-responsive > table.table > tbody > tr > td[data-label]:before {
+                content: attr(data-label);
+                font-weight: 700;
+                display: block;
+                color: #666;
+                margin-bottom: 2px;
+                font-size: 12px;
+            }
+            .client-history-filters .form-group {
+                margin-bottom: 10px;
+            }
+            .small-box h3 {
+                font-size: 22px;
+            }
+            .box-header .box-title {
+                font-size: 16px;
+            }
+            #ai-assistant-toggle.ai-fab {
+                bottom: 16px;
+                left: 12px;
+            }
+        }
+
         .loader {
             border: 5px solid #f3f3f3;
             border-radius: 50%;

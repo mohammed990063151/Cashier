@@ -62,10 +62,15 @@ class Order extends Model
         return $this->products->sum(fn ($p) => $p->pivot->quantity * $p->pivot->sale_price);
     }
 
-    /** المدفوع من جدول الدفعات + الدفعة عند البيع */
+    /** المدفوع الفعلي بدون احتساب مزدوج لدفعة البيع */
     public function getTotalPaidAttribute()
     {
-        return (float) $this->paid_at_sale + (float) $this->payments->sum('amount');
+        $paymentsTotal = (float) $this->payments->sum('amount');
+        if ($paymentsTotal > 0) {
+            return $paymentsTotal;
+        }
+
+        return (float) ($this->paid_at_sale ?? 0);
     }
 
     public function getPaidAmountAttribute()
@@ -75,7 +80,9 @@ class Order extends Model
 
     public function getRemainingAmountAttribute()
     {
-        return max((float) $this->total_after_discount - $this->total_paid, 0);
+        $afterDiscount = (float) ($this->total_after_discount ?? $this->total_price ?? 0);
+
+        return max($afterDiscount - $this->total_paid, 0);
     }
 
     public function getTotalProfitAttribute()

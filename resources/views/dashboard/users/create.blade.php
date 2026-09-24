@@ -71,9 +71,9 @@
                             <div class="nav-tabs-custom">
 
                                 @php
-                                    $models = ['users', 'categories', 'products', 'clients', 'orders'];
+                                    $models = ['users', 'categories', 'products', 'clients', 'orders', 'suppliers', 'expenses', 'cash', 'reports', 'settings', 'stock', 'purchases', 'backup', 'trash'];
                                     $maps = ['create', 'read', 'update', 'delete'];
-                                    $models_ar = ['المستخدمين', 'الأقسام', 'المنتجات', 'العملاء', 'الطلبات'];
+                                    $models_ar = ['المستخدمين', 'الأقسام', 'المنتجات', 'العملاء', 'الطلبات', 'الموردين', 'المصروفات', 'الخزينة', 'التقارير', 'الإعدادات', 'المخزون', 'المشتريات', 'النسخ الاحتياطي', 'سلة المحذوفات'];
                                     $maps_ar = ['إضافة', 'عرض', 'تعديل', 'حذف'];
                                 @endphp
 

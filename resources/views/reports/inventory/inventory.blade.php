@@ -35,27 +35,32 @@
                         </form>
 
                         <hr>
-                        <table class="table table-bordered table-striped datatable">
+                        <table class="table table-bordered table-striped datatable table-responsive-stack">
                             <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>الصنف</th>
                                     <th>التصنيف</th>
-                                    <th>الكمية</th>
-                                    <th>سعر الشراء</th>
-                                    <th>سعر البيع</th>
+                                    <th>الكمية (حسب الوحدة)</th>
+                                    <th>سعر الشراء (أساسي)</th>
+                                    <th>سعر البيع (أساسي)</th>
                                     <th>إجمالي التكلفة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($detailed as $index=>$item)
+                                    @php
+                                        $stockLabel = app(\App\Services\ProductService::class)->stockDisplay($item);
+                                        $priceLabel = app(\App\Services\ProductService::class)->priceDisplay($item, 'purchase');
+                                        $saleLabel = app(\App\Services\ProductService::class)->priceDisplay($item, 'sale');
+                                    @endphp
                                     <tr>
                                         <td>{{ $index+1 }}</td>
                                         <td>{{ $item->name }}</td>
                                         <td>{{ $item->category->name ?? '-' }}</td>
-                                        <td>{{ $item->stock }}</td>
-                                        <td>{{ number_format($item->purchase_price,2) }}</td>
-                                        <td>{{ number_format($item->sale_price,2) }}</td>
+                                        <td>{{ $stockLabel }}</td>
+                                        <td>{{ $priceLabel }}</td>
+                                        <td>{{ $saleLabel }}</td>
                                         <td>{{ number_format($item->stock * $item->purchase_price,2) }}</td>
                                     </tr>
                                 @endforeach

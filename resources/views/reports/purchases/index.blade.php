@@ -37,7 +37,10 @@
                                     <tr>
                                         <td>{{ $group->first()->supplier->name ?? '—' }}</td>
                                         <td>{{ $group->count() }}</td>
-                                        <td>{{ number_format($group->sum(fn($i)=>$i->paid + $i->payments->sum('amount')),2) }}</td>
+                                        <td>{{ number_format($group->sum(function ($i) {
+                                            $payments = $i->payments->sum('amount') ?? 0;
+                                            return $payments > 0 ? $payments : (float) $i->paid;
+                                        }),2) }}</td>
                                         <td>{{ number_format($group->sum('remaining'),2) }}</td>
                                     </tr>
                                 @endforeach
@@ -61,7 +64,8 @@
                             <tbody>
                                 @foreach($invoices as $invoice)
                                     @php
-                                        $totalPaid = $invoice->paid + ($invoice->payments->sum('amount') ?? 0);
+                                        $paymentsSum = (float) ($invoice->payments->sum('amount') ?? 0);
+                                        $totalPaid = $paymentsSum > 0 ? $paymentsSum : (float) $invoice->paid;
                                     @endphp
                                     <tr>
                                         <td>{{ $invoice->supplier->name ?? '—' }}</td>
@@ -94,11 +98,16 @@
                             <tbody>
                                 @foreach($invoices as $invoice)
                                     @foreach($invoice->items as $item)
+                                        @php
+                                            $qtyLabel = $item->entered_qty
+                                                ? (($item->purchase_unit_label ?? 'وحدة').' × '.$item->entered_qty.' (= '. \App\Support\DecimalMath::display($item->quantity).' أساس)')
+                                                : \App\Support\DecimalMath::display($item->quantity);
+                                        @endphp
                                         <tr>
                                             <td>{{ $invoice->supplier->name ?? '—' }}</td>
                                             <td>{{ $item->product->name ?? '—' }}</td>
                                             <td>{{ $item->product->category->name ?? '—' }}</td>
-                                            <td>{{ $item->quantity }}</td>
+                                            <td>{{ $qtyLabel }}</td>
                                             <td>{{ number_format($item->price,2) }}</td>
                                             <td>{{ number_format($item->subtotal,2) }}</td>
                                         </tr>
@@ -123,11 +132,12 @@
                             <tbody>
                                 @foreach($invoices->where('remaining','>',0) as $invoice)
                                     @php
-                                        $totalPaid = $invoice->paid + ($invoice->payments->sum('amount') ?? 0);
+                                        $paymentsSum = (float) ($invoice->payments->sum('amount') ?? 0);
+                                        $totalPaid = $paymentsSum > 0 ? $paymentsSum : (float) $invoice->paid;
                                     @endphp
                                     <tr>
                                         <td>{{ $invoice->supplier->name ?? '—' }}</td>
-                                        <td>{{ $invoice->id }}</td>
+                                        <td>{{ $invoice->invoice_number ?? $invoice->id }}</td>
                                         <td>{{ number_format($invoice->total,2) }}</td>
                                         <td>{{ number_format($totalPaid,2) }}</td>
                                         <td>{{ number_format($invoice->remaining,2) }}</td>

@@ -123,6 +123,50 @@
             </div>
         </div>
 
+        @if(!empty($clientsWithDues))
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-danger">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-exclamation-circle"></i> عملاء عليهم مبالغ (من الأقدم للأحدث)</h3>
+                        <div class="box-tools pull-left">
+                            <a href="{{ route('dashboard.clients.history', ['unpaid_only' => 1]) }}" class="btn btn-sm btn-danger">سجل المتأخرات</a>
+                        </div>
+                    </div>
+                    <div class="box-body table-responsive mobile-card-table">
+                        <table class="table table-condensed table-striped">
+                            <thead>
+                                <tr>
+                                    <th>العميل</th>
+                                    <th>عدد الطلبات</th>
+                                    <th>إجمالي المتبقي</th>
+                                    <th>أقدم طلب</th>
+                                    <th>التاريخ</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($clientsWithDues as $due)
+                                    <tr>
+                                        <td data-label="العميل"><strong>{{ $due['name'] }}</strong></td>
+                                        <td data-label="عدد الطلبات">{{ $due['orders_count'] }}</td>
+                                        <td data-label="المتبقي" style="color:#c0392b;font-weight:bold;">{{ number_format($due['total_due'], 2) }} ج.س</td>
+                                        <td data-label="أقدم طلب">{{ $due['oldest_order'] }}</td>
+                                        <td data-label="التاريخ">{{ $due['oldest_date'] }}</td>
+                                        <td>
+                                            <a class="btn btn-xs btn-primary" href="{{ route('dashboard.clients.history', ['client_id' => $due['id'], 'unpaid_only' => 1]) }}">التفاصيل</a>
+                                            <a class="btn btn-xs btn-success" href="{{ route('dashboard.payments.index', ['client_id' => $due['id']]) }}">سداد</a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @if($collectionAlertsCount > 0)
         <div class="row">
             <div class="col-md-12">

@@ -52,19 +52,28 @@
                             </thead>
                             <tbody>
                                 @foreach ($orders as $order)
+                                    @php
+                                        $finance = $order->finance ?? [];
+                                        $total = $finance['totalAfterDiscount'] ?? $order->total_after_discount ?? 0;
+                                        $discount = $finance['invoiceDiscount'] ?? $order->invoice_discount ?? 0;
+                                        $paid = $finance['totalPaid'] ?? $order->paid_amount ?? 0;
+                                        $remaining = $finance['remaining'] ?? $order->remaining_amount ?? 0;
+                                    @endphp
                                     <tr>
                                         <td class="details-control"></td>
                                         <td>{{ $order->order_number }}</td>
-                                        <td>{{ $order->client->name }}</td>
+                                        <td>{{ $order->client->name ?? '—' }}</td>
                                         <td style="color: #01941f; font-weight: bold;">
-                                            {{ number_format($order->total_amount, 2) }}
+                                            {{ number_format($total, 2) }}
                                         </td>
                                         <td style="color: rgb(192, 152, 9); font-weight: bold;">
-                                            {{ number_format($order->tax_amount, 2) }}
+                                            {{ number_format($discount, 2) }}
                                         </td>
-                                        <td>{{ number_format($order->paid_amount, 2) }}</td>
+                                        <td style="color: #2980b9; font-weight: bold;">
+                                            {{ number_format($paid, 2) }}
+                                        </td>
                                         <td style="color: #e74c3c; font-weight: bold;">
-                                            {{ number_format($order->remaining_amount, 2) }}
+                                            {{ number_format($remaining, 2) }}
                                         </td>
                                         <td>{{ $order->created_at->format('Y-m-d') }}</td>
                                     </tr>
