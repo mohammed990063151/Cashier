@@ -16,6 +16,15 @@
             <span class="phone-header-brand-text">{{ $setting->name ?? 'لوحة التحكم' }}</span>
         </a>
 
+        @php
+            $fxHeader = app(\App\Services\CurrencyService::class);
+        @endphp
+        @if($fxHeader->enabled())
+            <a href="{{ route('dashboard.exchange-rates.index') }}" class="fx-rate-chip" title="تحديث سعر الدولار">
+                <i class="fa fa-dollar"></i> {{ $fxHeader->rateLabel() }}
+            </a>
+        @endif
+
         <div class="navbar-custom-menu">
             <ul class="nav navbar-nav">
                 @php $headerAlertsTotal = (int) ($collectionAlertsCount ?? 0) + (int) ($stockAlertsCount ?? 0); @endphp

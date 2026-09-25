@@ -165,6 +165,11 @@
                     <i class="fa fa-cogs"></i> <span>إعدادات</span>
                 </a>
             </li>
+            <li>
+                <a href="{{ route('dashboard.exchange-rates.index') }}">
+                    <i class="fa fa-dollar"></i> <span>سعر الدولار</span>
+                </a>
+            </li>
             @endif
 
             @if (auth()->user()->hasPermission('read_backup') || auth()->user()->hasPermission('create_backup'))

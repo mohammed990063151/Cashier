@@ -28,6 +28,7 @@ use App\Http\Controllers\Dashboard\PurchaseReportController;
 use App\Http\Controllers\Dashboard\ExpenseReportController;
 use App\Http\Controllers\Dashboard\ClientReportController;
 use App\Http\Controllers\Dashboard\CashReportController;
+use App\Http\Controllers\Dashboard\ExchangeRateController;
 use App\Http\Controllers\Dashboard\SettingController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
@@ -117,6 +118,10 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     //     ->name('dashboard.payments.edit');
     Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+
+    Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
+    Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');
+    Route::post('exchange-rates/convert', [ExchangeRateController::class, 'convert'])->name('exchange-rates.convert');
 
     // Route لتحميل المدفوعات عبر AJAX
     Route::get('orders/{order}/payment-log', [PaymentController::class, 'paymentLog'])->name('orders.payment-log');

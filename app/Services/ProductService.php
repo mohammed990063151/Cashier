@@ -132,9 +132,16 @@ class ProductService
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
         if ($measure === SaleUnits::UNIT_KILO) {
-            return DecimalMath::display($value).' / '.$unit;
+            $text = DecimalMath::display($value).' / '.$unit;
+        } else {
+            $text = DecimalMath::moneyDisplay($value).' / '.$unit;
         }
 
-        return DecimalMath::moneyDisplay($value).' / '.$unit;
+        $currency = app(CurrencyService::class);
+        if ($currency->enabled()) {
+            $text .= ' ≈ '.$currency->formatUsd($currency->toUsd($value));
+        }
+
+        return $text;
     }
 }

@@ -148,15 +148,15 @@
                         </div>
                         <div class="history-grand-item">
                             <span>الإجمالي</span>
-                            <strong class="money-total">{{ number_format($grand['total'], 2) }}</strong>
+                            <strong class="money-total"><x-money :amount="$grand['total']" :decimals="0" /></strong>
                         </div>
                         <div class="history-grand-item">
                             <span>المدفوع</span>
-                            <strong class="money-paid">{{ number_format($grand['paid'], 2) }}</strong>
+                            <strong class="money-paid"><x-money :amount="$grand['paid']" :decimals="0" /></strong>
                         </div>
                         <div class="history-grand-item">
                             <span>المتبقي</span>
-                            <strong class="money-remain">{{ number_format($grand['remaining'], 2) }}</strong>
+                            <strong class="money-remain"><x-money :amount="$grand['remaining']" :decimals="0" /></strong>
                         </div>
                     </div>
                 </div>

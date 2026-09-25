@@ -10,6 +10,12 @@ class Setting extends Model
 
     protected $fillable = [
         'name', 'logo', 'email', 'phone', 'address',
-        'facebook', 'twitter', 'instagram', 'linkedin'
+        'facebook', 'twitter', 'instagram', 'linkedin',
+        'usd_rate', 'show_usd',
+    ];
+
+    protected $casts = [
+        'usd_rate' => 'float',
+        'show_usd' => 'boolean',
     ];
 }

@@ -72,6 +72,9 @@
 
                     <div class="form-group">
                         <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> حفظ</button>
+                        <a href="{{ route('dashboard.exchange-rates.index') }}" class="btn btn-success">
+                            <i class="fa fa-dollar"></i> سعر الدولار / حاسبة التضخم
+                        </a>
                     </div>
                 </form>
 

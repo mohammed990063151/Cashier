@@ -85,6 +85,14 @@
                 float: none !important;
                 position: relative;
                 padding: 0 6px 0 4px;
+                gap: 4px;
+            }
+            .main-header.phone-header .fx-rate-chip {
+                flex: 0 1 auto;
+                margin: 0 2px;
+                max-width: 38vw;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .main-header.phone-header .sidebar-toggle {
                 float: none !important;
@@ -964,7 +972,9 @@
         {{-- @include('partials._errors') --}}
 
         @include('dashboard.ai._styles')
+        @include('dashboard.exchange._styles')
         @include('dashboard.ai._widget')
+        @include('dashboard.exchange._widget')
 
         <footer class="main-footer">
 
@@ -1172,6 +1182,7 @@
     @livewireScripts
     @stack('scripts')
     @include('dashboard.ai._script')
+    @include('dashboard.exchange._script')
     @include('dashboard.stock._alerts_script')
 
 </body>

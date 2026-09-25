@@ -34,6 +34,7 @@ class SettingServiceProvider extends ServiceProvider
 
             $schedule = app(CollectionScheduleService::class);
             $stockAlerts = app(StockAlertService::class);
+            $currency = app(\App\Services\CurrencyService::class);
 
             $view->with([
                 'collectionAlerts' => $schedule->dashboardAlerts(15),
@@ -41,6 +42,9 @@ class SettingServiceProvider extends ServiceProvider
                 'collectionDueToday' => $schedule->dueTodayAlerts(),
                 'stockAlerts' => $stockAlerts->alerts(15),
                 'stockAlertsCount' => $stockAlerts->alertsCount(),
+                'usdRate' => $currency->rate(),
+                'usdRateLabel' => $currency->rateLabel(),
+                'showUsdMoney' => $currency->enabled(),
             ]);
         });
     }
