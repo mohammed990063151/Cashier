@@ -68,21 +68,21 @@
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label id="label_purchase_price">سعر الشراء <span class="text-danger">*</span></label>
-                        <input type="number" name="purchase_price" id="purchase_price" step="0.001" min="0" class="form-control" required
+                        <input type="number" name="purchase_price" id="purchase_price" step="1" min="0" class="form-control" required
                                value="{{ $entry['purchase_price'] }}">
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label id="label_sale_price">سعر البيع <span class="text-danger">*</span></label>
-                        <input type="number" name="sale_price" id="sale_price" step="0.001" min="0" class="form-control" required
+                        <input type="number" name="sale_price" id="sale_price" step="1" min="0" class="form-control" required
                                value="{{ $entry['sale_price'] }}">
                     </div>
                 </div>
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label id="label_stock">المخزون <span class="text-danger">*</span></label>
-                        <input type="number" name="stock" id="stock" step="0.001" min="0" class="form-control" required
+                        <input type="number" name="stock" id="stock" step="1" min="0" class="form-control" required
                                value="{{ $entry['stock'] }}">
                     </div>
                 </div>

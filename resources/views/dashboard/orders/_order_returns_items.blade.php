@@ -19,9 +19,20 @@
             </thead>
             <tbody>
                 @foreach($ret->items as $item)
+                @php
+                    $p = $item->product;
+                    $qtyLabel = $p
+                        ? \App\Support\SaleUnits::formatQuantityLabel(
+                            (float) $item->quantity,
+                            max(1, (int) ($p->pieces_per_carton ?? 12)),
+                            $p->sale_mode ?? null,
+                            $p->measure_unit ?? null
+                        )
+                        : (string) $item->quantity;
+                @endphp
                 <tr>
-                    <td>{{ $item->product->name ?? '—' }}</td>
-                    <td class="text-center">{{ $item->quantity }}</td>
+                    <td>{{ $p->name ?? '—' }}</td>
+                    <td class="text-center">{{ $qtyLabel }}</td>
                     <td class="text-center">{{ number_format($item->unit_price, 2) }}</td>
                     <td class="text-center">{{ number_format($item->subtotal, 2) }}</td>
                 </tr>

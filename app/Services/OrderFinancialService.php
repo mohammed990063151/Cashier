@@ -194,15 +194,15 @@ class OrderFinancialService
         if ($measure === SaleUnits::UNIT_KILO) {
             $priceText = \App\Support\DecimalMath::display($piecePrice).' ج.س / كيلو';
         } elseif ($mode === SaleUnits::MODE_BULK_ONLY && $bulkSize > 1) {
-            $priceText = \App\Support\DecimalMath::display(\App\Support\DecimalMath::mul($piecePrice, $bulkSize)).' ج.س / كرتونة';
+            $priceText = \App\Support\DecimalMath::moneyDisplay(\App\Support\DecimalMath::money($piecePrice * $bulkSize)).' ج.س / كرتونة';
         } else {
-            $priceText = \App\Support\DecimalMath::display($piecePrice).' ج.س / حبة';
+            $priceText = \App\Support\DecimalMath::moneyDisplay($piecePrice).' ج.س / حبة';
         }
 
         return [
             'quantity' => $quantityText,
             'price' => $priceText,
-            'line_total' => \App\Support\DecimalMath::mul($pieces, $piecePrice),
+            'line_total' => \App\Support\DecimalMath::money(\App\Support\DecimalMath::mul($pieces, $piecePrice)),
         ];
     }
 

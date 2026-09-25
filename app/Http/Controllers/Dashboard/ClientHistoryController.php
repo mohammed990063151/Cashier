@@ -7,9 +7,13 @@ use App\Models\Client;
 use App\Models\Order;
 use App\Services\OrderFinancialService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class ClientHistoryController extends Controller
 {
+    /** @var list<string> */
+    private const STATUS_ORDER = ['unpaid', 'partial', 'partial_return', 'returned', 'paid'];
+
     public function index(Request $request, OrderFinancialService $finance)
     {
         $clientId = $request->integer('client_id') ?: null;
@@ -39,19 +43,19 @@ class ClientHistoryController extends Controller
 
         $finance->applyPaymentStatusFilter($query, $unpaidOnly ? null : $status);
 
-        $orders = $query->paginate(20)->withQueryString();
+        $orders = $query->limit(500)->get();
 
-        $rows = $orders->getCollection()->map(function (Order $order) use ($finance) {
+        $rows = $orders->map(function (Order $order) use ($finance) {
             $calc = $finance->calculate($order);
             $statusKey = $finance->paymentStatus($order);
 
             return [
                 'order' => $order,
                 'client_name' => $order->client->name ?? '—',
-                'total' => $calc['totalAfterDiscount'],
-                'paid' => $calc['totalPaid'],
-                'remaining' => $calc['remaining'],
-                'discount' => $calc['invoiceDiscount'],
+                'total' => (float) $calc['totalAfterDiscount'],
+                'paid' => (float) $calc['totalPaid'],
+                'remaining' => (float) $calc['remaining'],
+                'discount' => (float) $calc['invoiceDiscount'],
                 'status' => $statusKey,
                 'status_label' => $finance->paymentStatusLabel($statusKey),
                 'status_class' => $finance->paymentStatusClass($statusKey),
@@ -59,11 +63,20 @@ class ClientHistoryController extends Controller
             ];
         });
 
+        $groups = $this->buildStatusGroups($rows, $finance);
+
+        $grand = [
+            'count' => $rows->count(),
+            'total' => (float) $rows->sum('total'),
+            'paid' => (float) $rows->sum('paid'),
+            'remaining' => (float) $rows->sum('remaining'),
+        ];
+
         $clients = Client::orderBy('name')->get(['id', 'name']);
 
         return view('dashboard.clients.history', [
-            'orders' => $orders,
-            'rows' => $rows,
+            'groups' => $groups,
+            'grand' => $grand,
             'clients' => $clients,
             'filters' => [
                 'client_id' => $clientId,
@@ -73,5 +86,33 @@ class ClientHistoryController extends Controller
                 'unpaid_only' => $unpaidOnly,
             ],
         ]);
+    }
+
+    /**
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function buildStatusGroups(Collection $rows, OrderFinancialService $finance): Collection
+    {
+        $byStatus = $rows->groupBy('status');
+
+        return collect(self::STATUS_ORDER)
+            ->filter(fn (string $key) => $byStatus->has($key) && $byStatus->get($key)->isNotEmpty())
+            ->map(function (string $key) use ($byStatus, $finance) {
+                /** @var Collection<int, array<string, mixed>> $items */
+                $items = $byStatus->get($key);
+
+                return [
+                    'status' => $key,
+                    'status_label' => $finance->paymentStatusLabel($key),
+                    'status_class' => $finance->paymentStatusClass($key),
+                    'count' => $items->count(),
+                    'total' => (float) $items->sum('total'),
+                    'paid' => (float) $items->sum('paid'),
+                    'remaining' => (float) $items->sum('remaining'),
+                    'rows' => $items->values(),
+                ];
+            })
+            ->values();
     }
 }

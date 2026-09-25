@@ -39,7 +39,7 @@ $categoriesTotals = $categories->map(function($cat) {
 
     $summary = $detailed->sum(fn($item) => $item->stock * $item->purchase_price);
 
-    $priceChanges = PriceHistory::with('product')
+    $priceChanges = PriceHistory::with(['product' => fn ($q) => $q->withTrashed()])
         ->latest()
         ->get();
 

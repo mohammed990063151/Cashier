@@ -103,7 +103,7 @@
                                 @foreach($priceChanges as $index=>$change)
                                     <tr>
                                         <td>{{ $index+1 }}</td>
-                                        <td>{{ $change->product->name }}</td>
+                                        <td>{{ $change->product->name ?? ('منتج محذوف #'.$change->product_id) }}</td>
                                         <td>{{ number_format($change->old_price,2) }}</td>
                                         <td>{{ number_format($change->new_price,2) }}</td>
                                         <td>{{ $change->created_at->format('Y-m-d') }}</td>

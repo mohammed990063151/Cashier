@@ -489,7 +489,12 @@ class SaleUnits
 
     public static function unitPriceForForm(string $unitKey, float $piecePrice, int $bulkSize): float
     {
-        return DecimalMath::mul($piecePrice, self::multiplier($unitKey, $bulkSize));
+        $price = DecimalMath::mul($piecePrice, self::multiplier($unitKey, $bulkSize));
+        if ($unitKey === 'kilo') {
+            return DecimalMath::round($price);
+        }
+
+        return DecimalMath::money($price);
     }
 
     /**
@@ -520,11 +525,26 @@ class SaleUnits
         $sale = DecimalMath::round($data['sale_price'] ?? 0);
         $stock = DecimalMath::round($data['stock'] ?? 0);
 
+        // الحبة/الكرتونة: أسعار صحيحة بدون كسور (تجنّب أخطاء الحسابات)
+        if ($measure !== self::UNIT_KILO) {
+            $purchase = DecimalMath::money($purchase);
+            $sale = DecimalMath::money($sale);
+            if ($measure === self::UNIT_CARTON) {
+                $stock = DecimalMath::money($stock); // عدد كراتين صحيح
+            } else {
+                $stock = DecimalMath::money($stock); // عدد حبات صحيح
+            }
+        }
+
         // Carton entry: prices & stock are per carton → convert to per-piece base.
+        // نستخدم دقة أعلى داخلياً ثم نعرض الكرتونة كرقم صحيح.
         if ($measure === self::UNIT_CARTON && $bulk > 1) {
-            $purchase = DecimalMath::div($purchase, $bulk);
-            $sale = DecimalMath::div($sale, $bulk);
+            $purchase = $bulk > 0 ? ($purchase / $bulk) : 0;
+            $sale = $bulk > 0 ? ($sale / $bulk) : 0;
             $stock = DecimalMath::mul($stock, $bulk);
+            // احفظ بسعر الحبة بدقة كافية لاسترجاع سعر الكرتونة صحيحاً
+            $purchase = round($purchase, 6);
+            $sale = round($sale, 6);
         }
 
         return [
@@ -546,22 +566,30 @@ class SaleUnits
     {
         $measure = self::normalizeMeasureUnit($measureUnit ?? $product->measure_unit ?? null);
         $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
-        $purchase = DecimalMath::round($product->purchase_price);
-        $sale = DecimalMath::round($product->sale_price);
+        $purchase = (float) $product->purchase_price;
+        $sale = (float) $product->sale_price;
         $stock = DecimalMath::round($product->stock);
 
         if ($measure === self::UNIT_CARTON && $bulk > 1) {
             return [
-                'purchase_price' => DecimalMath::mul($purchase, $bulk),
-                'sale_price' => DecimalMath::mul($sale, $bulk),
-                'stock' => DecimalMath::div($stock, $bulk),
+                'purchase_price' => DecimalMath::money($purchase * $bulk),
+                'sale_price' => DecimalMath::money($sale * $bulk),
+                'stock' => DecimalMath::money($bulk > 0 ? $stock / $bulk : 0),
+            ];
+        }
+
+        if ($measure === self::UNIT_KILO) {
+            return [
+                'purchase_price' => DecimalMath::round($purchase),
+                'sale_price' => DecimalMath::round($sale),
+                'stock' => $stock,
             ];
         }
 
         return [
-            'purchase_price' => $purchase,
-            'sale_price' => $sale,
-            'stock' => $stock,
+            'purchase_price' => DecimalMath::money($purchase),
+            'sale_price' => DecimalMath::money($sale),
+            'stock' => DecimalMath::money($stock),
         ];
     }
 

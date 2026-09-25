@@ -128,8 +128,8 @@ class OrderReturnService
     }
 
     /**
-     * @param  array<int, int>  $lines
-     * @return array{items: list<array{product: Product, quantity: int, unit_price: float, subtotal: float}>, items_total: float, summary: string}
+     * @param  array<int, mixed>  $lines  product_id => pieces OR unit map
+     * @return array{items: list<array{product: Product, quantity: float, unit_price: float, subtotal: float, quantity_label: string}>, items_total: float, summary: string}
      */
     protected function buildReturnLines(Order $order, array $lines): array
     {
@@ -137,48 +137,127 @@ class OrderReturnService
         $total = 0.0;
         $names = [];
 
-        foreach ($lines as $productId => $qty) {
-            $qty = \App\Support\DecimalMath::round($qty);
+        foreach ($lines as $productId => $line) {
+            $product = $order->products->find($productId);
+            if (! $product) {
+                if ($this->lineHasQty($line)) {
+                    throw ValidationException::withMessages([
+                        "lines.{$productId}" => 'المنتج غير موجود في هذا الطلب.',
+                    ]);
+                }
+                continue;
+            }
+
+            $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+            $mode = $product->sale_mode ?? null;
+            $measure = $product->measure_unit ?? null;
+            $piecePrice = (float) $product->pivot->sale_price;
+            $maxQty = \App\Support\DecimalMath::round($product->pivot->quantity);
+
+            [$qty, $subtotal] = $this->resolveReturnQuantity($line, $piecePrice, $bulk, $mode, $measure);
+
             if ($qty <= 0) {
                 continue;
             }
 
-            $product = $order->products->find($productId);
-            if (! $product) {
-                throw ValidationException::withMessages([
-                    "lines.{$productId}" => 'المنتج غير موجود في هذا الطلب.',
-                ]);
-            }
-
-            $maxQty = \App\Support\DecimalMath::round($product->pivot->quantity);
             if ($qty > $maxQty + 0.0005) {
+                $soldLabel = \App\Support\SaleUnits::formatQuantityLabel($maxQty, $bulk, $mode, $measure);
                 throw ValidationException::withMessages([
-                    "lines.{$productId}" => "الكمية المرتجعة أكبر من المباعة ({$maxQty}).",
+                    "lines.{$productId}" => "الكمية المرتجعة أكبر من المباعة ({$soldLabel}).",
                 ]);
             }
 
-            $unitPrice = (float) $product->pivot->sale_price;
-            $subtotal = \App\Support\DecimalMath::mul($unitPrice, $qty);
+            $unitPrice = $qty > 0 ? \App\Support\DecimalMath::div($subtotal, $qty) : $piecePrice;
+            $qtyLabel = \App\Support\SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure);
             $total += $subtotal;
-            $names[] = $product->name.' ×'.$qty;
+            $names[] = $product->name.' × '.$qtyLabel;
 
             $items[] = [
                 'product' => $product,
                 'quantity' => $qty,
                 'unit_price' => $unitPrice,
                 'subtotal' => $subtotal,
+                'quantity_label' => $qtyLabel,
             ];
         }
 
         return [
             'items' => $items,
-            'items_total' => \App\Support\DecimalMath::round($total),
+            'items_total' => \App\Support\DecimalMath::money($total),
             'summary' => implode('، ', array_slice($names, 0, 3)).(count($names) > 3 ? '…' : ''),
         ];
     }
 
+    protected function lineHasQty(mixed $line): bool
+    {
+        if (is_numeric($line)) {
+            return (float) $line > 0;
+        }
+        if (! is_array($line)) {
+            return false;
+        }
+        foreach ($line as $unitData) {
+            if (is_array($unitData) && (float) ($unitData['qty'] ?? 0) > 0) {
+                return true;
+            }
+            if (is_numeric($unitData) && (float) $unitData > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
-     * @param  array<int, int>  $lines
+     * @return array{0: float, 1: float} [pieces, subtotal]
+     */
+    protected function resolveReturnQuantity(
+        mixed $line,
+        float $piecePrice,
+        int $bulk,
+        ?string $mode,
+        ?string $measure
+    ): array {
+        // توافق قديم: رقم واحد = كمية بالحبة/الوحدة الأساسية
+        if (is_numeric($line)) {
+            $qty = \App\Support\DecimalMath::round($line);
+            return [$qty, \App\Support\DecimalMath::mul($piecePrice, $qty)];
+        }
+
+        if (! is_array($line)) {
+            return [0.0, 0.0];
+        }
+
+        $normalized = [];
+        foreach ($line as $unitKey => $unitData) {
+            if (is_array($unitData)) {
+                $qty = max(0, (float) ($unitData['qty'] ?? 0));
+                $price = isset($unitData['price'])
+                    ? max(0, (float) $unitData['price'])
+                    : \App\Support\SaleUnits::unitPriceForForm((string) $unitKey, $piecePrice, $bulk);
+            } else {
+                $qty = max(0, (float) $unitData);
+                $price = \App\Support\SaleUnits::unitPriceForForm((string) $unitKey, $piecePrice, $bulk);
+            }
+            $normalized[$unitKey] = ['qty' => $qty, 'price' => $price];
+        }
+
+        $converted = \App\Support\SaleUnits::toPieceLine($normalized, $bulk, $mode, $measure);
+        $pieces = (float) ($converted['quantity'] ?? 0);
+        if ($pieces <= 0) {
+            return [0.0, 0.0];
+        }
+
+        $subtotal = 0.0;
+        foreach ($normalized as $unitKey => $unitData) {
+            $subtotal += ((float) $unitData['qty']) * ((float) $unitData['price']);
+        }
+
+        return [$pieces, \App\Support\DecimalMath::round($subtotal)];
+    }
+
+    /**
+     * @param  array<int, mixed>  $lines
      * @return array{items_total: float, refund_amount: float, remaining_reduced: float}
      */
     public function preview(Order $order, array $lines): array

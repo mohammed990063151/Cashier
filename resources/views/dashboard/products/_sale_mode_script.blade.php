@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         [purchaseInput, saleInput, stockInput].forEach(function (el) {
             if (!el) return;
-            el.step = '0.001';
+            el.step = unit === 'kilo' ? '0.001' : '1';
         });
 
         syncSaleModeFields();

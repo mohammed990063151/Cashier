@@ -202,7 +202,6 @@ class OrderController extends Controller
     {
         $request->validate([
             'lines' => 'required|array',
-            'lines.*' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'return_date' => 'nullable|date',
         ]);

@@ -55,4 +55,15 @@ class DecimalMath
 
         return $trimmed === '' ? '0' : $trimmed;
     }
+
+    /** أسعار الحبة/الكرتونة بدون كسور (جنيه صحيح). */
+    public static function money(mixed $value): float
+    {
+        return round((float) $value, 0);
+    }
+
+    public static function moneyDisplay(mixed $value): string
+    {
+        return number_format(self::money($value), 0, '.', '');
+    }
 }

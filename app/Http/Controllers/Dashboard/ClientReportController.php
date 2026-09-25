@@ -116,7 +116,15 @@ class ClientReportController extends Controller
             ];
         })->values();
 
-        return view('reports.clients.show', compact('client', 'invoices', 'productsSold', 'statement'));
+        $remainingBalance = (float) $invoices->sum('remaining');
+
+        return view('reports.clients.show', compact(
+            'client',
+            'invoices',
+            'productsSold',
+            'statement',
+            'remainingBalance'
+        ));
     }
 
     // (اختياري) API endpoint لتحميل بيانات DataTables server-side لو احتجت

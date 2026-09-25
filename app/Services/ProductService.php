@@ -129,7 +129,12 @@ class ProductService
         $entry = SaleUnits::toEntryValues($product);
         $value = $type === 'purchase' ? $entry['purchase_price'] : $entry['sale_price'];
         $unit = SaleUnits::measureUnitShort($product->measure_unit ?? SaleUnits::UNIT_PIECE);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
-        return DecimalMath::display($value).' / '.$unit;
+        if ($measure === SaleUnits::UNIT_KILO) {
+            return DecimalMath::display($value).' / '.$unit;
+        }
+
+        return DecimalMath::moneyDisplay($value).' / '.$unit;
     }
 }

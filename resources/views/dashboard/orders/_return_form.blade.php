@@ -29,37 +29,63 @@
     @endif
 
     <p class="text-muted" style="font-size:12px;margin-bottom:10px;">
-        حدد الكميات المرتجعة. يُخصم قيمة المرتجع من المتبقي أولاً، ثم يُسحب من الخزينة ما يُستحق إرجاعه للعميل من المدفوعات.
+        أدخل الكمية المرتجعة <strong>بنفس وحدة البيع</strong> (حبة / كرتونة / كيلو). لا تخلط الوحدات.
     </p>
 
-    <table class="table table-bordered table-condensed return-items-table">
-        <thead>
-            <tr>
-                <th>المنتج</th>
-                <th class="text-center">المباع</th>
-                <th class="text-center" style="width:100px;">كمية المرتجع</th>
-                <th class="text-center">السعر</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($order->products as $product)
-            <tr>
-                <td>{{ $product->name }}</td>
-                <td class="text-center">{{ $product->pivot->quantity }}</td>
-                <td>
-                    <input type="number"
-                           name="lines[{{ $product->id }}]"
-                           class="form-control input-sm text-center return-qty-input"
-                           min="0"
-                           max="{{ $product->pivot->quantity }}"
-                           value="{{ old('lines.'.$product->id, 0) }}"
-                           data-price="{{ $product->pivot->sale_price }}">
-                </td>
-                <td class="text-center">{{ number_format($product->pivot->sale_price, 2) }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+    @foreach($order->products as $product)
+        @php
+            $soldPieces = (float) $product->pivot->quantity;
+            $piecePrice = (float) $product->pivot->sale_price;
+            $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+            $mode = $product->sale_mode ?? 'flexible';
+            $measure = $product->measure_unit ?? 'piece';
+            $units = \App\Support\SaleUnits::unitsForOrderForm($bulk, $mode, $measure);
+            $soldLabel = \App\Support\SaleUnits::formatQuantityLabel($soldPieces, $bulk, $mode, $measure);
+            $breakdown = $fin->productUnitBreakdown($product);
+        @endphp
+        <div class="return-product-card" data-product-id="{{ $product->id }}" data-max-pieces="{{ $soldPieces }}">
+            <div class="return-product-title">
+                <strong>{{ $product->name }}</strong>
+                <span class="label label-default">مباع: {{ $soldLabel }}</span>
+            </div>
+            @if(count($breakdown))
+            <div class="return-sold-units">
+                @foreach($breakdown as $b)
+                    <span>{{ $b['label'] }} × {{ \App\Support\DecimalMath::display($b['count']) }}</span>
+                @endforeach
+            </div>
+            @endif
+
+            <div class="return-unit-grid">
+                @foreach($units as $unitKey => $unitMeta)
+                    @php
+                        $unitPrice = \App\Support\SaleUnits::unitPriceForForm($unitKey, $piecePrice, $bulk);
+                        $multiplier = (float) $unitMeta['multiplier'];
+                        $maxUnit = $multiplier > 0 ? floor($soldPieces / $multiplier + 1e-9) : 0;
+                        if ($unitKey === 'kilo') {
+                            $maxUnit = $soldPieces;
+                        }
+                    @endphp
+                    <div class="return-unit-block">
+                        <label>{{ $unitMeta['label'] }}</label>
+                        <small class="text-muted">سعر الوحدة: {{ \App\Support\DecimalMath::display($unitPrice) }} ج.س</small>
+                        <input type="number"
+                               name="lines[{{ $product->id }}][{{ $unitKey }}][qty]"
+                               class="form-control return-qty-input"
+                               min="0"
+                               max="{{ $maxUnit }}"
+                               step="{{ $unitMeta['step'] ?? '1' }}"
+                               value="0"
+                               data-price="{{ $unitPrice }}"
+                               data-multiplier="{{ $multiplier }}"
+                               data-product="{{ $product->id }}">
+                        <input type="hidden" name="lines[{{ $product->id }}][{{ $unitKey }}][price]" value="{{ $unitPrice }}">
+                        <small class="text-muted">الحد الأقصى: {{ \App\Support\DecimalMath::display($maxUnit) }}</small>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endforeach
 
     <div class="form-group">
         <label>تاريخ المرتجع</label>
@@ -75,6 +101,7 @@
         <div><span>قيمة المرتجع:</span> <strong id="preview-items-total">0.00</strong> ج.س</div>
         <div><span>يُخصم من المتبقي:</span> <strong id="preview-remaining">0.00</strong> ج.س</div>
         <div><span>يُسحب من الخزينة للعميل:</span> <strong id="preview-refund" class="text-danger">0.00</strong> ج.س</div>
+        <div id="preview-unit-error" class="text-danger" style="display:none;margin-top:6px;"></div>
     </div>
 
     <button type="submit" class="btn btn-warning btn-block" id="return-submit-btn">
@@ -91,7 +118,49 @@
     padding-bottom: 10px;
     border-bottom: 1px solid #e2e8f0;
 }
-.return-items-table { font-size: 12px; margin-bottom: 12px; }
+.return-product-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+.return-product-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.return-sold-units {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #64748b;
+}
+.return-sold-units span {
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 3px 8px;
+}
+.return-unit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+.return-unit-block label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.return-unit-block small { display: block; margin: 2px 0 4px; }
+.return-unit-block .form-control {
+    min-height: 42px;
+    text-align: center;
+    font-size: 16px;
+}
 .return-preview-box {
     background: #fff8e1;
     border: 1px solid #ffe082;
@@ -101,6 +170,9 @@
     font-size: 13px;
 }
 .return-preview-box div { display: flex; justify-content: space-between; padding: 3px 0; }
+@media (max-width: 767px) {
+    .return-unit-grid { grid-template-columns: 1fr; }
+}
 </style>
 
 <script>
@@ -111,14 +183,31 @@
     var invoiceDiscount = {{ (float) ($invoiceDiscount ?? 0) }};
     var alreadyRefunded = {{ (float) ($alreadyRefundedCash ?? 0) }};
     var box = document.getElementById('return-preview-box');
+    var errEl = document.getElementById('preview-unit-error');
 
     function updatePreview() {
         var itemsTotal = 0;
-        document.querySelectorAll('.return-qty-input').forEach(function(input) {
-            var qty = parseInt(input.value, 10) || 0;
-            var price = parseFloat(input.dataset.price) || 0;
-            itemsTotal += qty * price;
+        var unitError = '';
+
+        document.querySelectorAll('.return-product-card').forEach(function(card) {
+            var maxPieces = parseFloat(card.getAttribute('data-max-pieces')) || 0;
+            var usedPieces = 0;
+            card.querySelectorAll('.return-qty-input').forEach(function(input) {
+                var qty = parseFloat(input.value) || 0;
+                var price = parseFloat(input.dataset.price) || 0;
+                var mult = parseFloat(input.dataset.multiplier) || 1;
+                itemsTotal += qty * price;
+                usedPieces += qty * mult;
+            });
+            usedPieces = Math.round(usedPieces * 1000) / 1000;
+            if (usedPieces > maxPieces + 0.0005) {
+                unitError = 'كمية المرتجع أكبر من المباعة في أحد الأصناف.';
+                card.style.borderColor = '#e74c3c';
+            } else {
+                card.style.borderColor = '#e2e8f0';
+            }
         });
+
         itemsTotal = Math.round(itemsTotal * 100) / 100;
         var remainingReduced = Math.min(itemsTotal, remaining);
         var newTotalSale = Math.max(0, totalSale - itemsTotal);
@@ -126,11 +215,17 @@
         var stillOwed = Math.max(0, Math.round((totalPaid - newAfterDiscount) * 100) / 100);
         var refund = Math.max(0, Math.round((stillOwed - alreadyRefunded) * 100) / 100);
 
-        if (itemsTotal > 0) {
+        if (itemsTotal > 0 || unitError) {
             box.style.display = 'block';
             document.getElementById('preview-items-total').textContent = itemsTotal.toFixed(2);
             document.getElementById('preview-remaining').textContent = remainingReduced.toFixed(2);
             document.getElementById('preview-refund').textContent = refund.toFixed(2);
+            if (unitError) {
+                errEl.style.display = 'block';
+                errEl.textContent = unitError;
+            } else {
+                errEl.style.display = 'none';
+            }
         } else {
             box.style.display = 'none';
         }
