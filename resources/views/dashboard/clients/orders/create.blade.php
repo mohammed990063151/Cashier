@@ -62,14 +62,16 @@
 
                                             @foreach ($category->products as $product)
                                             @php
-                                                $stockLabel = app(\App\Services\ProductService::class)->stockDisplay($product);
+                                                $productService = app(\App\Services\ProductService::class);
+                                                $stockLabel = $productService->stockDisplay($product);
                                                 $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
+                                                $listPrice = $productService->orderListPriceDisplay($product);
                                             @endphp
                                             <tr>
                                                 <td>{{ $product->name }}</td>
                                                 <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
                                                 <td><small>{{ $stockLabel }}</small></td>
-                                                <td>{{ \App\Support\DecimalMath::display($product->sale_price) }}</td>
+                                                <td><strong>{{ $listPrice }}</strong></td>
 
                                                 <td>
                                                     <a href="" id="product-{{ $product->id }}"

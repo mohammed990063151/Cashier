@@ -52,7 +52,8 @@ try {
     ]);
     assert_true($entry['purchase_price'] === 10.0, 'carton purchase/piece = 10');
     assert_true($entry['sale_price'] === 15.0, 'carton sale/piece = 15');
-    assert_true($entry['stock'] === 30.0, 'carton stock pieces = 30');
+    // 2.5 كرتونة تُقرَّب إلى 3 كراتين صحيحة → 36 حبة
+    assert_true($entry['stock'] === 36.0, 'carton stock pieces = 36 (2.5→3 cartons)');
     assert_true($entry['sale_mode'] === 'flexible', 'carton defaults flexible sale mode');
 
     // 2) Kilo entry

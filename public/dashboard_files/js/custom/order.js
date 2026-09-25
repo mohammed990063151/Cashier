@@ -19,17 +19,29 @@ function round3(value) {
 }
 
 function formatMoney(value) {
-    const n = round3(value);
-    return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    const n = Math.round(parseNumber(value));
+    return n.toLocaleString('en-US');
 }
 
-function formatPriceInput(value) {
-    const n = round3(value);
-    return n > 0 ? String(n) : '0';
+function formatPriceInput(value, allowDecimal) {
+    if (allowDecimal) {
+        const n = round3(value);
+        return n > 0 ? String(n) : '0';
+    }
+    const n = Math.round(parseNumber(value));
+    return String(n);
 }
 
 function displayQty(value) {
     return String(round3(value));
+}
+
+function unitMoney(piecePrice, multiplier, measureUnit) {
+    const raw = parseNumber(piecePrice) * parseNumber(multiplier);
+    if (measureUnit === 'kilo') {
+        return round3(raw);
+    }
+    return Math.round(raw);
 }
 
 function halfCartonPieces(bulkSize) {
@@ -62,15 +74,15 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
     }
 
     if (mode === 'bulk_only') {
-        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true }];
+        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1', isMaster: true }];
     }
 
-    // بيع مرن — للكرتونة أو أي منتج له عبوة
+    // بيع مرن — وحدة كرتونة: الكرتونة أولاً ثم الحبة
     if (measure === 'carton' && bulk > 1) {
         return [
-            { key: 'piece', ...SALE_UNITS.piece, isMaster: true },
+            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1', isMaster: true },
             { key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' },
-            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' },
+            { key: 'piece', ...SALE_UNITS.piece },
         ];
     }
 
@@ -82,7 +94,7 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
 
     if (bulk > 1) {
         units.push({ key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' });
-        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' });
+        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1' });
     } else {
         units.push({ key: 'dozen', ...SALE_UNITS.dozen });
     }
@@ -90,11 +102,13 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
     return units;
 }
 
-function unitBlockHtml(productId, unit, unitPrice) {
-    const priceVal = formatPriceInput(unitPrice);
+function unitBlockHtml(productId, unit, unitPrice, measureUnit) {
+    const allowDecimal = measureUnit === 'kilo';
+    const priceVal = formatPriceInput(unitPrice, allowDecimal);
     const masterClass = unit.isMaster ? ' unit-price-master' : '';
     const step = unit.step || '1';
-    const hintUnit = unit.key === 'kilo' ? 'كيلو' : (unit.multiplier + ' حبة');
+    const priceStep = allowDecimal ? '0.001' : '1';
+    const hintUnit = unit.key === 'kilo' ? 'كيلو' : (unit.key === 'bulk' ? 'كرتونة' : (unit.multiplier + ' حبة'));
 
     return `
         <div class="order-unit-block" data-unit="${unit.key}" data-multiplier="${unit.multiplier}">
@@ -108,23 +122,24 @@ function unitBlockHtml(productId, unit, unitPrice) {
                 </div>
                 <div class="col-xs-6" style="padding:0 5px;">
                     <label class="order-unit-label">السعر</label>
-                    <input type="number" min="0" step="0.001" value="${priceVal}"
+                    <input type="number" min="0" step="${priceStep}" value="${priceVal}"
                         name="products[${productId}][${unit.key}][price]"
                         class="form-control input-sm unit-price${masterClass}">
                 </div>
             </div>
-            <small class="text-muted unit-hint">= ${hintUnit}</small>
+            <small class="text-muted unit-hint">وحدة: ${hintUnit}</small>
         </div>
     `;
 }
 
 function unitBlocksHtml(productId, piecePrice, bulkSize, saleMode, measureUnit) {
     const price = round3(piecePrice);
-    const units = unitsForProduct(bulkSize, saleMode, measureUnit);
+    const measure = measureUnit || 'piece';
+    const units = unitsForProduct(bulkSize, saleMode, measure);
     let html = '<div class="order-unit-grid">';
 
     units.forEach(function (unit) {
-        html += unitBlockHtml(productId, unit, round3(price * unit.multiplier));
+        html += unitBlockHtml(productId, unit, unitMoney(price, unit.multiplier, measure), measure);
     });
 
     html += '</div>';
@@ -153,11 +168,12 @@ function syncUnitPricesFromMaster($row) {
     if (piecePrice <= 0) {
         return;
     }
+    const measure = $row.data('measure-unit') || 'piece';
 
     $row.find('.order-unit-block').each(function () {
         const multiplier = parseFloat($(this).data('multiplier')) || 1;
         const $priceInput = $(this).find('.unit-price');
-        $priceInput.val(formatPriceInput(piecePrice * multiplier));
+        $priceInput.val(formatPriceInput(unitMoney(piecePrice, multiplier, measure), measure === 'kilo'));
     });
 }
 
@@ -165,6 +181,8 @@ function calculateRowTotal($row) {
     let lineTotal = 0;
     let totalPieces = 0;
     const measure = $row.data('measure-unit') || 'piece';
+    const saleMode = $row.data('sale-mode') || 'flexible';
+    const bulkSize = Math.max(1, parseInt($row.data('bulk-size'), 10) || 12);
     const available = round3($row.data('stock'));
 
     $row.find('.order-unit-block').each(function () {
@@ -177,13 +195,24 @@ function calculateRowTotal($row) {
     });
 
     $row.find('.product-price').text(formatMoney(lineTotal));
-    const unitLabel = measure === 'kilo' ? ' كيلو' : ' حبة';
-    $row.find('.total-pieces-hint').text(totalPieces > 0 ? displayQty(totalPieces) + unitLabel : '0' + unitLabel);
-    $row.find('input[name$="[total_price]"]').val(round3(lineTotal).toFixed(3));
+    let qtyHint = '0';
+    if (totalPieces > 0) {
+        if (measure === 'kilo') {
+            qtyHint = displayQty(totalPieces) + ' كيلو';
+        } else if ((saleMode === 'bulk_only' || measure === 'carton') && bulkSize > 1) {
+            qtyHint = displayQty(totalPieces / bulkSize) + ' كرتونة (' + displayQty(totalPieces) + ' حبة)';
+        } else {
+            qtyHint = displayQty(totalPieces) + ' حبة'
+                + (bulkSize > 1 ? ' ≈ ' + displayQty(totalPieces / bulkSize) + ' كرتونة' : '');
+        }
+    }
+    $row.find('.total-pieces-hint').text(qtyHint);
+    $row.find('input[name$="[total_price]"]').val(Math.round(lineTotal));
 
     const $warn = $row.find('.stock-warning');
     if ($warn.length) {
         if (totalPieces > available + 0.0005) {
+            const unitLabel = measure === 'kilo' ? ' كيلو' : ' حبة';
             $warn.text('تجاوز المخزون! المتاح ' + displayQty(available) + unitLabel).show();
         } else {
             $warn.hide().text('');
@@ -229,11 +258,18 @@ function buildOrderRow(name, id, piecePrice, bulkSize, saleMode, measureUnit, st
     const mode = saleMode || 'flexible';
     const measure = measureUnit || 'piece';
     const available = round3(stock);
-    const zeroHint = measure === 'kilo' ? '0 كيلو' : '0 حبة';
-    const stockHint = measure === 'kilo'
-        ? ('المتاح: ' + displayQty(available) + ' كيلو')
-        : ('المتاح: ' + displayQty(available) + ' حبة'
-            + (bulkSize > 1 ? ' ≈ ' + displayQty(available / bulkSize) + ' كرتونة' : ''));
+    const zeroHint = measure === 'kilo'
+        ? '0 كيلو'
+        : ((mode === 'bulk_only' || measure === 'carton') ? '0 كرتونة' : '0 حبة');
+    let stockHint;
+    if (measure === 'kilo') {
+        stockHint = 'المتاح: ' + displayQty(available) + ' كيلو';
+    } else if ((mode === 'bulk_only' || measure === 'carton') && bulkSize > 1) {
+        stockHint = 'المتاح: ' + displayQty(available / bulkSize) + ' كرتونة (' + displayQty(available) + ' حبة)';
+    } else {
+        stockHint = 'المتاح: ' + displayQty(available) + ' حبة'
+            + (bulkSize > 1 ? ' ≈ ' + displayQty(available / bulkSize) + ' كرتونة' : '');
+    }
 
     return `
         <tr class="order-item" data-id="${id}" data-bulk-size="${bulkSize}" data-sale-mode="${mode}" data-measure-unit="${measure}" data-stock="${available}">

@@ -186,24 +186,24 @@ class SaleUnits
 
         if ($mode === self::MODE_BULK_ONLY) {
             return [
-                'bulk' => ['label' => self::bulkLabel($bulk), 'multiplier' => $bulk, 'step' => '0.001'],
+                'bulk' => ['label' => self::bulkLabel($bulk), 'multiplier' => $bulk, 'step' => '1'],
             ];
         }
 
-        // بيع مرن — خصوصاً منتجات الكرتونة: حبة / نصف / كاملة
+        // بيع مرن لوحدة كرتونة: الكرتونة أولاً ثم الحبة
         if ($measure === self::UNIT_CARTON && $bulk > 1) {
             return [
-                'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
+                'bulk' => [
+                    'label' => self::bulkLabel($bulk),
+                    'multiplier' => $bulk,
+                    'step' => '1',
+                ],
                 'half_carton' => [
                     'label' => self::halfCartonLabel($bulk),
                     'multiplier' => self::halfCartonPieces($bulk),
                     'step' => '1',
                 ],
-                'bulk' => [
-                    'label' => self::bulkLabel($bulk),
-                    'multiplier' => $bulk,
-                    'step' => '0.001',
-                ],
+                'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
             ];
         }
 
@@ -222,7 +222,7 @@ class SaleUnits
             $units['bulk'] = [
                 'label' => self::bulkLabel($bulk),
                 'multiplier' => $bulk,
-                'step' => '0.001',
+                'step' => '1',
             ];
         } else {
             $units['dozen'] = ['label' => 'دستة (12)', 'multiplier' => self::DOZEN, 'step' => '1'];
@@ -256,17 +256,17 @@ class SaleUnits
             $bulk = max(2, $bulk);
 
             return [
-                'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
+                'bulk' => [
+                    'label' => self::bulkLabel($bulk),
+                    'multiplier' => $bulk,
+                    'step' => '1',
+                ],
                 'half_carton' => [
                     'label' => self::halfCartonLabel($bulk),
                     'multiplier' => self::halfCartonPieces($bulk),
                     'step' => '1',
                 ],
-                'bulk' => [
-                    'label' => self::bulkLabel($bulk),
-                    'multiplier' => $bulk,
-                    'step' => '0.001',
-                ],
+                'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => '1'],
             ];
         }
 
@@ -282,7 +282,8 @@ class SaleUnits
             return 'kilo';
         }
 
-        if (self::normalizeSaleMode($saleMode) === self::MODE_BULK_ONLY) {
+        $mode = self::normalizeSaleMode($saleMode);
+        if ($mode === self::MODE_BULK_ONLY || ($measure === self::UNIT_CARTON && $mode !== self::MODE_PIECE_ONLY)) {
             return 'bulk';
         }
 
@@ -611,17 +612,28 @@ class SaleUnits
             ];
         }
 
-        if ($mode === self::MODE_BULK_ONLY && $unitKey === 'bulk') {
+        // منتجات الكرتونة / بالعبوة فقط: الكمية المحفوظة تُعرض بكرتونة
+        if (
+            $unitKey === 'bulk'
+            && $bulkSize > 1
+            && (
+                $mode === self::MODE_BULK_ONLY
+                || ($measure === self::UNIT_CARTON && $mode !== self::MODE_PIECE_ONLY)
+            )
+        ) {
             return [
-                'qty' => $bulkSize > 0 ? DecimalMath::div($storedPieces, $bulkSize) : 0,
+                'qty' => DecimalMath::div($storedPieces, $bulkSize),
                 'price' => self::unitPriceForForm('bulk', $piecePrice, $bulkSize),
             ];
         }
 
-        if ($unitKey === 'piece') {
+        if ($unitKey === 'piece' && ! (
+            $mode === self::MODE_BULK_ONLY
+            || ($measure === self::UNIT_CARTON && $mode !== self::MODE_PIECE_ONLY && $bulkSize > 1)
+        )) {
             return [
                 'qty' => $storedPieces,
-                'price' => $piecePrice,
+                'price' => DecimalMath::money($piecePrice),
             ];
         }
 

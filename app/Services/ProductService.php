@@ -111,11 +111,12 @@ class ProductService
     public function stockDisplay(Product $product): string
     {
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+        $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $stock = DecimalMath::round($product->stock);
         $unit = SaleUnits::measureUnitShort($measure);
+        $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
 
-        if ($measure === SaleUnits::UNIT_CARTON) {
-            $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+        if ($measure === SaleUnits::UNIT_CARTON || ($mode === SaleUnits::MODE_BULK_ONLY && $bulk > 1)) {
             $cartons = $bulk > 0 ? DecimalMath::div($stock, $bulk) : 0;
 
             return DecimalMath::display($cartons).' كرتونة ('.DecimalMath::display($stock).' حبة)';
@@ -126,18 +127,59 @@ class ProductService
 
     public function priceDisplay(Product $product, string $type = 'sale'): string
     {
-        $entry = SaleUnits::toEntryValues($product);
-        $value = $type === 'purchase' ? $entry['purchase_price'] : $entry['sale_price'];
-        $unit = SaleUnits::measureUnitShort($product->measure_unit ?? SaleUnits::UNIT_PIECE);
+        $piece = (float) ($type === 'purchase' ? $product->purchase_price : $product->sale_price);
+        $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+        $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
         if ($measure === SaleUnits::UNIT_KILO) {
-            $text = DecimalMath::display($value).' / '.$unit;
+            $value = $piece;
+            $text = DecimalMath::display($value).' / كيلو';
+        } elseif (
+            $mode === SaleUnits::MODE_BULK_ONLY
+            || ($measure === SaleUnits::UNIT_CARTON && $bulk > 1 && $mode !== SaleUnits::MODE_PIECE_ONLY)
+        ) {
+            $value = DecimalMath::money($piece * $bulk);
+            $text = DecimalMath::moneyDisplay($value).' / كرتونة';
         } else {
-            $text = DecimalMath::moneyDisplay($value).' / '.$unit;
+            $value = DecimalMath::money($piece);
+            $text = DecimalMath::moneyDisplay($value).' / حبة';
         }
 
         $currency = app(CurrencyService::class);
+        if ($currency->enabled()) {
+            $text .= ' ≈ '.$currency->formatUsd($currency->toUsd($value));
+        }
+
+        return $text;
+    }
+
+    /**
+     * سعر العرض في قائمة إضافة الطلب حسب طريقة البيع.
+     * كرتونة فقط / وحدة كرتونة → سعر الكرتونة. حبة فقط → سعر الحبة.
+     */
+    public function orderListPriceDisplay(Product $product): string
+    {
+        $piece = (float) $product->sale_price;
+        $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+        $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+        $currency = app(CurrencyService::class);
+
+        if ($measure === SaleUnits::UNIT_KILO) {
+            $value = $piece;
+            $text = DecimalMath::display($value).' / كيلو';
+        } elseif (
+            $mode === SaleUnits::MODE_BULK_ONLY
+            || ($measure === SaleUnits::UNIT_CARTON && $bulk > 1 && $mode !== SaleUnits::MODE_PIECE_ONLY)
+        ) {
+            $value = DecimalMath::money($piece * $bulk);
+            $text = DecimalMath::moneyDisplay($value).' / كرتونة';
+        } else {
+            $value = DecimalMath::money($piece);
+            $text = DecimalMath::moneyDisplay($value).' / حبة';
+        }
+
         if ($currency->enabled()) {
             $text .= ' ≈ '.$currency->formatUsd($currency->toUsd($value));
         }
