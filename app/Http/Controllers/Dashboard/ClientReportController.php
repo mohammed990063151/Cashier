@@ -65,7 +65,7 @@ class ClientReportController extends Controller
                 'id' => $order->id,
                 'order_number' => $order->order_number ?? $order->id,
                 'total' => $calc['totalAfterDiscount'],
-                'paid' => $calc['totalPaid'],
+                'paid' => $calc['netPaid'] ?? $calc['totalPaid'],
                 'remaining' => $calc['remaining'],
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
                 'created_at' => $order->created_at,
@@ -77,7 +77,7 @@ class ClientReportController extends Controller
         $productsSold = $productsFlat->groupBy('id')->map(function ($items) {
             $first = $items->first();
             $totalQty = $items->sum('pivot.quantity');
-            $totalSales = $items->sum(fn ($p) => $p->pivot->quantity * $p->pivot->sale_price);
+            $totalSales = $items->sum(fn ($p) => \App\Support\SaleUnits::lineMoney($p));
             $bulk = max(1, (int) ($first->pieces_per_carton ?? 12));
             $qtyLabel = \App\Support\SaleUnits::formatQuantityLabel(
                 $totalQty,
@@ -109,7 +109,7 @@ class ClientReportController extends Controller
                 'order_number' => $order->order_number ?? $order->id,
                 'date' => $order->created_at,
                 'total' => $calc['totalAfterDiscount'],
-                'paid' => $calc['totalPaid'],
+                'paid' => $calc['netPaid'] ?? $calc['totalPaid'],
                 'remaining' => $calc['remaining'],
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
                 'payments' => $paidItems,

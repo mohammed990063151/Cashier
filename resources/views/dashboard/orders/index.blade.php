@@ -94,7 +94,7 @@
                                         <td><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span></td>
                                         <td><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span></td>
                                         <td><span class="money money-after">{{ number_format($fin['totalAfterDiscount'], 2) }}</span></td>
-                                        <td><span class="money money-paid">{{ number_format($fin['totalPaid'], 2) }}</span></td>
+                                        <td><span class="money money-paid">{{ number_format($fin['netPaid'] ?? $fin['totalPaid'], 2) }}</span></td>
                                         <td>
                                             <span class="money {{ $fin['remaining'] > 0 ? 'money-remain-due' : 'money-remain-zero' }}">
                                                 {{ number_format($fin['remaining'], 2) }}

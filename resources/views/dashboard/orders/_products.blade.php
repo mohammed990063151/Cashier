@@ -33,9 +33,15 @@
             <span class="money">{{ number_format($totalAfterDiscount, 2) }}</span>
         </div>
         <div class="preview-row preview-row--paid">
-            <span>المدفوع</span>
-            <span class="money money-paid">{{ number_format($totalPaid, 2) }}</span>
+            <span>{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</span>
+            <span class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }}</span>
         </div>
+        @if(($totalRefundedToCustomer ?? 0) > 0)
+        <div class="preview-row">
+            <span>مُسترد</span>
+            <span class="money text-danger">-{{ number_format($totalRefundedToCustomer, 2) }}</span>
+        </div>
+        @endif
         <div class="preview-row">
             <span>المتبقي</span>
             <span class="money {{ $remaining > 0 ? 'money-remain-due' : 'money-remain-zero' }}">{{ number_format($remaining, 2) }}</span>
@@ -47,7 +53,7 @@
         @foreach($order->products as $product)
             @php
                 $breakdown = $fin->productUnitBreakdown($product);
-                $lineTotal = $product->pivot->quantity * $product->pivot->sale_price;
+                $lineTotal = \App\Support\SaleUnits::lineMoney($product);
             @endphp
             <div class="preview-product-item">
                 <div class="preview-product-top">

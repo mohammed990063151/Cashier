@@ -111,7 +111,7 @@ class ReportController extends Controller
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->select(
                 'categories.name as category_name',
-                DB::raw('SUM(product_order.quantity * product_order.sale_price) as total_sales')
+                DB::raw('SUM(COALESCE(product_order.line_total, product_order.quantity * product_order.sale_price)) as total_sales')
             )
             ->groupBy('categories.id', 'categories.name')
             ->orderByDesc('total_sales')

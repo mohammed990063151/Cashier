@@ -21,7 +21,9 @@
 
     <div class="order-detail-stats">
         <span><label>الإجمالي</label> {{ number_format($data['totalSale'], 2) }}</span>
-        <span><label>مدفوع</label> <strong class="text-primary">{{ number_format($data['totalPaid'], 2) }}</strong></span>
+        <span><label>{{ ($data['totalRefundedToCustomer'] ?? 0) > 0 ? 'صافي المدفوع' : 'مدفوع' }}</label>
+            <strong class="text-primary">{{ number_format($data['netPaid'] ?? $data['totalPaid'], 2) }}</strong>
+        </span>
         <span><label>بعد الخصم</label> {{ number_format($data['totalAfterDiscount'], 2) }}</span>
     </div>
 

@@ -47,6 +47,10 @@
             <td>مُسترد للعميل من الخزينة</td>
             <td class="oar-num text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} ج.س</td>
         </tr>
+        <tr>
+            <td>صافي المدفوع (بعد الاسترداد)</td>
+            <td class="oar-num text-primary">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} ج.س</td>
+        </tr>
         @endif
         <tr>
             <td>المتبقي على العميل</td>

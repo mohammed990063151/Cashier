@@ -53,7 +53,7 @@ class ClientHistoryController extends Controller
                 'order' => $order,
                 'client_name' => $order->client->name ?? '—',
                 'total' => (float) $calc['totalAfterDiscount'],
-                'paid' => (float) $calc['totalPaid'],
+                'paid' => (float) ($calc['netPaid'] ?? $calc['totalPaid']),
                 'remaining' => (float) $calc['remaining'],
                 'discount' => (float) $calc['invoiceDiscount'],
                 'status' => $statusKey,

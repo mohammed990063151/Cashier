@@ -70,13 +70,14 @@ class OrderController extends Controller
         $client = Client::findOrFail($client);
 
         $total_price = 0;
+        $hasKilo = false;
 
         // تحقق من المخزون باستخدام الكميات المحوّلة للحبة (أو الكيلو)
         foreach ($products as $productId => $data) {
             $product = Product::findOrFail($productId);
 
             $quantity = DecimalMath::round($data['quantity'] ?? 0);
-            $sale_price = max(0, DecimalMath::round($data['sale_price'] ?? 0));
+            $lineTotal = (float) ($data['line_total'] ?? DecimalMath::mul($data['sale_price'] ?? 0, $quantity));
 
             if ($stockError = $this->stockShortageMessage($product, $quantity)) {
                 return redirect()->back()
@@ -84,20 +85,30 @@ class OrderController extends Controller
                     ->with('error', $stockError);
             }
 
-            $total_price += DecimalMath::mul($sale_price, $quantity);
+            if (SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null) === SaleUnits::UNIT_KILO) {
+                $hasKilo = true;
+                $total_price += DecimalMath::round($lineTotal);
+            } else {
+                $total_price += DecimalMath::money($lineTotal);
+            }
         }
+        $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
 
         $paidAtSale = (float) ($request->paid_at_sale ?? 0);
         $invoiceDiscount = (float) ($request->invoice_discount ?? 0);
+        if (! $hasKilo) {
+            $paidAtSale = DecimalMath::money($paidAtSale);
+            $invoiceDiscount = DecimalMath::money($invoiceDiscount);
+        }
         $totalAfterDiscount = max($total_price - $invoiceDiscount, 0);
 
-        if ($invoiceDiscount > $total_price) {
+        if ($invoiceDiscount > $total_price + 0.0005) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', __("الخصم ($invoiceDiscount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
         }
 
-        if ($paidAtSale > $totalAfterDiscount) {
+        if ($paidAtSale > $totalAfterDiscount + 0.0005) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', __("المدفوع ($paidAtSale) لا يمكن أن يكون أكبر من الإجمالي بعد الخصم ($totalAfterDiscount)"));
@@ -175,13 +186,16 @@ public function update(Request $request, Client $client, Order $order, CashServi
     $total_price = 0;
     $total_profit = 0;
     $productData = [];
+    $hasKilo = false;
 
     foreach ($products as $productId => $data) {
         $quantity = DecimalMath::round($data['quantity'] ?? 0);
-        $unitPrice = max(0, DecimalMath::round($data['sale_price'] ?? 0));
+        $unitPrice = max(0, (float) ($data['sale_price'] ?? 0));
+        $lineTotal = (float) ($data['line_total'] ?? ($unitPrice * $quantity));
         $product = Product::findOrFail($productId);
         $oldQuantity = (float) ($order->products->find($productId)?->pivot->quantity ?? 0);
         $available_stock = DecimalMath::add((float) $product->stock, $oldQuantity);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
         if ($stockError = $this->stockShortageMessage($product, $quantity, $available_stock)) {
             return redirect()->back()
@@ -189,22 +203,35 @@ public function update(Request $request, Client $client, Order $order, CashServi
                 ->with('error', $stockError);
         }
 
+        if ($measure === SaleUnits::UNIT_KILO) {
+            $hasKilo = true;
+            $lineTotal = DecimalMath::round($lineTotal);
+        } else {
+            $lineTotal = DecimalMath::money($lineTotal);
+        }
+
         $productData[$productId] = [
             'quantity'   => $quantity,
             'sale_price' => $unitPrice,
             'cost_price' => $product->purchase_price,
+            'line_total' => $lineTotal,
         ];
 
-        $total_price  += DecimalMath::mul($unitPrice, $quantity);
-        $total_profit += ($unitPrice - $product->purchase_price) * $quantity;
+        $total_price  += $lineTotal;
+        $total_profit += $lineTotal - ((float) $product->purchase_price * $quantity);
     }
-     if ($invoiceDiscount > $total_price) {
+    $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
+    if (! $hasKilo) {
+        $paidAtSale = DecimalMath::money($paidAtSale);
+        $invoiceDiscount = DecimalMath::money($invoiceDiscount);
+    }
+     if ($invoiceDiscount > $total_price + 0.0005) {
         return redirect()->back()
             ->withInput()
             ->with('error', __("الخصم ($invoiceDiscount) لا يمكن أن يكون أكبر من إجمالي الطلب ($total_price)"));
     }
  $total_after_discount = max($total_price - $invoiceDiscount, 0);
-    if ($paidAtSale > $total_after_discount) {
+    if ($paidAtSale > $total_after_discount + 0.0005) {
         return redirect()->back()
             ->withInput()
             ->with('error', __("المدفوع ($paidAtSale) لا يمكن أن يكون أكبر من الإجمالي بعد الخصم ($total_after_discount)"));
@@ -319,26 +346,42 @@ public function update(Request $request, Client $client, Order $order, CashServi
         $total_price = 0;
         $productData = [];
         $total_profit = 0;
+        $hasKilo = false;
 
         // المنتجات مفترضة مُطبَّعة مسبقاً في store() — لا نُرجع RedirectResponse من هنا
         foreach ($request->products as $productId => $data) {
             $quantity = DecimalMath::round($data['quantity'] ?? 0);
-            $unitPrice = max(0, DecimalMath::round($data['sale_price'] ?? 0));
+            $unitPrice = max(0, (float) ($data['sale_price'] ?? 0));
+            $lineTotal = (float) ($data['line_total'] ?? ($unitPrice * $quantity));
 
             $product = Product::findOrFail($productId);
+            $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
 
             if ($stockError = $this->stockShortageMessage($product, $quantity)) {
                 throw new \RuntimeException($stockError);
+            }
+
+            if ($measure === SaleUnits::UNIT_KILO) {
+                $hasKilo = true;
+                $lineTotal = DecimalMath::round($lineTotal);
+            } else {
+                $lineTotal = DecimalMath::money($lineTotal);
             }
 
             $productData[$productId] = [
                 'quantity' => $quantity,
                 'sale_price' => $unitPrice,
                 'cost_price' => (float) $product->purchase_price,
+                'line_total' => $lineTotal,
             ];
 
-            $total_price += DecimalMath::mul($unitPrice, $quantity);
-            $total_profit += ($unitPrice - (float) $product->purchase_price) * $quantity;
+            $total_price += $lineTotal;
+            $total_profit += $lineTotal - ((float) $product->purchase_price * $quantity);
+        }
+        $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
+        if (! $hasKilo) {
+            $paidAtSale = DecimalMath::money($paidAtSale);
+            $invoiceDiscount = DecimalMath::money($invoiceDiscount);
         }
         $total_after_discount = max($total_price - $invoiceDiscount, 0);
         $remaining = max($total_after_discount - $paidAtSale, 0);
@@ -361,6 +404,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
                 'quantity' => $data['quantity'],
                 'sale_price' => $data['sale_price'],
                 'cost_price' => $data['cost_price'],
+                'line_total' => $data['line_total'],
             ]);
 
             $product = Product::findOrFail($productId);

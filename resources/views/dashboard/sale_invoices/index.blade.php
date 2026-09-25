@@ -59,7 +59,7 @@
                                         $finance = $order->finance ?? [];
                                         $total = $finance['totalAfterDiscount'] ?? $order->total_after_discount ?? 0;
                                         $discount = $finance['invoiceDiscount'] ?? $order->invoice_discount ?? 0;
-                                        $paid = $finance['totalPaid'] ?? $order->paid_amount ?? 0;
+                                        $paid = $finance['netPaid'] ?? $finance['totalPaid'] ?? $order->paid_amount ?? 0;
                                         $remaining = $finance['remaining'] ?? $order->remaining_amount ?? 0;
                                     @endphp
                                     <tr>

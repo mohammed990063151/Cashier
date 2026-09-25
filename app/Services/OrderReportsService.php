@@ -163,9 +163,9 @@ class OrderReportsService
             ->join('orders', 'product_order.order_id', '=', 'orders.id')
             ->select(
                 'products.name as product_name',
-                DB::raw('SUM(product_order.quantity * product_order.sale_price) as sales'),
+                DB::raw('SUM(COALESCE(product_order.line_total, product_order.quantity * product_order.sale_price)) as sales'),
                 DB::raw('SUM(product_order.quantity * product_order.cost_price) as cost'),
-                DB::raw('SUM(product_order.quantity * (product_order.sale_price - product_order.cost_price)) as profit')
+                DB::raw('SUM(COALESCE(product_order.line_total, product_order.quantity * product_order.sale_price) - product_order.quantity * product_order.cost_price) as profit')
             )
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('profit');

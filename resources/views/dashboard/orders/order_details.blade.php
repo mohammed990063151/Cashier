@@ -38,9 +38,15 @@
             <strong class="od-stat-value">{{ number_format($totalAfterDiscount, 2) }}</strong>
         </div>
         <div class="od-stat od-stat--highlight">
-            <span class="od-stat-label">المدفوع</span>
-            <strong class="od-stat-value text-primary">{{ number_format($totalPaid, 2) }}</strong>
+            <span class="od-stat-label">{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</span>
+            <strong class="od-stat-value text-primary">{{ number_format($netPaid ?? $totalPaid, 2) }}</strong>
         </div>
+        @if(($totalRefundedToCustomer ?? 0) > 0)
+        <div class="od-stat">
+            <span class="od-stat-label">مُسترد</span>
+            <strong class="od-stat-value text-danger">{{ number_format($totalRefundedToCustomer, 2) }}</strong>
+        </div>
+        @endif
         <div class="od-stat">
             <span class="od-stat-label">المتبقي</span>
             <strong class="od-stat-value {{ $remaining > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($remaining, 2) }}</strong>
@@ -56,7 +62,7 @@
     @foreach($order->products as $product)
         @php
             $breakdown = $financial->productUnitBreakdown($product);
-            $lineTotal = $product->pivot->quantity * $product->pivot->sale_price;
+            $lineTotal = \App\Support\SaleUnits::lineMoney($product);
         @endphp
         <div class="od-product-card">
             <div class="od-product-head">

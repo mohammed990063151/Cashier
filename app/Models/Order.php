@@ -29,7 +29,7 @@ class Order extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class, 'product_order')
-            ->withPivot('quantity', 'sale_price', 'cost_price');
+            ->withPivot('quantity', 'sale_price', 'cost_price', 'line_total');
     }
 
     public function payments()
@@ -59,10 +59,10 @@ class Order extends Model
 
     public function getTotalAmountAttribute()
     {
-        return $this->products->sum(fn ($p) => $p->pivot->quantity * $p->pivot->sale_price);
+        return $this->products->sum(fn ($p) => \App\Support\SaleUnits::lineMoney($p));
     }
 
-    /** المدفوع الفعلي بدون احتساب مزدوج لدفعة البيع */
+    /** إجمالي ما دفعه العميل (بدون خصم الاستردادات) */
     public function getTotalPaidAttribute()
     {
         $paymentsTotal = (float) $this->payments->sum('amount');
@@ -73,16 +73,29 @@ class Order extends Model
         return (float) ($this->paid_at_sale ?? 0);
     }
 
+    /** صافي المدفوع بعد خصم المبالغ المستردة نقداً */
+    public function getNetPaidAttribute()
+    {
+        $refunded = 0.0;
+        if ($this->relationLoaded('returns')) {
+            $refunded = (float) $this->returns->sum('refund_amount');
+        } else {
+            $refunded = (float) $this->returns()->sum('refund_amount');
+        }
+
+        return max(0, round($this->total_paid - $refunded, 2));
+    }
+
     public function getPaidAmountAttribute()
     {
-        return $this->total_paid;
+        return $this->net_paid;
     }
 
     public function getRemainingAmountAttribute()
     {
         $afterDiscount = (float) ($this->total_after_discount ?? $this->total_price ?? 0);
 
-        return max($afterDiscount - $this->total_paid, 0);
+        return max($afterDiscount - $this->net_paid, 0);
     }
 
     public function getTotalProfitAttribute()

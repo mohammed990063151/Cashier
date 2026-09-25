@@ -307,7 +307,14 @@ class SaleUnits
         $intPieces = (int) round($qty);
 
         if ($measure === self::UNIT_CARTON && $bulkSize > 1) {
-            return self::formatFlexibleQuantityLabel($intPieces, $bulkSize);
+            $bulks = intdiv($intPieces, $bulkSize);
+            $rest = $intPieces % $bulkSize;
+            $label = $bulks.' كرتونة';
+            if ($rest > 0) {
+                $label .= ' + '.$rest.' حبة';
+            }
+
+            return $label.' ('.$intPieces.' حبة)';
         }
 
         if ($mode === self::MODE_PIECE_ONLY) {
@@ -317,12 +324,12 @@ class SaleUnits
         if ($mode === self::MODE_BULK_ONLY && $bulkSize > 1) {
             $bulks = intdiv($intPieces, $bulkSize);
             $rest = $intPieces % $bulkSize;
-            $label = $bulks.' '.self::bulkLabel($bulkSize);
+            $label = $bulks.' كرتونة';
             if ($rest > 0) {
                 $label .= ' + '.$rest.' حبة';
             }
 
-            return $label.' — '.$intPieces.' حبة';
+            return $label.' ('.$intPieces.' حبة)';
         }
 
         return self::formatFlexibleQuantityLabel($intPieces, $bulkSize);
@@ -641,18 +648,29 @@ class SaleUnits
     }
 
     /**
+     * حوّل وحدات النموذج إلى كمية مخزون (حبة/كيلو) + إجمالي مالي للسطر كما أدخله المستخدم.
+     *
      * @param  array<string, mixed>  $line
-     * @return array{quantity: float, sale_price: float}
+     * @return array{quantity: float, sale_price: float, line_total: float}
      */
     public static function toPieceLine(array $line, int $piecesPerBulk, ?string $saleMode = null, ?string $measureUnit = null): array
     {
+        $measure = self::normalizeMeasureUnit($measureUnit);
         $allowedUnits = array_keys(self::unitsForOrderForm($piecesPerBulk, $saleMode, $measureUnit));
         $totalPieces = 0.0;
         $lineTotal = 0.0;
 
         foreach ($allowedUnits as $unit) {
-            $qty = max(0, DecimalMath::round($line[$unit]['qty'] ?? 0));
-            $price = max(0, DecimalMath::round($line[$unit]['price'] ?? 0));
+            $qty = max(0, (float) ($line[$unit]['qty'] ?? 0));
+            $price = max(0, (float) ($line[$unit]['price'] ?? 0));
+
+            if ($measure === self::UNIT_KILO) {
+                $qty = DecimalMath::round($qty);
+                $price = DecimalMath::round($price);
+            } else {
+                $qty = DecimalMath::money($qty);
+                $price = DecimalMath::money($price);
+            }
 
             if ($qty <= 0) {
                 continue;
@@ -660,16 +678,50 @@ class SaleUnits
 
             $multiplier = self::multiplier($unit, $piecesPerBulk);
             $totalPieces = DecimalMath::add($totalPieces, DecimalMath::mul($qty, $multiplier));
-            $lineTotal = DecimalMath::add($lineTotal, DecimalMath::mul($qty, $price));
+            // الإجمالي = الكمية المدخلة × سعر الوحدة المدخل (كرتونة/حبة/كيلو) — بدون إعادة ضرب بحبة
+            $lineTotal += $qty * $price;
         }
 
         if ($totalPieces <= 0) {
-            return ['quantity' => 0, 'sale_price' => 0];
+            return ['quantity' => 0, 'sale_price' => 0.0, 'line_total' => 0.0];
         }
+
+        if ($measure === self::UNIT_KILO) {
+            $lineTotal = DecimalMath::round($lineTotal);
+        } else {
+            $lineTotal = DecimalMath::money($lineTotal);
+        }
+
+        // سعر الحبة/الكيلو المرجعي للمخزون والعرض — بدقة كافية لاسترجاع الإجمالي
+        $salePrice = $totalPieces > 0 ? ($lineTotal / $totalPieces) : 0.0;
 
         return [
             'quantity' => $totalPieces,
-            'sale_price' => DecimalMath::div($lineTotal, $totalPieces),
+            'sale_price' => $salePrice,
+            'line_total' => $lineTotal,
         ];
+    }
+
+    /**
+     * مبلغ سطر الطلب من line_total إن وُجد، وإلا quantity × sale_price مع تقريب حسب الوحدة.
+     */
+    public static function lineMoney($product): float
+    {
+        $qty = (float) ($product->pivot->quantity ?? 0);
+        $price = (float) ($product->pivot->sale_price ?? 0);
+        $measure = self::normalizeMeasureUnit($product->measure_unit ?? null);
+        $stored = $product->pivot->line_total ?? null;
+
+        if ($stored !== null && $stored !== '') {
+            $amount = (float) $stored;
+        } else {
+            $amount = $qty * $price;
+        }
+
+        if ($measure === self::UNIT_KILO) {
+            return DecimalMath::round($amount);
+        }
+
+        return DecimalMath::money($amount);
     }
 }

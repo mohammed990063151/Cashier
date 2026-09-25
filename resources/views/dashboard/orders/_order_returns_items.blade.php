@@ -42,13 +42,13 @@
         @endif
         <div class="ord-ret-foot">
             <span>قيمة المرتجع: <strong>{{ number_format($ret->items_total, 2) }}</strong> ج.س</span>
+            @if($ret->remaining_reduced > 0)
+            <span>خُصم من المتبقي: <strong>{{ number_format($ret->remaining_reduced, 2) }}</strong> ج.س</span>
+            @endif
             @if($ret->refund_amount > 0)
             <span class="text-danger">مُسترد من الخزينة: <strong>{{ number_format($ret->refund_amount, 2) }}</strong> ج.س</span>
-            @else
-            <span class="text-muted">خصم من المتبقي — دون حركة نقدية</span>
-            @endif
-            @if($ret->remaining_reduced > 0 && $ret->refund_amount <= 0)
-            <span>خُصم من المتبقي: {{ number_format($ret->remaining_reduced, 2) }} ج.س</span>
+            @elseif($ret->remaining_reduced <= 0)
+            <span class="text-muted">بدون أثر مالي إضافي</span>
             @endif
         </div>
         @if($ret->notes)

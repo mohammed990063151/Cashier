@@ -12,8 +12,12 @@ $kernel->bootstrap();
 
 use App\Models\Category;
 use App\Models\Client;
+use App\Models\Order;
+use App\Models\OrderReturn;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Services\AiAssistant\AssistantEngine;
+use App\Services\OrderFinancialService;
 use App\Services\OrderLineNormalizer;
 use App\Services\ProductService;
 use App\Support\DecimalMath;
@@ -76,15 +80,37 @@ try {
     assert_true((float) $units['half_carton']['multiplier'] === 12.0, 'half of 24 = 12');
     assert_true((float) $units['bulk']['multiplier'] === 24.0, 'full carton = 24');
 
-    // 4) toPieceLine conversion
+    // 4) toPieceLine conversion — المال من سعر الوحدة المدخل، المخزون بالحبة
     $line = SaleUnits::toPieceLine([
         'piece' => ['qty' => 2, 'price' => 15],
         'half_carton' => ['qty' => 1, 'price' => 180],
         'bulk' => ['qty' => 1, 'price' => 360],
     ], 24, 'flexible', 'carton');
-    // 2 + 12 + 24 = 38 pieces; total money = 2*15 + 180 + 360 = 570; avg = 570/38
+    // 2 + 12 + 24 = 38 pieces; money = 2*15 + 180 + 360 = 570
     assert_true($line['quantity'] === 38.0, 'toPieceLine qty=38');
-    assert_true(abs($line['sale_price'] - DecimalMath::div(570, 38)) < 0.001, 'toPieceLine avg price');
+    assert_true(abs($line['line_total'] - 570) < 0.01, 'toPieceLine line_total=570');
+    assert_true(abs($line['sale_price'] - (570 / 38)) < 0.0001, 'toPieceLine unit avg');
+
+    // 4b) 5 كراتين × 7 = 35 بالضبط (بدون 34.98)
+    $cartonMoney = SaleUnits::toPieceLine([
+        'bulk' => ['qty' => 5, 'price' => 7],
+    ], 12, 'bulk_only', 'carton');
+    assert_true($cartonMoney['quantity'] === 60.0, '5 cartons = 60 pieces stock');
+    assert_true($cartonMoney['line_total'] === 35.0, '5×7 carton money = 35');
+    assert_true(abs($cartonMoney['line_total'] - 34.98) > 0.01, 'not 34.98 drift');
+
+    // 4c) كيلو: 1.5 × 10 = 15
+    $kiloMoney = SaleUnits::toPieceLine([
+        'kilo' => ['qty' => 1.5, 'price' => 10],
+    ], 1, 'piece_only', 'kilo');
+    assert_true($kiloMoney['quantity'] === 1.5, 'kilo qty 1.5');
+    assert_true($kiloMoney['line_total'] === 15.0, 'kilo line_total 15');
+
+    // 4d) حبة فقط: 10 × 8 = 80
+    $pieceMoney = SaleUnits::toPieceLine([
+        'piece' => ['qty' => 10, 'price' => 8],
+    ], 1, 'piece_only', 'piece');
+    assert_true($pieceMoney['line_total'] === 80.0, 'piece line_total 80');
 
     // 5) Create real products and sell
     $pieceProduct = Product::create([
@@ -171,7 +197,50 @@ try {
     assert_true($exact['quantity'] === 10.0, 'exact 10 pieces');
     assert_true($exact['quantity'] <= (float) $pieceProduct->stock + 0.0005, 'equal stock allowed');
 
-    // 11) AI assistant replies with real data
+    // 11) Return money: net paid = paid - refund; remaining uses net
+    $client = Client::first() ?? Client::create([
+        'name' => 'TEST-CLIENT-'.uniqid(),
+        'phone' => '000',
+        'address' => 'test',
+    ]);
+    $returnOrder = Order::create([
+        'client_id' => $client->id,
+        'order_number' => 'TST-'.uniqid(),
+        'total_price' => 50,
+        'paid_at_sale' => 80,
+        'invoice_discount' => 0,
+        'total_after_discount' => 50,
+        'remaining' => 0,
+        'total_return' => 50,
+        'profit' => 0,
+    ]);
+    $returnOrder->products()->attach($pieceProduct->id, [
+        'quantity' => 5,
+        'sale_price' => 10,
+        'cost_price' => 5,
+    ]);
+    Payment::create([
+        'order_id' => $returnOrder->id,
+        'amount' => 80,
+        'method' => 'cash_at_sale',
+        'notes' => 'test',
+    ]);
+    OrderReturn::create([
+        'order_id' => $returnOrder->id,
+        'return_number' => 'RET-TST-'.uniqid(),
+        'items_total' => 50,
+        'refund_amount' => 30,
+        'remaining_reduced' => 20,
+        'return_date' => now()->toDateString(),
+    ]);
+    $finCalc = app(OrderFinancialService::class)->calculate($returnOrder->fresh(['products', 'payments', 'returns']));
+    assert_true(abs($finCalc['totalPaid'] - 80) < 0.01, 'gross paid stays 80');
+    assert_true(abs($finCalc['netPaid'] - 50) < 0.01, 'net paid = 80-30 = 50');
+    assert_true(abs($finCalc['totalAfterDiscount'] - 50) < 0.01, 'net total after return = 50');
+    assert_true(abs($finCalc['remaining']) < 0.01, 'remaining 0 after refund');
+    assert_true(abs(($finCalc['netPaid'] + $finCalc['remaining']) - $finCalc['totalAfterDiscount']) < 0.02, 'netPaid+remaining≈total');
+
+    // 12) AI assistant replies with real data
     $ai = app(AssistantEngine::class);
     $r1 = $ai->handle('ملخص المخزون');
     assert_true(str_contains($r1['reply'], 'ملخص المخزون'), 'AI inventory summary');
@@ -180,11 +249,11 @@ try {
     $r3 = $ai->handle('عرض التقارير');
     assert_true(count($r3['links']) > 0, 'AI reports links');
 
-    // 12) DecimalMath rounding
+    // 13) DecimalMath rounding
     assert_true(DecimalMath::mul(1.455, 15.999) === 23.279, 'mul 3 decimals');
     assert_true(DecimalMath::div(120.455, 12) === 10.038, 'div 3 decimals');
 
-    // 13) Entry values round-trip for carton
+    // 14) Entry values round-trip for carton
     $roundTrip = SaleUnits::toEntryValues($cartonProduct->fresh(), 'carton');
     assert_true(abs($roundTrip['sale_price'] - 180) < 0.01, 'entry sale price back to carton');
     assert_true(abs($roundTrip['stock'] - 1.0) < 0.01, 'entry stock back to 1 carton after sale');

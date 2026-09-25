@@ -345,6 +345,10 @@
                 <td class="t-label">مُسترد للعميل (خزينة)</td>
                 <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalRefundedToCustomer, 2) }}</td>
             </tr>
+            <tr>
+                <td class="t-label">صافي المدفوع</td>
+                <td class="t-value paid-val">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }}</td>
+            </tr>
             @endif
             <tr>
                 <td class="t-label">المتبقي</td>

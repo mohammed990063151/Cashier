@@ -18,7 +18,11 @@ function round3(value) {
     return Math.round(parseNumber(value) * 1000) / 1000;
 }
 
-function formatMoney(value) {
+function formatMoney(value, allowDecimal) {
+    if (allowDecimal) {
+        const n = round3(value);
+        return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    }
     const n = Math.round(parseNumber(value));
     return n.toLocaleString('en-US');
 }
@@ -190,11 +194,19 @@ function calculateRowTotal($row) {
         const price = round3($(this).find('.unit-price').val());
         const multiplier = parseFloat($(this).data('multiplier')) || 1;
 
-        lineTotal = round3(lineTotal + round3(qty * price));
+        if (measure === 'kilo') {
+            lineTotal = round3(lineTotal + round3(qty * price));
+        } else {
+            lineTotal += Math.round(parseNumber(qty) * parseNumber(price));
+        }
         totalPieces = round3(totalPieces + round3(qty * multiplier));
     });
 
-    $row.find('.product-price').text(formatMoney(lineTotal));
+    if (measure !== 'kilo') {
+        lineTotal = Math.round(lineTotal);
+    }
+
+    $row.find('.product-price').text(formatMoney(lineTotal, measure === 'kilo'));
     let qtyHint = '0';
     if (totalPieces > 0) {
         if (measure === 'kilo') {
@@ -207,7 +219,7 @@ function calculateRowTotal($row) {
         }
     }
     $row.find('.total-pieces-hint').text(qtyHint);
-    $row.find('input[name$="[total_price]"]').val(Math.round(lineTotal));
+    $row.find('input[name$="[total_price]"]').val(measure === 'kilo' ? round3(lineTotal) : Math.round(lineTotal));
 
     const $warn = $row.find('.stock-warning');
     if ($warn.length) {
@@ -224,30 +236,39 @@ function calculateRowTotal($row) {
 
 function calculateTotal() {
     let total = 0;
+    let hasKilo = false;
 
     $('.order-list tr.order-item').each(function () {
+        const measure = $(this).data('measure-unit') || 'piece';
+        if (measure === 'kilo') {
+            hasKilo = true;
+        }
         total = round3(total + calculateRowTotal($(this)));
     });
 
-    $('.total-price').text(formatMoney(total));
+    if (!hasKilo) {
+        total = Math.round(total);
+    }
 
-    const invoiceDiscount = round3($('#invoice_discount').val());
-    let discountedTotal = round3(total - invoiceDiscount);
+    $('.total-price').text(formatMoney(total, hasKilo));
+
+    const invoiceDiscount = hasKilo ? round3($('#invoice_discount').val()) : Math.round(parseNumber($('#invoice_discount').val()));
+    let discountedTotal = hasKilo ? round3(total - invoiceDiscount) : Math.round(total - invoiceDiscount);
     if (discountedTotal < 0) {
         discountedTotal = 0;
     }
 
-    $('#discounted-total').text(formatMoney(discountedTotal));
+    $('#discounted-total').text(formatMoney(discountedTotal, hasKilo));
 
-    const paid = round3($('#paid_at_sale').val());
-    let remaining = round3(discountedTotal - paid);
+    const paid = hasKilo ? round3($('#paid_at_sale').val()) : Math.round(parseNumber($('#paid_at_sale').val()));
+    let remaining = hasKilo ? round3(discountedTotal - paid) : Math.round(discountedTotal - paid);
     if (remaining < 0) {
         remaining = 0;
     }
 
     const $remainingDisplay = $('#remaining-display');
     if ($remainingDisplay.length) {
-        $remainingDisplay.text(formatMoney(remaining));
+        $remainingDisplay.text(formatMoney(remaining, hasKilo));
         $remainingDisplay.toggleClass('text-danger', remaining > 0);
         $remainingDisplay.toggleClass('text-success', remaining <= 0);
     }
@@ -281,7 +302,7 @@ function buildOrderRow(name, id, piecePrice, bulkSize, saleMode, measureUnit, st
             </td>
             <td colspan="2">${unitBlocksHtml(id, price, bulkSize, mode, measure)}</td>
             <td>
-                <span class="product-price" style="color:#01941f;font-weight:bold;">${formatMoney(0)}</span>
+                <span class="product-price" style="color:#01941f;font-weight:bold;">${formatMoney(0, measure === 'kilo')}</span>
                 <input type="hidden" name="products[${id}][total_price]" value="0">
             </td>
             <td>

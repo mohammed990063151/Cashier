@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\DecimalMath;
 use App\Support\SaleUnits;
 
 class OrderFinancialService
@@ -15,9 +16,16 @@ class OrderFinancialService
     {
         $order->loadMissing(['products', 'payments', 'returns']);
 
-        $totalSale = (float) $order->products->sum(
-            fn ($product) => $product->pivot->quantity * $product->pivot->sale_price
-        );
+        $totalSale = 0.0;
+        $hasKilo = false;
+        foreach ($order->products as $product) {
+            $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+            if ($measure === SaleUnits::UNIT_KILO) {
+                $hasKilo = true;
+            }
+            $totalSale += SaleUnits::lineMoney($product);
+        }
+        $totalSale = $hasKilo ? DecimalMath::round($totalSale) : DecimalMath::money($totalSale);
 
         $paidAtSale = (float) ($order->paid_at_sale ?? 0);
         $invoiceDiscount = (float) ($order->invoice_discount ?? 0);
@@ -42,7 +50,10 @@ class OrderFinancialService
             $totalPaid = $paidAtSale;
         }
 
-        $remaining = max($totalAfterDiscount - $totalPaid, 0);
+        // المسترد نقداً لا يُحذف من جدول الدفعات — نخصمه لصافي المدفوع والمتبقي
+        $totalRefundedToCustomer = round((float) $order->returns->sum('refund_amount'), 2);
+        $netPaid = round(max(0, $totalPaid - $totalRefundedToCustomer), 2);
+        $remaining = max($totalAfterDiscount - $netPaid, 0);
 
         $totalPurchase = $order->products->sum(
             fn ($product) => $product->pivot->quantity * $product->pivot->cost_price
@@ -53,7 +64,15 @@ class OrderFinancialService
             ? ($profitAfterDiscount / $totalPurchase) * 100
             : 0;
 
-        $returnMetrics = $this->returnMetrics($order, $totalSale, $invoiceDiscount, $totalAfterDiscount, $totalPaid);
+        $returnMetrics = $this->returnMetrics(
+            $order,
+            $totalSale,
+            $invoiceDiscount,
+            $totalAfterDiscount,
+            $totalPaid,
+            $netPaid,
+            $totalRefundedToCustomer
+        );
 
         return array_merge(compact(
             'order',
@@ -63,6 +82,7 @@ class OrderFinancialService
             'paidAtSale',
             'paymentsSum',
             'totalPaid',
+            'netPaid',
             'remaining',
             'totalPurchase',
             'profitBeforeDiscount',
@@ -79,15 +99,16 @@ class OrderFinancialService
         float $totalSale,
         float $invoiceDiscount,
         float $totalAfterDiscount,
-        float $totalPaid
+        float $totalPaid,
+        float $netPaid,
+        float $totalRefundedToCustomer
     ): array {
         $totalReturnedMerchandise = round((float) ($order->total_return ?? 0), 2);
-        $totalRefundedToCustomer = round((float) $order->returns->sum('refund_amount'), 2);
         $originalTotalSale = round($totalSale + $totalReturnedMerchandise, 2);
         $originalTotalAfterDiscount = max($originalTotalSale - $invoiceDiscount, 0);
         $hasReturns = $totalReturnedMerchandise > 0.009;
         $isFullyReturned = $hasReturns && ($totalSale <= 0.009 || $order->products->isEmpty());
-        $overpaidAfterReturn = round(max(0, $totalPaid - $totalAfterDiscount), 2);
+        $overpaidAfterReturn = round(max(0, $netPaid - $totalAfterDiscount), 2);
 
         return [
             'totalReturnedMerchandise' => $totalReturnedMerchandise,
@@ -188,21 +209,27 @@ class OrderFinancialService
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
         $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+        $lineTotal = SaleUnits::lineMoney($product);
 
         $quantityText = SaleUnits::formatQuantityLabel($pieces, $bulkSize, $mode, $measure);
 
         if ($measure === SaleUnits::UNIT_KILO) {
-            $priceText = \App\Support\DecimalMath::display($piecePrice).' ج.س / كيلو';
-        } elseif ($mode === SaleUnits::MODE_BULK_ONLY && $bulkSize > 1) {
-            $priceText = \App\Support\DecimalMath::moneyDisplay(\App\Support\DecimalMath::money($piecePrice * $bulkSize)).' ج.س / كرتونة';
+            $priceText = DecimalMath::display($piecePrice).' ج.س / كيلو';
+        } elseif (
+            ($mode === SaleUnits::MODE_BULK_ONLY || $measure === SaleUnits::UNIT_CARTON)
+            && $bulkSize > 1
+        ) {
+            $cartons = $bulkSize > 0 ? $pieces / $bulkSize : 0;
+            $unitPrice = $cartons > 0 ? DecimalMath::money($lineTotal / $cartons) : DecimalMath::money($piecePrice * $bulkSize);
+            $priceText = DecimalMath::moneyDisplay($unitPrice).' ج.س / كرتونة';
         } else {
-            $priceText = \App\Support\DecimalMath::moneyDisplay($piecePrice).' ج.س / حبة';
+            $priceText = DecimalMath::moneyDisplay(DecimalMath::money($piecePrice)).' ج.س / حبة';
         }
 
         return [
             'quantity' => $quantityText,
             'price' => $priceText,
-            'line_total' => \App\Support\DecimalMath::money(\App\Support\DecimalMath::mul($pieces, $piecePrice)),
+            'line_total' => $lineTotal,
         ];
     }
 
@@ -239,13 +266,13 @@ class OrderFinancialService
 
         $remaining = (float) $data['remaining'];
         $totalAfterDiscount = (float) $data['totalAfterDiscount'];
-        $totalPaid = (float) $data['totalPaid'];
+        $netPaid = (float) ($data['netPaid'] ?? $data['totalPaid']);
 
         if ($totalAfterDiscount <= 0.009 || $remaining <= 0.009) {
             return 'paid';
         }
 
-        if ($totalPaid > 0.009) {
+        if ($netPaid > 0.009) {
             return 'partial';
         }
 

@@ -11,8 +11,12 @@
             <div class="text-muted">{{ $order->client->name }}</div>
         </div>
         <div class="text-left">
-            <small class="text-muted">المدفوع</small>
-            <div class="money money-paid">{{ number_format($totalPaid, 2) }} ج.س</div>
+            <small class="text-muted">{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</small>
+            <div class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }} ج.س</div>
+            @if(($totalRefundedToCustomer ?? 0) > 0)
+            <small class="text-muted">مدفوع أصلي / مُسترد</small>
+            <div style="font-size:12px;">{{ number_format($totalPaid, 2) }} / <span class="text-danger">{{ number_format($totalRefundedToCustomer, 2) }}</span></div>
+            @endif
             <small class="text-muted">المتبقي</small>
             <div class="money {{ $remaining > 0 ? 'money-remain-due' : 'money-remain-zero' }}">{{ number_format($remaining, 2) }} ج.س</div>
         </div>
