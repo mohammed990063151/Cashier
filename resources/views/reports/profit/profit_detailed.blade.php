@@ -37,7 +37,8 @@
                         @foreach($orders as $order)
                             @foreach($order->products as $product)
                                @php
-                        $lineProfit = ($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity;
+                        $lineProfit = \App\Support\SaleUnits::lineMoney($product)
+                            - ((float) $product->pivot->quantity * (float) $product->pivot->cost_price);
                     @endphp
                                 <tr>
                                     <td>{{ $order->id }}</td>

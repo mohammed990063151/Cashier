@@ -245,7 +245,7 @@
                                                     <tr>
                                                         <th colspan="3" class="text-end fw-bold">الإجمالي الكلي:</th>
                                                         <th class="text-danger fw-bold">
-                                                            {{ number_format($order->products->sum(fn($p) => $p->pivot->sale_price * $p->pivot->quantity),2) }} ج.س
+                                                            {{ number_format($order->products->sum(fn($p) => \App\Support\SaleUnits::lineMoney($p)),2) }} ج.س
                                                         </th>
                                                     </tr>
                                                 </tfoot>

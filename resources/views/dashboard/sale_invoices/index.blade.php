@@ -126,11 +126,14 @@ $(document).ready(function () {
         html += '<tbody>';
         order.products.forEach(function (p) {
             html += '<tr>';
+            var lineTotal = (p.pivot.line_total != null && p.pivot.line_total !== '')
+                ? parseFloat(p.pivot.line_total)
+                : (p.pivot.quantity * p.pivot.sale_price);
             html += '<td>' + p.name + '</td>';
             html += '<td>' + p.pivot.quantity + '</td>';
             html += '<td>' + parseFloat(p.pivot.sale_price).toFixed(2) + '</td>';
             html += '<td>' + parseFloat(p.pivot.cost_price).toFixed(2) + '</td>';
-            html += '<td>' + (p.pivot.quantity * p.pivot.sale_price).toFixed(2) + '</td>';
+            html += '<td>' + Math.round(lineTotal * 100) / 100 + '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';

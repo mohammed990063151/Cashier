@@ -240,7 +240,8 @@ class OrderFinancialService
     {
         $pieces = (float) $product->pivot->quantity;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
-        $piecePrice = (float) $product->pivot->sale_price;
+        $lineMoney = SaleUnits::lineMoney($product);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
         $lines = SaleUnits::breakdownLines(
             $pieces,
             $bulkSize,
@@ -248,10 +249,20 @@ class OrderFinancialService
             $product->measure_unit ?? null
         );
 
-        return array_map(function ($line) use ($piecePrice) {
+        return array_map(function ($line) use ($lineMoney, $pieces, $measure) {
+            $share = $pieces > 0 ? ($lineMoney * ((float) $line['pieces'] / $pieces)) : 0;
+            $lineTotal = $measure === SaleUnits::UNIT_KILO
+                ? DecimalMath::round($share)
+                : DecimalMath::money($share);
+            $count = max((float) $line['count'], 0.0001);
+            $unitPrice = $measure === SaleUnits::UNIT_KILO
+                ? DecimalMath::round($lineTotal / $count)
+                : DecimalMath::money($lineTotal / $count);
+
             return array_merge($line, [
-                'piece_price' => $piecePrice,
-                'line_total' => \App\Support\DecimalMath::mul($line['pieces'], $piecePrice),
+                'piece_price' => $pieces > 0 ? ($lineMoney / $pieces) : 0,
+                'unit_price' => $unitPrice,
+                'line_total' => $lineTotal,
             ]);
         }, $lines);
     }

@@ -33,8 +33,61 @@
             return;
         }
         var mult = parseFloat($row.find('.unit-select option:selected').data('multiplier')) || 1;
-        var piecePrice = piecePurchasePrice(product);
-        $row.find('.unit-price').val((piecePrice * mult).toFixed(3));
+        var basePrice = piecePurchasePrice(product);
+        var measure = product.measure_unit || 'piece';
+        var unitKey = $row.find('.unit-select').val() || 'piece';
+        var raw;
+
+        // الكتالوج يمرّر سعر وحدة القياس (كرتونة/كيلو/حبة) — لا نضرب الكرتونة في حجم العبوة مرة أخرى
+        if (measure === 'kilo' || unitKey === 'kilo') {
+            raw = basePrice;
+            $row.find('.unit-price').val((Math.round(raw * 1000) / 1000).toFixed(3));
+            return;
+        }
+        if (measure === 'carton' && (unitKey === 'bulk' || unitKey === 'piece' || unitKey === 'half_carton')) {
+            if (unitKey === 'bulk') {
+                raw = basePrice;
+            } else if (unitKey === 'half_carton') {
+                raw = basePrice / 2;
+            } else {
+                raw = basePrice / Math.max(1, parseInt(product.pieces_per_carton, 10) || 12);
+            }
+            $row.find('.unit-price').val(String(Math.round(raw)));
+            return;
+        }
+
+        raw = basePrice * mult;
+        $row.find('.unit-price').val(String(Math.round(raw)));
+    }
+
+    function rowSubtotal($row) {
+        var qty = parseFloat($row.find('.entered-qty').val()) || 0;
+        var price = parseFloat($row.find('.unit-price').val()) || 0;
+        var product = findProduct($row.find('.product-select').val());
+        var measure = product && product.measure_unit === 'kilo' ? 'kilo' : 'piece';
+        var sub = qty * price;
+        return measure === 'kilo' ? Math.round(sub * 1000) / 1000 : Math.round(sub);
+    }
+
+    function refreshRow($row) {
+        var sub = rowSubtotal($row);
+        var product = findProduct($row.find('.product-select').val());
+        var measure = product && product.measure_unit === 'kilo' ? 'kilo' : 'piece';
+        $row.find('.row-subtotal').text(measure === 'kilo' ? sub.toFixed(3) : String(Math.round(sub)));
+        updatePiecesHint($row);
+    }
+
+    function invoiceTotal() {
+        var sum = 0;
+        var hasKilo = false;
+        $('#purchaseItemsBody .purchase-item-row').each(function () {
+            var product = findProduct($(this).find('.product-select').val());
+            if (product && product.measure_unit === 'kilo') {
+                hasKilo = true;
+            }
+            sum += rowSubtotal($(this));
+        });
+        return hasKilo ? Math.round(sum * 1000) / 1000 : Math.round(sum);
     }
 
     function updateUnitSelect($row, product) {
@@ -78,26 +131,6 @@
         var pieces = Math.round(qty * mult * 1000) / 1000;
         var measure = product && product.measure_unit === 'kilo' ? 'كيلو' : 'حبة';
         $row.find('.unit-pieces-hint').text(pieces > 0 ? '= ' + pieces + ' ' + measure + ' في المخزون' : '');
-    }
-
-    function rowSubtotal($row) {
-        var qty = parseFloat($row.find('.entered-qty').val()) || 0;
-        var price = parseFloat($row.find('.unit-price').val()) || 0;
-        return qty * price;
-    }
-
-    function refreshRow($row) {
-        var sub = rowSubtotal($row);
-        $row.find('.row-subtotal').text(sub.toFixed(2));
-        updatePiecesHint($row);
-    }
-
-    function invoiceTotal() {
-        var sum = 0;
-        $('#purchaseItemsBody .purchase-item-row').each(function () {
-            sum += rowSubtotal($(this));
-        });
-        return sum;
     }
 
     function refreshTotals() {

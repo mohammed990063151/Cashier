@@ -135,13 +135,18 @@ class PurchaseInvoiceController extends Controller
      */
     protected function productsCatalog($products): array
     {
-        return $products->map(fn (Product $p) => [
-            'id' => $p->id,
-            'name' => $p->name,
-            'purchase_price' => (float) ($p->purchase_price ?? 0),
-            'pieces_per_carton' => max(1, (int) ($p->pieces_per_carton ?? 12)),
-            'sale_mode' => $p->sale_mode,
-            'measure_unit' => $p->measure_unit ?? 'piece',
-        ])->values()->all();
+        return $products->map(function (Product $p) {
+            $entry = \App\Support\SaleUnits::toEntryValues($p);
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                // سعر الشراء بوحدة القياس المعتمدة للمنتج (كرتونة/حبة/كيلو)
+                'purchase_price' => (float) $entry['purchase_price'],
+                'pieces_per_carton' => max(1, (int) ($p->pieces_per_carton ?? 12)),
+                'sale_mode' => $p->sale_mode,
+                'measure_unit' => $p->measure_unit ?? 'piece',
+            ];
+        })->values()->all();
     }
 }

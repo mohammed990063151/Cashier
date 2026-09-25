@@ -101,7 +101,10 @@ class Order extends Model
     public function getTotalProfitAttribute()
     {
         return $this->products->sum(function ($product) {
-            return ($product->pivot->sale_price - $product->pivot->cost_price) * $product->pivot->quantity;
+            $line = \App\Support\SaleUnits::lineMoney($product);
+            $cost = (float) $product->pivot->quantity * (float) $product->pivot->cost_price;
+
+            return $line - $cost;
         });
     }
 }

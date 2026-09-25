@@ -4,7 +4,7 @@
     $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
     $piecePrice = (float) $product->pivot->sale_price;
     $qtyStored = (float) $product->pivot->quantity;
-    $lineTotal = DecimalMath::money(DecimalMath::mul($qtyStored, $piecePrice));
+    $lineTotal = SaleUnits::lineMoney($product);
     $saleMode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
     $measureUnit = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
     $units = SaleUnits::unitsForOrderForm($bulkSize, $saleMode, $measureUnit);

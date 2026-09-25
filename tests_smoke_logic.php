@@ -112,6 +112,13 @@ try {
     ], 1, 'piece_only', 'piece');
     assert_true($pieceMoney['line_total'] === 80.0, 'piece line_total 80');
 
+    // 4e) سعر الكرتونة من line_total: 35 على 60 حبة = 7 للكرتونة
+    $fromLine = SaleUnits::unitPriceFromLineMoney('bulk', 35.0, 60.0, 12, 'carton');
+    assert_true($fromLine === 7.0, 'unitPriceFromLineMoney carton = 7');
+    $cartonBreak = SaleUnits::breakdownLines(60, 12, 'bulk_only', 'carton');
+    assert_true(($cartonBreak[0]['label'] ?? '') === 'كرتونة (12 حبة)', 'breakdown uses كرتونة not دستة');
+    assert_true((int) ($cartonBreak[0]['count'] ?? 0) === 5, 'breakdown 5 cartons');
+
     // 5) Create real products and sell
     $pieceProduct = Product::create([
         'category_id' => $cat->id,

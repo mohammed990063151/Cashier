@@ -108,10 +108,29 @@ class AssistantTools
         };
 
         $pieces = DecimalMath::mul($qty, $multiplier);
-        $saleUnitPrice = DecimalMath::mul((float) $product->sale_price, $multiplier);
-        $purchaseUnitPrice = DecimalMath::mul((float) $product->purchase_price, $multiplier);
-        $saleTotal = DecimalMath::mul($qty, $saleUnitPrice);
-        $purchaseTotal = DecimalMath::mul($qty, $purchaseUnitPrice);
+        $entry = SaleUnits::toEntryValues($product);
+
+        if ($measure === SaleUnits::UNIT_KILO || $unit === 'kilo') {
+            $saleUnitPrice = DecimalMath::round((float) $entry['sale_price']);
+            $purchaseUnitPrice = DecimalMath::round((float) $entry['purchase_price']);
+            $saleTotal = DecimalMath::round(DecimalMath::mul($qty, $saleUnitPrice));
+            $purchaseTotal = DecimalMath::round(DecimalMath::mul($qty, $purchaseUnitPrice));
+        } elseif ($measure === SaleUnits::UNIT_CARTON && in_array($unit, ['carton', 'bulk'], true)) {
+            $saleUnitPrice = DecimalMath::money((float) $entry['sale_price']);
+            $purchaseUnitPrice = DecimalMath::money((float) $entry['purchase_price']);
+            $saleTotal = DecimalMath::money($qty * $saleUnitPrice);
+            $purchaseTotal = DecimalMath::money($qty * $purchaseUnitPrice);
+        } elseif ($measure === SaleUnits::UNIT_CARTON && in_array($unit, ['half_carton', 'half'], true)) {
+            $saleUnitPrice = DecimalMath::money((float) $entry['sale_price'] / 2);
+            $purchaseUnitPrice = DecimalMath::money((float) $entry['purchase_price'] / 2);
+            $saleTotal = DecimalMath::money($qty * $saleUnitPrice);
+            $purchaseTotal = DecimalMath::money($qty * $purchaseUnitPrice);
+        } else {
+            $saleUnitPrice = DecimalMath::money((float) $product->sale_price * $multiplier);
+            $purchaseUnitPrice = DecimalMath::money((float) $product->purchase_price * $multiplier);
+            $saleTotal = DecimalMath::money($qty * $saleUnitPrice);
+            $purchaseTotal = DecimalMath::money($qty * $purchaseUnitPrice);
+        }
         $stock = DecimalMath::round($product->stock);
         $available = $stock >= $pieces;
 

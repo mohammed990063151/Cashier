@@ -39,7 +39,7 @@
     @foreach($order->products as $product)
         @php
             $soldPieces = (float) $product->pivot->quantity;
-            $piecePrice = (float) $product->pivot->sale_price;
+            $lineMoney = \App\Support\SaleUnits::lineMoney($product);
             $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
             $mode = $product->sale_mode ?? 'flexible';
             $measure = $product->measure_unit ?? 'piece';
@@ -63,7 +63,13 @@
             <div class="return-unit-grid">
                 @foreach($units as $unitKey => $unitMeta)
                     @php
-                        $unitPrice = \App\Support\SaleUnits::unitPriceForForm($unitKey, $piecePrice, $bulk);
+                        $unitPrice = \App\Support\SaleUnits::unitPriceFromLineMoney(
+                            $unitKey,
+                            $lineMoney,
+                            max($soldPieces, 0.0001),
+                            $bulk,
+                            $measure
+                        );
                         $multiplier = (float) $unitMeta['multiplier'];
                         $maxUnit = $multiplier > 0 ? floor($soldPieces / $multiplier + 1e-9) : 0;
                         if ($unitKey === 'kilo') {

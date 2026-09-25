@@ -369,7 +369,7 @@ class SaleUnits
         }
 
         $dozens = intdiv($remaining, self::DOZEN);
-        if ($dozens > 0) {
+        if ($dozens > 0 && ($bulkSize === self::DOZEN || $bulkSize <= 1)) {
             $parts[] = $dozens.' دستة';
             $remaining -= $dozens * self::DOZEN;
         }
@@ -416,11 +416,14 @@ class SaleUnits
             return [['label' => 'حبة', 'count' => $intPieces, 'pieces' => $intPieces]];
         }
 
-        if (($mode === self::MODE_BULK_ONLY) && $bulkSize > 1) {
+        if (
+            ($mode === self::MODE_BULK_ONLY || $measure === self::UNIT_CARTON)
+            && $bulkSize > 1
+        ) {
             $bulks = intdiv($intPieces, $bulkSize);
             $lines = [];
             if ($bulks > 0) {
-                $lines[] = ['label' => self::bulkLabel($bulkSize), 'count' => $bulks, 'pieces' => $bulks * $bulkSize];
+                $lines[] = ['label' => 'كرتونة ('.$bulkSize.' حبة)', 'count' => $bulks, 'pieces' => $bulks * $bulkSize];
             }
             $rest = $intPieces % $bulkSize;
             if ($rest > 0) {
@@ -455,7 +458,7 @@ class SaleUnits
             }
         }
 
-        if ($bulkSize === self::DOZEN || $remaining >= self::DOZEN) {
+        if ($bulkSize === self::DOZEN || ($bulkSize <= 1 && $remaining >= self::DOZEN)) {
             $count = intdiv($remaining, self::DOZEN);
             if ($count > 0) {
                 $lines[] = ['label' => 'دستة (12 حبة)', 'count' => $count, 'pieces' => $count * self::DOZEN];
@@ -503,6 +506,31 @@ class SaleUnits
         }
 
         return DecimalMath::money($price);
+    }
+
+    /**
+     * سعر وحدة العرض من إجمالي السطر الفعلي (بدون إعادة تقريب عبر متوسط الحبة 3 خانات).
+     */
+    public static function unitPriceFromLineMoney(
+        string $unitKey,
+        float $lineMoney,
+        float $pieces,
+        int $bulkSize,
+        ?string $measureUnit = null
+    ): float {
+        if ($pieces <= 0) {
+            return 0.0;
+        }
+
+        $measure = self::normalizeMeasureUnit($measureUnit);
+        $multiplier = self::multiplier($unitKey, $bulkSize);
+        $raw = ($lineMoney / $pieces) * $multiplier;
+
+        if ($measure === self::UNIT_KILO || $unitKey === 'kilo') {
+            return DecimalMath::round($raw);
+        }
+
+        return DecimalMath::money($raw);
     }
 
     /**
@@ -611,11 +639,13 @@ class SaleUnits
         $mode = self::normalizeSaleMode($product->sale_mode ?? null);
         $measure = self::normalizeMeasureUnit($product->measure_unit ?? null);
         $storedPieces = DecimalMath::round($product->pivot->quantity ?? 0);
+        $lineMoney = self::lineMoney($product);
+        $unitPrice = self::unitPriceFromLineMoney($unitKey, $lineMoney, max($storedPieces, 0.0001), $bulkSize, $measure);
 
         if ($measure === self::UNIT_KILO && $unitKey === 'kilo') {
             return [
                 'qty' => $storedPieces,
-                'price' => $piecePrice,
+                'price' => $unitPrice > 0 ? $unitPrice : $piecePrice,
             ];
         }
 
@@ -630,7 +660,7 @@ class SaleUnits
         ) {
             return [
                 'qty' => DecimalMath::div($storedPieces, $bulkSize),
-                'price' => self::unitPriceForForm('bulk', $piecePrice, $bulkSize),
+                'price' => $unitPrice,
             ];
         }
 
@@ -640,11 +670,11 @@ class SaleUnits
         )) {
             return [
                 'qty' => $storedPieces,
-                'price' => DecimalMath::money($piecePrice),
+                'price' => $unitPrice > 0 ? $unitPrice : DecimalMath::money($piecePrice),
             ];
         }
 
-        return ['qty' => 0, 'price' => self::unitPriceForForm($unitKey, $piecePrice, $bulkSize)];
+        return ['qty' => 0, 'price' => $unitPrice];
     }
 
     /**
