@@ -29,8 +29,8 @@
                         <button type="submit" class="btn btn-primary btn-block">تصفية</button>
                     </div>
                     <div class="col-md-4 text-left">
-                        <span class="label label-success">صافي: {{ number_format($snapshot['net_sales'], 2) }}</span>
-                        <span class="label label-warning">مرتجع: {{ number_format($snapshot['returns_merchandise'], 2) }}</span>
+                        <span class="label label-success">صافي: <x-report-money :amount="$snapshot['net_sales']" :entries="$snapshot['fx']['net_sales']" /></span>
+                        <span class="label label-warning">مرتجع: <x-report-money :amount="$snapshot['returns_merchandise']" :entries="$snapshot['fx']['returns']" /></span>
                     </div>
                 </form>
             </div>
@@ -65,12 +65,12 @@
                                         {{ $fin->paymentStatusLabel($st) }}
                                     </span>
                                 </td>
-                                <td>{{ number_format($order->total_price, 2) }}</td>
-                                <td>{{ $order->total_return > 0 ? number_format($order->total_return, 2) : '—' }}</td>
-                                <td>{{ number_format($order->invoice_discount, 2) }}</td>
-                                <td>{{ number_format($paid, 2) }}</td>
-                                <td>{{ number_format($order->remaining, 2) }}</td>
-                                <td>{{ number_format($order->profit ?? 0, 2) }}</td>
+                                <td><x-report-money :amount="$order->total_price" :rate="$order->usd_rate" /></td>
+                                <td>@if($order->total_return > 0)<x-report-money :amount="$order->total_return" :rate="$order->usd_rate" />@else — @endif</td>
+                                <td><x-report-money :amount="$order->invoice_discount" :rate="$order->usd_rate" /></td>
+                                <td><x-report-money :amount="$paid" :rate="$order->usd_rate" /></td>
+                                <td><x-report-money :amount="$order->remaining" :rate="$order->usd_rate" /></td>
+                                <td><x-report-money :amount="$order->profit ?? 0" :rate="$order->usd_rate" /></td>
                                 <td data-order="{{ $order->created_at->timestamp }}">{{ $order->created_at->format('Y-m-d') }}</td>
                             </tr>
                         @endforeach

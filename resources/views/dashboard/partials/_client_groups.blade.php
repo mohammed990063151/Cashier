@@ -28,6 +28,14 @@
                 <small>إجمالي المتبقي</small>
                 <strong>{{ number_format($group['total_remaining'], 2) }}</strong>
                 <span>ج.س</span>
+                @php
+                    $debtEntries = $group['orders']->map(function ($order) {
+                        $left = app(\App\Services\OrderFinancialService::class)->calculate($order)['remaining'];
+
+                        return ['amount' => $left, 'rate' => $order->usd_rate];
+                    })->all();
+                @endphp
+                <x-debt-fx :entries="$debtEntries" />
             </div>
             <button type="button" class="btn btn-primary btn-lg btn-toggle-orders {{ $isOpen ? '' : 'collapsed' }}"
                     data-toggle="collapse" data-target="#{{ $collapseId }}" aria-expanded="{{ $isOpen ? 'true' : 'false' }}">

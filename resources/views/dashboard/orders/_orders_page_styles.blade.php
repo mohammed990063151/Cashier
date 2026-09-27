@@ -164,12 +164,14 @@
         font-size: 16px !important;
     }
     .orders-toolbar .payment-status-filter {
-        display: grid;
+        display: grid !important;
         grid-template-columns: 1fr 1fr;
         gap: 8px;
+        width: 100%;
     }
     .orders-toolbar .payment-status-filter .btn {
-        width: 100%;
+        width: 100% !important;
+        float: none !important;
         min-height: 42px;
         margin: 0 !important;
     }
@@ -204,6 +206,66 @@
     }
     .orders-preview-empty {
         padding: 28px 14px;
+    }
+    .orders-preview-box {
+        display: none;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        padding: 8px 10px 12px;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td {
+        display: block !important;
+        width: auto !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 6px 4px !important;
+        text-align: right !important;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td:before {
+        content: attr(data-label);
+        display: block !important;
+        max-width: none !important;
+        flex: none !important;
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        margin-bottom: 2px;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-order-no,
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-client,
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-status,
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-actions {
+        grid-column: 1 / -1;
+    }
+    .orders-table-wrap td.col-order-no {
+        font-size: 17px;
+        padding-bottom: 0 !important;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-order-no:before,
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.col-actions:before {
+        display: none !important;
+    }
+    .orders-table-wrap .table-responsive > table.orders-table > tbody > tr.orders-row > td.phone-hide {
+        display: none !important;
+    }
+    .orders-table-wrap .money {
+        font-size: 17px;
+    }
+    .orders-table-wrap .fx-compare,
+    .orders-table-wrap .debt-rate,
+    .orders-table-wrap .debt-fx {
+        width: 100%;
+    }
+    .orders-table-wrap .money-usd,
+    .orders-table-wrap .debt-rate {
+        display: inline-flex;
+        margin-top: 4px;
+        white-space: normal;
+    }
+    .orders-table-wrap td.col-actions {
+        padding-top: 8px !important;
     }
 }
 </style>

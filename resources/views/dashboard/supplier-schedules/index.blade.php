@@ -78,6 +78,13 @@
                             <div class="total-remaining-box">
                                 <small>إجمالي المتبقي</small>
                                 <strong>{{ number_format($group['total_remaining'], 2) }}</strong> ج.س
+                                @php
+                                    $supplierDebt = $group['invoices']->map(fn ($invoice) => [
+                                        'amount' => $invoice->remaining,
+                                        'rate' => $invoice->usd_rate,
+                                    ])->all();
+                                @endphp
+                                <x-debt-fx :entries="$supplierDebt" rate-label="استلام" :invert="true" />
                             </div>
                         </div>
                     </div>

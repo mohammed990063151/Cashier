@@ -17,7 +17,7 @@ class CollectionScheduleService
 {
     public function dueSoonDays(): int
     {
-        return max(1, (int) config('collection.due_soon_days', 7));
+        return max(1, (int) config('collection.due_soon_days', 3));
     }
 
     /**
@@ -197,6 +197,61 @@ class CollectionScheduleService
         return $this->unpaidInstallmentQuery()
             ->whereDate('due_at', '<=', $soonEnd)
             ->count();
+    }
+
+    public function daysUntilDue(?Carbon $dueAt): int
+    {
+        if (! $dueAt) {
+            return 0;
+        }
+
+        return (int) Carbon::today()->diffInDays($dueAt->copy()->startOfDay(), false);
+    }
+
+    public function dueWhenLabel(int $days): string
+    {
+        if ($days < 0) {
+            $n = abs($days);
+
+            return $n === 1 ? 'متأخر من أمس' : 'متأخر '.$n.' أيام';
+        }
+
+        return match ($days) {
+            0 => 'اليوم',
+            1 => 'غداً',
+            default => 'بعد '.$days.' أيام',
+        };
+    }
+
+    /**
+     * أقساط غير مسددة حلّ موعدها أو يبقى عليه 3 أيام فأقل.
+     *
+     * @return array{count: int, within_days: int, url: string, alerts: array<int, array<string, mixed>>}
+     */
+    public function reminderPayload(int $limit = 8): array
+    {
+        $items = $this->dashboardAlerts($limit);
+
+        return [
+            'count' => $this->dashboardAlertsCount(),
+            'within_days' => $this->dueSoonDays(),
+            'url' => route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']),
+            'alerts' => $items->map(function (array $row) {
+                $inst = $row['installment'];
+                $order = $row['order'];
+                $days = $this->daysUntilDue($inst->due_at);
+
+                return [
+                    'client' => $order->client->name ?? '',
+                    'order_number' => $order->order_number,
+                    'amount' => number_format((float) $inst->amount, 2),
+                    'due_at' => $inst->due_at?->format('d/m/Y'),
+                    'days' => $days,
+                    'when' => $this->dueWhenLabel($days),
+                    'status' => $row['status'],
+                ];
+            })->values()->all(),
+        ];
     }
 
     /**

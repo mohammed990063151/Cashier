@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\PurchaseInvoice;
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
+use App\Services\CurrencyService;
 use App\Models\SupplierPaymentInstallment;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,7 +28,7 @@ class SupplierPaymentScheduleService
     public function baseQuery(): Builder
     {
         return PurchaseInvoice::query()
-            ->with(['supplier', 'paymentInstallments'])
+            ->with(['supplier', 'paymentInstallments', 'payments'])
             ->where('remaining', '>', 0);
     }
 
@@ -190,6 +191,7 @@ class SupplierPaymentScheduleService
                 'amount' => $amount,
                 'payment_date' => now()->toDateString(),
                 'note' => 'سداد قسط — موعد '.$installment->due_at->format('d/m/Y'),
+                'usd_rate' => app(CurrencyService::class)->rate() ?: null,
             ]);
 
             $cashService->record(

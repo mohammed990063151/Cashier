@@ -77,8 +77,7 @@ try {
 
     // 3) Units for carton flexible
     $units = SaleUnits::unitsForOrderForm(24, 'flexible', 'carton');
-    assert_true(isset($units['piece'], $units['half_carton'], $units['bulk']), 'carton units: piece/half/bulk');
-    assert_true((float) $units['half_carton']['multiplier'] === 12.0, 'half of 24 = 12');
+    assert_true(isset($units['piece'], $units['bulk']) && ! isset($units['half_carton']), 'carton flexible is piece + carton only');
     assert_true((float) $units['bulk']['multiplier'] === 24.0, 'full carton = 24');
 
     // 4) toPieceLine conversion — المال من سعر الوحدة المدخل، المخزون بالحبة
@@ -87,10 +86,10 @@ try {
         'half_carton' => ['qty' => 1, 'price' => 180],
         'bulk' => ['qty' => 1, 'price' => 360],
     ], 24, 'flexible', 'carton');
-    // 2 + 12 + 24 = 38 pieces; money = 2*15 + 180 + 360 = 570
-    assert_true($line['quantity'] === 38.0, 'toPieceLine qty=38');
-    assert_true(abs($line['line_total'] - 570) < 0.01, 'toPieceLine line_total=570');
-    assert_true(abs($line['sale_price'] - (570 / 38)) < 0.0001, 'toPieceLine unit avg');
+    // نصف الكرتونة لا يُحسب. 2 حبة + 24 حبة كرتونة = 26؛ المال = 30 + 360 = 390
+    assert_true($line['quantity'] === 26.0, 'toPieceLine qty=26 without half carton');
+    assert_true(abs($line['line_total'] - 390) < 0.01, 'toPieceLine line_total=390');
+    assert_true(abs($line['sale_price'] - (390 / 26)) < 0.0001, 'toPieceLine unit avg');
 
     // 4b) 5 كراتين × 7 = 35 بالضبط (بدون 34.98)
     $cartonMoney = SaleUnits::toPieceLine([

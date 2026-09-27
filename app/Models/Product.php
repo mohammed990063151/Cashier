@@ -19,22 +19,29 @@ class Product extends Model
     protected $fillable = [
         'category_id',
         'name',
+        'barcode',
         'description',
         'purchase_price',
         'sale_price',
+        'previous_sale_price',
+        'previous_sale_usd_rate',
         'stock',
         'pieces_per_carton',
         'sale_mode',
         'measure_unit',
         'image',
         'usd_rate',
+        'sale_usd_rate',
     ];
 
     protected $casts = [
         'purchase_price' => 'float',
         'sale_price' => 'float',
+        'previous_sale_price' => 'float',
+        'previous_sale_usd_rate' => 'float',
         'stock' => 'float',
         'usd_rate' => 'float',
+        'sale_usd_rate' => 'float',
         'pieces_per_carton' => 'integer',
     ];
 

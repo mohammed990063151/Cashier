@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class SupplierPayment extends Model
 {
-    protected $fillable = ['supplier_id', 'amount', 'payment_date', 'note', 'purchase_invoice_id'];
+    protected $fillable = ['supplier_id', 'amount', 'payment_date', 'note', 'purchase_invoice_id', 'usd_rate'];
+
+    protected $casts = [
+        'amount' => 'float',
+        'usd_rate' => 'float',
+    ];
 
     public function supplier()
     {

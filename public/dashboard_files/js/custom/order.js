@@ -53,11 +53,11 @@ function bulkLabel(bulkSize) {
     if (size <= 1) {
         return 'حبة';
     }
-    return 'كرتونة كاملة (' + size + ' حبة)';
+    return 'كرتونة';
 }
 
 function halfCartonLabel(bulkSize) {
-    return 'نصف كرتونة (' + displayQty(halfCartonPieces(bulkSize)) + ' حبة)';
+    return 'نصف كرتونة';
 }
 
 function unitsForProduct(bulkSize, saleMode, measureUnit) {
@@ -77,29 +77,14 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
         return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true }];
     }
 
-    // بيع مرن — وحدة كرتونة: الكرتونة أولاً ثم الحبة
-    if (measure === 'carton' && bulk > 1) {
-        return [
-            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true },
-            { key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' },
-            { key: 'piece', ...SALE_UNITS.piece },
-        ];
+    if (bulk <= 1) {
+        return [{ key: 'piece', ...SALE_UNITS.piece, isMaster: true }];
     }
 
-    const units = [
-        { key: 'piece', ...SALE_UNITS.piece, isMaster: true },
-        { key: 'pack_3', ...SALE_UNITS.pack_3 },
-        { key: 'pack_6', ...SALE_UNITS.pack_6 },
+    return [
+        { key: 'bulk', label: 'كرتونة', multiplier: bulk, step: 'any', isMaster: true },
+        { key: 'piece', ...SALE_UNITS.piece },
     ];
-
-    if (bulk > 1) {
-        units.push({ key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' });
-        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' });
-    } else {
-        units.push({ key: 'dozen', ...SALE_UNITS.dozen });
-    }
-
-    return units;
 }
 
 function unitBlockHtml(productId, unit, unitPrice, measureUnit) {
@@ -163,6 +148,10 @@ function getPiecePriceFromRow($row) {
 }
 
 function syncUnitPricesFromMaster($row) {
+    const saleMode = $row.data('sale-mode') || 'flexible';
+    if (saleMode === 'flexible') {
+        return;
+    }
     const piecePrice = getPiecePriceFromRow($row);
     if (piecePrice <= 0) {
         return;
@@ -205,7 +194,7 @@ function calculateRowTotal($row) {
         if (measure === 'kilo') {
             qtyHint = displayQty(totalPieces) + ' كيلو';
         } else if ((saleMode === 'bulk_only' || measure === 'carton') && bulkSize > 1) {
-            qtyHint = displayQty(totalPieces / bulkSize) + ' كرتونة (' + displayQty(totalPieces) + ' حبة)';
+            qtyHint = displayQty(totalPieces / bulkSize) + ' كرتونة';
         } else {
             qtyHint = displayQty(totalPieces) + ' حبة'
                 + (bulkSize > 1 ? ' ≈ ' + displayQty(totalPieces / bulkSize) + ' كرتونة' : '');
@@ -299,6 +288,31 @@ function buildOrderRow(name, id, piecePrice, bulkSize, saleMode, measureUnit, st
     `;
 }
 
+window.addScannedSaleProduct = function (product, qty) {
+    const id = product.id;
+    let $row = $('.order-list tr.order-item[data-id="' + id + '"]');
+    if (!$row.length) {
+        $('.order-list').append(buildOrderRow(
+            product.name,
+            id,
+            product.sale_price,
+            product.pieces_per_carton || 1,
+            product.sale_mode || 'flexible',
+            product.measure_unit || 'piece',
+            product.stock
+        ));
+        $('#product-' + id).removeClass('btn-success').addClass('btn-default disabled');
+        $row = $('.order-list tr.order-item[data-id="' + id + '"]');
+    }
+    const $qty = $row.find('.unit-qty').first();
+    const current = parseNumber($qty.val());
+    $qty.val(displayQty(current + (parseNumber(qty) || 1)));
+    calculateRowTotal($row);
+    calculateTotal();
+    $('#add-order-form-btn').prop('disabled', false).removeClass('disabled');
+    $row[0] && $row[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+
 $(document).ready(function () {
     $('.add-product-btn').on('click', function (e) {
         e.preventDefault();
@@ -361,6 +375,11 @@ $(document).ready(function () {
         e.preventDefault();
         const $btn = $(this);
         const $row = $btn.closest('tr.orders-row');
+
+        if (window.matchMedia('(max-width: 767px)').matches && typeof loadOrderModal === 'function') {
+            loadOrderModal($btn.data('order-id') || $row.data('order-id'));
+            return;
+        }
 
         $('.orders-row').removeClass('active');
         if ($row.length) {

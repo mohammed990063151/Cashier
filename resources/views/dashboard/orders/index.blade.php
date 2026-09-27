@@ -89,35 +89,36 @@
                                         $status = $finService->paymentStatus($order);
                                     @endphp
                                     <tr class="orders-row" data-order-id="{{ $order->id }}">
-                                        <td class="col-order-no">{{ $order->order_number }}</td>
-                                        <td class="col-client">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$fin['remaining']" /></td>
-                                        <td><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalSale']" /></td>
-                                        <td><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['invoiceDiscount']" /></td>
-                                        <td><span class="money money-after">{{ number_format($fin['totalAfterDiscount'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalAfterDiscount']" /></td>
-                                        <td><span class="money money-paid">{{ number_format($fin['netPaid'] ?? $fin['totalPaid'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['netPaid'] ?? $fin['totalPaid']" /></td>
-                                        <td>
+                                        <td class="col-order-no" data-label="رقم الطلب">{{ $order->order_number }}</td>
+                                        <td class="col-client" data-label="العميل">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$fin['remaining']" /></td>
+                                        <td data-label="الإجمالي"><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalSale']" /></td>
+                                        <td class="phone-hide" data-label="الخصم"><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span></td>
+                                        <td class="phone-hide" data-label="بعد الخصم"><span class="money money-after">{{ number_format($fin['totalAfterDiscount'], 2) }}</span></td>
+                                        <td data-label="المدفوع"><span class="money money-paid">{{ number_format($fin['netPaid'] ?? $fin['totalPaid'], 2) }}</span></td>
+                                        <td data-label="المتبقي">
                                             <span class="money {{ $fin['remaining'] > 0 ? 'money-remain-due' : 'money-remain-zero' }}">
                                                 {{ number_format($fin['remaining'], 2) }}
                                             </span>
                                             <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['remaining']" />
                                         </td>
-                                        <td class="col-date">{{ $order->created_at->format('d/m/Y') }}</td>
-                                        <td>
+                                        <td class="col-date" data-label="التاريخ">{{ $order->created_at->format('d/m/Y') }}</td>
+                                        <td class="{{ ($order->total_return ?? 0) > 0 ? '' : 'phone-hide' }}" data-label="مرتجع">
                                             @if(($order->total_return ?? 0) > 0)
-                                            <span class="money text-danger">{{ number_format($order->total_return, 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$order->total_return" />
+                                            <span class="money text-danger">{{ number_format($order->total_return, 2) }}</span>
                                             @else
                                             <span class="text-muted">—</span>
                                             @endif
                                         </td>
-                                        <td>
+                                        <td class="col-status" data-label="الحالة">
                                             <span class="label {{ $finService->paymentStatusClass($status) }}">
                                                 {{ $finService->paymentStatusLabel($status) }}
                                             </span>
                                         </td>
-                                        <td class="col-actions">
+                                        <td class="col-actions" data-label="إجراءات">
                                             <div class="orders-actions phone-action-bar">
                                                 <button type="button" class="btn btn-primary btn-sm order-products"
                                                         title="معاينة سريعة"
+                                                        data-order-id="{{ $order->id }}"
                                                         data-url="{{ route('dashboard.orders.products', $order->id) }}"
                                                         data-method="get">
                                                     <i class="fa fa-eye"></i> معاينة
@@ -229,6 +230,38 @@
 <style>
 .order-modal-fit { max-width: 720px; width: 95%; margin: 30px auto; }
 .order-modal-body { max-height: 70vh; overflow-y: auto; padding: 12px 15px !important; }
+@media (max-width: 767px) {
+    .order-modal-fit {
+        width: 100% !important;
+        max-width: none;
+        height: 100%;
+        margin: 0;
+    }
+    .order-modal-fit .modal-content {
+        min-height: 100vh;
+        border-radius: 0;
+        border: 0;
+    }
+    .order-modal-body {
+        max-height: none;
+        padding: 12px !important;
+    }
+    #orderModal .modal-footer,
+    #orderReturnModal .modal-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    #orderModal .modal-footer .btn,
+    #orderReturnModal .modal-dialog {
+        width: 100%;
+        margin: 0;
+    }
+    #orderReturnModal .modal-dialog {
+        width: auto;
+        margin: 8px;
+    }
+}
 </style>
 
 @push('scripts')

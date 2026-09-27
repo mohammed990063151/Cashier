@@ -19,6 +19,8 @@
 
     <section class="content">
 
+        @include('dashboard.partials._barcode_scanner', ['mode' => 'sale'])
+
         <div class="row">
 
             <div class="col-md-6">
@@ -69,7 +71,7 @@
                                             @endphp
                                             <tr>
                                                 <td>{{ $product->name }}</td>
-                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
+                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}</small></td>
                                                 <td><small>{{ $stockLabel }}</small></td>
                                                 <td><strong>{{ $listPrice }}</strong></td>
 

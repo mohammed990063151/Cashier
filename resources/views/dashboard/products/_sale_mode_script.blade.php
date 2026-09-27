@@ -76,9 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
         var unit = currentUnit();
         var mode = modeEl.value;
         var hints = {
-            piece_only: 'في الطلبات: بيع بالحبة فقط.',
-            bulk_only: 'في الطلبات: كرتونة كاملة فقط.',
-            flexible: 'في الطلبات: حبة + نصف كرتونة + كرتونة كاملة (حسب عدد الحبات الذي حددته).'
+            piece_only: 'في الطلبات: حبة فقط. الكمية × سعر الحبة.',
+            bulk_only: 'في الطلبات: كرتونة فقط. الكمية × سعر الكرتونة.',
+            flexible: 'في الطلبات: حبة وحدها وكرتونة وحدها. كل واحدة بسعرها.'
         };
 
         if (saleHelpEl) {
@@ -98,10 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
             cartonEl.readOnly = false;
             cartonEl.min = 2;
             if (parseInt(cartonEl.value, 10) < 2) cartonEl.value = 12;
-            if (hintEl) hintEl.textContent = 'أدخله يدوياً حسب بضاعتك. مثال: شاي=12، بسكويت=24. هذا يحدد الحبة ونصف الكرتونة والكرتونة.';
-            if (modeEl && (!modeEl.value || modeEl.value === 'piece_only')) {
-                modeEl.value = 'flexible';
-            }
+            if (hintEl) hintEl.textContent = 'عدد الحبات داخل الكرتونة. الحبة تُحسب بسعرها، والكرتونة بسعرها.';
             return;
         }
 

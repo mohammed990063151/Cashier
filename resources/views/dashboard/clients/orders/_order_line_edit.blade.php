@@ -51,7 +51,7 @@
         </div>
     </td>
     <td>
-        <span class="product-price" style="color:#01941f;font-weight:bold;">{{ DecimalMath::moneyDisplay($lineTotal) }}</span>
+        <span class="product-price" style="color:#01941f;font-weight:bold;">{{ number_format($lineTotal, 2, '.', '') }}</span>
         <input type="hidden" name="products[{{ $product->id }}][total_price]" value="{{ $lineTotal }}">
     </td>
     <td>

@@ -25,6 +25,36 @@ class ProductController extends Controller
         return view('dashboard.products.index', compact('categories', 'products'));
     }
 
+    public function lookupBarcode(Request $request)
+    {
+        $code = trim((string) $request->query('barcode', ''));
+        if ($code === '') {
+            return response()->json(['found' => false]);
+        }
+
+        $product = Product::query()->where('barcode', $code)->first();
+        if (! $product) {
+            return response()->json(['found' => false, 'barcode' => $code]);
+        }
+
+        $entry = \App\Support\SaleUnits::toEntryValues($product);
+
+        return response()->json([
+            'found' => true,
+            'product' => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'barcode' => $product->barcode,
+                'sale_price' => (float) $product->sale_price,
+                'purchase_price' => (float) $entry['purchase_price'],
+                'stock' => (float) $product->stock,
+                'pieces_per_carton' => max(1, (int) ($product->pieces_per_carton ?? 1)),
+                'sale_mode' => $product->sale_mode ?? 'flexible',
+                'measure_unit' => $product->measure_unit ?? 'piece',
+            ],
+        ]);
+    }
+
     public function create()
     {
         $categories = Category::orderBy('name')->get();
@@ -41,6 +71,12 @@ class ProductController extends Controller
                 'string',
                 'max:255',
                 Rule::unique('products', 'name')->whereNull('deleted_at'),
+            ],
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:64',
+                Rule::unique('products', 'barcode')->whereNull('deleted_at'),
             ],
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
@@ -60,6 +96,7 @@ class ProductController extends Controller
             array_merge($this->productService->preparePayload($validated), [
                 'image' => Product::DEFAULT_IMAGE,
                 'usd_rate' => $this->currentUsdRate(),
+                'sale_usd_rate' => $this->currentUsdRate(),
             ])
         );
 
@@ -90,6 +127,7 @@ class ProductController extends Controller
         }
 
         $payload['usd_rate'] = $this->currentUsdRate();
+        $payload['sale_usd_rate'] = $this->currentUsdRate();
         Product::create($payload);
 
         session()->flash('success', 'تم إضافة المنتج بنجاح');
@@ -121,6 +159,14 @@ class ProductController extends Controller
         if ($priceChanged) {
             $payload['usd_rate'] = $this->currentUsdRate();
         }
+        if (abs((float) $product->sale_price - (float) ($payload['sale_price'] ?? 0)) > 0.0001) {
+            $payload['sale_usd_rate'] = $this->currentUsdRate();
+            $previous = (float) ($product->previous_sale_price ?? 0);
+            if ($previous > 0 && abs($previous - (float) $payload['sale_price']) < 0.0005) {
+                $payload['previous_sale_price'] = null;
+                $payload['previous_sale_usd_rate'] = null;
+            }
+        }
 
         if ($request->hasFile('image')) {
             $this->deleteImageFile($product->image);
@@ -132,6 +178,24 @@ class ProductController extends Controller
         session()->flash('success', 'تم تحديث المنتج بنجاح');
 
         return redirect()->route('dashboard.products.index');
+    }
+
+    public function restoreSalePrice(Product $product)
+    {
+        $previous = (float) ($product->previous_sale_price ?? 0);
+        if ($previous <= 0) {
+            return back()->with('error', 'لا يوجد سعر قديم لإرجاعه.');
+        }
+
+        $product->sale_price = $previous;
+        $product->sale_usd_rate = (float) ($product->previous_sale_usd_rate ?? 0) > 0
+            ? $product->previous_sale_usd_rate
+            : $product->usd_rate;
+        $product->previous_sale_price = null;
+        $product->previous_sale_usd_rate = null;
+        $product->save();
+
+        return back()->with('success', 'تم إرجاع سعر البيع القديم لمنتج '.$product->name.'.');
     }
 
     public function destroy(Product $product)
@@ -163,6 +227,12 @@ class ProductController extends Controller
         return [
             'category_id' => 'required|exists:categories,id',
             'name' => ['required', 'string', 'max:255', $uniqueName],
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:64',
+                Rule::unique('products', 'barcode')->whereNull('deleted_at')->ignore($productId),
+            ],
             'description' => 'nullable|string',
             'purchase_price' => 'required|numeric|min:0',
             'sale_price' => 'required|numeric|min:0',
@@ -184,6 +254,8 @@ class ProductController extends Controller
             'category_id.exists' => 'القسم غير موجود.',
             'name.required' => 'اسم المنتج مطلوب.',
             'name.unique' => 'اسم المنتج مستخدم مسبقاً.',
+            'barcode.unique' => 'هذا الباركود مسجّل لمنتج آخر.',
+            'barcode.max' => 'الباركود طويل جداً.',
             'purchase_price.required' => 'سعر الشراء مطلوب.',
             'sale_price.required' => 'سعر البيع مطلوب.',
             'stock.required' => 'المخزون مطلوب.',

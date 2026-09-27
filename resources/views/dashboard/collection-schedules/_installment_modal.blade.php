@@ -17,6 +17,7 @@
                         <div class="col-md-3">
                             <label>عدد الأقساط</label>
                             <input type="number" id="splitCount" class="form-control" min="1" max="24" value="3">
+                            <small class="text-muted">يُقسَّم المتبقي تلقائياً، ويمكنك تعديل أي مبلغ.</small>
                         </div>
                         <div class="col-md-3">
                             <label>أول موعد</label>

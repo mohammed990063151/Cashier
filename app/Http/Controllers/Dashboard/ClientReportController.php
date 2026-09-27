@@ -49,14 +49,18 @@ class ClientReportController extends Controller
     }
 
     $clients = $query->distinct()->get();
-    $debtRates = Order::query()
+    $debtRows = Order::query()
         ->whereIn('client_id', $clients->pluck('id'))
         ->where('remaining', '>', 0.009)
-        ->get(['client_id', 'usd_rate'])
-        ->groupBy('client_id')
-        ->map(fn ($rows) => $rows->pluck('usd_rate'));
+        ->get(['client_id', 'remaining', 'usd_rate'])
+        ->groupBy('client_id');
+    $debtRates = $debtRows->map(fn ($rows) => $rows->pluck('usd_rate'));
+    $debtEntries = $debtRows->map(fn ($rows) => $rows->map(fn ($row) => [
+        'amount' => (float) $row->remaining,
+        'rate' => (float) $row->usd_rate,
+    ])->all());
 
-    return view('reports.clients.index', compact('clients', 'debtRates'));
+    return view('reports.clients.index', compact('clients', 'debtRates', 'debtEntries'));
     }
 
     // صفحة تفاصيل العميل: فواتيره - المنتجات المباعة - كشف الحساب

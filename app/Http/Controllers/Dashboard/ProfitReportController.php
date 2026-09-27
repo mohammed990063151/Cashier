@@ -39,6 +39,7 @@ class ProfitReportController extends Controller
             'totalSales' => $totals['sales'],
             'totalCost' => $totals['cost'],
             'totalProfit' => $totals['profit'],
+            'costFx' => $totals['fx']['cost'],
             'snapshot' => $snapshot,
             'from' => $request->from,
             'to' => $request->to,

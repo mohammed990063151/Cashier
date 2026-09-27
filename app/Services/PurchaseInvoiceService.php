@@ -277,6 +277,7 @@ class PurchaseInvoiceService
             'amount' => $amount,
             'payment_date' => now()->toDateString(),
             'note' => $note,
+            'usd_rate' => app(CurrencyService::class)->rate() ?: null,
         ]);
     }
 }

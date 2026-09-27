@@ -62,10 +62,11 @@
                 right: 0;
                 left: 0;
                 width: 100% !important;
-                height: 56px !important;
+                height: auto !important;
                 min-height: 56px !important;
                 z-index: 1040;
                 display: flex !important;
+                flex-direction: column;
                 align-items: stretch;
                 background: linear-gradient(135deg, #1e5f8a 0%, #3c8dbc 55%, #367fa9 100%) !important;
                 box-shadow: 0 2px 10px rgba(15, 23, 42, .18);
@@ -75,10 +76,11 @@
                 display: none !important;
             }
             .main-header.phone-header .navbar {
-                flex: 1 1 auto;
+                flex: 0 0 56px;
                 width: 100% !important;
                 margin: 0 !important;
                 min-height: 56px !important;
+                height: 56px !important;
                 background: transparent !important;
                 display: flex !important;
                 align-items: center;
@@ -87,12 +89,40 @@
                 padding: 0 6px 0 4px;
                 gap: 4px;
             }
-            .main-header.phone-header .fx-rate-chip {
-                flex: 0 1 auto;
-                margin: 0 2px;
-                max-width: 38vw;
-                overflow: hidden;
-                text-overflow: ellipsis;
+            .main-header.phone-header .navbar > .fx-rate-chip {
+                display: none !important;
+            }
+            .fx-phone-rate {
+                display: flex !important;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                width: 100%;
+                min-height: 46px;
+                padding: 8px 14px;
+                background: #fff7ed;
+                color: #9a3412 !important;
+                text-decoration: none !important;
+                border-bottom: 2px solid #f59e0b;
+                box-shadow: 0 2px 8px rgba(154, 52, 18, .12);
+            }
+            .fx-phone-rate-label {
+                font-size: 14px;
+                font-weight: 800;
+                white-space: nowrap;
+            }
+            .fx-phone-rate strong {
+                font-size: 20px;
+                font-weight: 800;
+                color: #0f766e;
+                direction: ltr;
+                unicode-bidi: isolate;
+                line-height: 1.2;
+                letter-spacing: 0;
+            }
+            .fx-phone-rate strong span {
+                font-size: 14px;
+                font-weight: 700;
             }
             .main-header.phone-header .sidebar-toggle {
                 float: none !important;
@@ -241,6 +271,9 @@
                 padding-top: 56px !important;
                 padding-bottom: 96px;
             }
+            body:has(.fx-phone-rate) .content-wrapper {
+                padding-top: 108px !important;
+            }
 
             .main-sidebar {
                 position: fixed !important;
@@ -276,6 +309,13 @@
                 margin-left: 0 !important;
             }
 
+            body:has(.fx-phone-rate) .main-sidebar {
+                padding-top: 108px !important;
+            }
+            body:has(.fx-phone-rate) .main-sidebar .sidebar {
+                height: calc(100vh - 108px) !important;
+                max-height: calc(100vh - 108px) !important;
+            }
             .main-sidebar .sidebar {
                 height: calc(100vh - 56px) !important;
                 max-height: calc(100vh - 56px) !important;
@@ -884,6 +924,7 @@
                 display: block !important;
             }
             .visible-phone-block { display: none !important; }
+            .fx-phone-rate { display: none !important; }
             .phone-header-brand { display: none !important; }
             .phone-header-avatar {
                 display: none;
@@ -1184,6 +1225,7 @@
     @include('dashboard.ai._script')
     @include('dashboard.exchange._script')
     @include('dashboard.stock._alerts_script')
+    @include('dashboard.collection-schedules._reminder_script')
 
 </body>
 </html>

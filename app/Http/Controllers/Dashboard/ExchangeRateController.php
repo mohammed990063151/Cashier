@@ -47,6 +47,7 @@ class ExchangeRateController extends Controller
             $data['note'] ?? null,
             auth()->id()
         );
+        $repriced = $currency->repricedProducts;
 
         if (array_key_exists('show_usd', $data) || $request->has('show_usd')) {
             $setting = Setting::first();
@@ -58,7 +59,8 @@ class ExchangeRateController extends Controller
 
         return redirect()
             ->route('dashboard.exchange-rates.index')
-            ->with('success', 'تم حفظ سعر الدولار: 1 $ = '.number_format((float) $data['sdg_per_usd'], 0).' ج.س');
+            ->with('success', 'تم حفظ سعر الدولار: 1 $ = '.number_format((float) $data['sdg_per_usd'], 0).' ج.س'
+                .($repriced > 0 ? '، ورُفع سعر بيع '.$repriced.' منتج.' : ''));
     }
 
     public function convert(Request $request, CurrencyService $currency)

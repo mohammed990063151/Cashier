@@ -314,6 +314,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
     // =================== تعديل الطلب ===================
     public function edit(Client $client, Order $order)
     {
+        $order->load('products');
         $categories = Category::with('products')->get();
         $orders = $client->orders()->with('products', 'payments')->paginate(5);
         return view('dashboard.clients.orders.edit', compact('client', 'order', 'categories', 'orders'));

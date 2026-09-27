@@ -34,6 +34,12 @@
                        value="{{ old('name', $item->name ?? '') }}" placeholder="مثال: ابريق شاي">
             </div>
             <div class="form-group">
+                <label>باركود الشركة</label>
+                <input type="text" name="barcode" class="form-control" inputmode="numeric" autocomplete="off"
+                       value="{{ old('barcode', $item->barcode ?? '') }}" placeholder="الرقم المكتوب خلف المنتج">
+                <small class="text-muted">يُستخدم في مسح كاميرا الهاتف عند البيع والشراء.</small>
+            </div>
+            <div class="form-group">
                 <label>الوصف</label>
                 <textarea name="description" class="form-control" rows="3" placeholder="وصف مختصر (اختياري)">{{ old('description', $item->description ?? '') }}</textarea>
             </div>
@@ -75,8 +81,11 @@
                 <div class="col-sm-4">
                     <div class="form-group">
                         <label id="label_sale_price">سعر البيع <span class="text-danger">*</span></label>
-                        <input type="number" name="sale_price" id="sale_price" step="1" min="0" class="form-control" required
+                        <input type="number" name="sale_price" id="sale_price" step="any" min="0" class="form-control" required
                                value="{{ $entry['sale_price'] }}">
+                        @if($isEdit && (float) ($item->previous_sale_price ?? 0) > 0)
+                            <small class="text-muted">قبل رفع الدولار: {{ app(\App\Services\ProductService::class)->formatPieceSale($item, (float) $item->previous_sale_price) }}. عدّل الرقم ثم احفظ، أو أرجع السعر القديم من الزر أعلى الصفحة.</small>
+                        @endif
                     </div>
                 </div>
                 <div class="col-sm-4">
@@ -95,9 +104,9 @@
             <div class="form-group">
                 <label>طريقة البيع</label>
                 <select name="sale_mode" id="sale_mode" class="form-control">
-                    <option value="flexible" {{ old('sale_mode', $item->sale_mode ?? 'flexible') === 'flexible' ? 'selected' : '' }}>بيع مرن: حبة + نصف كرتونة + كرتونة كاملة</option>
-                    <option value="piece_only" {{ old('sale_mode', $item->sale_mode ?? '') === 'piece_only' ? 'selected' : '' }}>بالحبة فقط</option>
-                    <option value="bulk_only" {{ old('sale_mode', $item->sale_mode ?? '') === 'bulk_only' ? 'selected' : '' }}>بالكرتونة كاملة فقط</option>
+                    <option value="piece_only" {{ old('sale_mode', $item->sale_mode ?? '') === 'piece_only' ? 'selected' : '' }}>حبة فقط</option>
+                    <option value="bulk_only" {{ old('sale_mode', $item->sale_mode ?? '') === 'bulk_only' ? 'selected' : '' }}>كرتونة فقط</option>
+                    <option value="flexible" {{ old('sale_mode', $item->sale_mode ?? 'flexible') === 'flexible' ? 'selected' : '' }}>حبة وكرتونة</option>
                 </select>
                 <div class="sale-mode-help" id="sale_mode_help"></div>
             </div>

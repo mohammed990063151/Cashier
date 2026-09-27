@@ -14,21 +14,21 @@
     <table class="oar-table">
         <tr>
             <td>إجمالي البيع الأصلي (قبل المرتجع)</td>
-            <td class="oar-num">{{ number_format($originalTotalSale, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalSale" /></td>
+            <td class="oar-num">{{ number_format($originalTotalSale, 2) }} ج.س</td>
         </tr>
         @if(($invoiceDiscount ?? 0) > 0)
         <tr>
             <td>خصم الفاتورة</td>
-            <td class="oar-num text-warning">-{{ number_format($invoiceDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></td>
+            <td class="oar-num text-warning">-{{ number_format($invoiceDiscount, 2) }} ج.س</td>
         </tr>
         <tr>
             <td>الصافي الأصلي بعد الخصم</td>
-            <td class="oar-num">{{ number_format($originalTotalAfterDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalAfterDiscount" /></td>
+            <td class="oar-num">{{ number_format($originalTotalAfterDiscount, 2) }} ج.س</td>
         </tr>
         @endif
         <tr class="oar-highlight">
             <td>قيمة المرتجعات (بضاعة)</td>
-            <td class="oar-num text-danger">-{{ number_format($totalReturnedMerchandise, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalReturnedMerchandise" /></td>
+            <td class="oar-num text-danger">-{{ number_format($totalReturnedMerchandise, 2) }} ج.س</td>
         </tr>
         <tr>
             <td>صافي البيع الحالي (بعد المرتجع)</td>
@@ -36,20 +36,20 @@
         </tr>
         <tr>
             <td>بعد الخصم (حالياً)</td>
-            <td class="oar-num">{{ number_format($totalAfterDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></td>
+            <td class="oar-num">{{ number_format($totalAfterDiscount, 2) }} ج.س</td>
         </tr>
         <tr>
             <td>إجمالي المدفوع من العميل</td>
-            <td class="oar-num text-success">{{ number_format($totalPaid, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalPaid" /></td>
+            <td class="oar-num text-success">{{ number_format($totalPaid, 2) }} ج.س</td>
         </tr>
         @if(($totalRefundedToCustomer ?? 0) > 0)
         <tr class="oar-highlight">
             <td>مُسترد للعميل من الخزينة</td>
-            <td class="oar-num text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></td>
+            <td class="oar-num text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} ج.س</td>
         </tr>
         <tr>
             <td>صافي المدفوع (بعد الاسترداد)</td>
-            <td class="oar-num text-primary">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer)" /></td>
+            <td class="oar-num text-primary">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} ج.س</td>
         </tr>
         @endif
         <tr>
@@ -65,9 +65,9 @@
         <div class="oar-return-item">
             <span>{{ $ret->return_number }}</span>
             <span class="text-muted">{{ $ret->return_date->format('d/m/Y') }}</span>
-            <span>بضاعة: {{ number_format($ret->items_total, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->items_total" /></span>
+            <span>بضاعة: {{ number_format($ret->items_total, 2) }}</span>
             @if($ret->refund_amount > 0)
-            <span class="text-danger">مُسترد: {{ number_format($ret->refund_amount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->refund_amount" /></span>
+            <span class="text-danger">مُسترد: {{ number_format($ret->refund_amount, 2) }}</span>
             @endif
         </div>
         @endforeach
@@ -95,6 +95,34 @@
 .oar-return-item {
     display: flex; flex-wrap: wrap; gap: 8px 12px;
     padding: 4px 0; font-size: 12px;
+}
+@media (max-width: 767px) {
+    .oar-table,
+    .oar-table tbody,
+    .oar-table tr,
+    .oar-table td {
+        display: block;
+        width: 100%;
+    }
+    .oar-table tr {
+        padding: 8px 0;
+        border-bottom: 1px dashed #bae6fd;
+    }
+    .oar-table td {
+        border: none;
+        padding: 0;
+        text-align: right !important;
+        white-space: normal !important;
+    }
+    .oar-num {
+        text-align: right !important;
+        margin-top: 2px;
+    }
+    .oar-num .money-usd,
+    .order-accounting-returns .debt-rate {
+        white-space: normal;
+        margin-top: 4px;
+    }
 }
 </style>
 @endif

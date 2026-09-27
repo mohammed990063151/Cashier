@@ -1,15 +1,23 @@
-@if(($collectionDueToday ?? collect())->isNotEmpty())
+@php
+    $installmentReminders = collect($collectionAlerts ?? []);
+@endphp
+@if($installmentReminders->isNotEmpty())
+@php $schedule = app(\App\Services\CollectionScheduleService::class); @endphp
 <div class="collection-due-banner">
     <div class="container-fluid">
         <i class="fa fa-bell"></i>
-        <strong>تنبيه سداد اليوم:</strong>
-        @foreach($collectionDueToday as $item)
+        <strong>أقساط خلال {{ $schedule->dueSoonDays() }} أيام:</strong>
+        @foreach($installmentReminders->take(4) as $item)
+            @php
+                $dueDays = $schedule->daysUntilDue($item['installment']->due_at);
+            @endphp
             <span class="collection-due-item">
-                {{ $item['order']->client->name }} <x-debt-rate :rate="$item['order']->usd_rate" :remaining="$item['order']->remaining ?: 1" /> — طلب {{ $item['order']->order_number }}:
+                {{ $item['order']->client->name }} — {{ $item['order']->order_number }}:
                 <strong>{{ number_format($item['installment']->amount, 2) }} ج.س</strong>
+                ({{ $schedule->dueWhenLabel($dueDays) }})
             </span>@if(!$loop->last)<span class="text-muted"> | </span>@endif
         @endforeach
-        <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'due_today']) }}" class="btn btn-sm btn-warning" style="margin-top:2px;float:left;font-weight:700;">
+        <a href="{{ route('dashboard.collection-schedules.index', ['schedule_status' => 'alert']) }}" class="btn btn-sm btn-warning" style="margin-top:2px;float:left;font-weight:700;">
             <i class="fa fa-money"></i> تحصيل الآن
         </a>
     </div>

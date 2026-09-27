@@ -19,6 +19,14 @@
             <div class="box-header with-border">
                 <h3 class="box-title"><i class="fa fa-pencil"></i> {{ $product->name }}</h3>
                 <div class="box-tools pull-left">
+                    @if((float) ($product->previous_sale_price ?? 0) > 0 && auth()->user()->hasPermission('update_products'))
+                    <form action="{{ route('dashboard.products.restore-sale', $product) }}" method="post" style="display:inline;">
+                        @csrf
+                        <button type="submit" class="btn btn-default btn-sm">
+                            <i class="fa fa-undo"></i> إرجاع السعر القديم
+                        </button>
+                    </form>
+                    @endif
                     <a href="{{ route('dashboard.products.show', $product->id) }}" class="btn btn-default btn-sm">
                         <i class="fa fa-eye"></i> عرض
                     </a>

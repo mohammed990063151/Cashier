@@ -28,27 +28,27 @@
             <div class="col-md-3">
                 <div class="box box-success text-center">
                     <div class="box-header bg-success text-white">صافي المبيعات</div>
-                    <div class="box-body fs-5 fw-bold">{{ number_format($r['net_sales'], 2) }} ج.س</div>
-                    <small class="text-muted">أصلي: {{ number_format($r['gross_sales'], 2) }}</small>
+                    <div class="box-body fs-5 fw-bold"><x-report-money :amount="$r['net_sales']" :entries="$r['fx']['net_sales']" /></div>
+                    <small class="text-muted">أصلي: <x-report-money :amount="$r['gross_sales']" :entries="$r['fx']['gross_sales']" /></small>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="box box-warning text-center">
                     <div class="box-header bg-warning">ربح المبيعات (هامش)</div>
-                    <div class="box-body fs-5 fw-bold">{{ number_format($r['orders_profit'], 2) }} ج.س</div>
+                    <div class="box-body fs-5 fw-bold"><x-report-money :amount="$r['orders_profit']" :entries="$r['fx']['profit']" /></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="box box-danger text-center">
                     <div class="box-header bg-danger text-white">المصروفات + مشتريات مدفوعة</div>
-                    <div class="box-body fs-5 fw-bold">{{ number_format($r['total_outflows'], 2) }} ج.س</div>
-                    <small class="text-muted">مصروفات: {{ number_format($r['expenses'], 2) }} | مشتريات: {{ number_format($r['purchases_paid'], 2) }}</small>
+                    <div class="box-body fs-5 fw-bold"><x-report-money :amount="$r['total_outflows']" /></div>
+                    <small class="text-muted">مصروفات: <x-report-money :amount="$r['expenses']" /> | مشتريات: <x-report-money :amount="$r['purchases_paid']" :entries="$r['fx']['purchases_paid']" /></small>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="box text-center">
                     <div class="box-header {{ $r['net_result'] >= 0 ? 'bg-success' : 'bg-danger' }} text-white">صافي النتيجة</div>
-                    <div class="box-body fs-5 fw-bold">{{ number_format($r['net_result'], 2) }} ج.س</div>
+                    <div class="box-body fs-5 fw-bold"><x-report-money :amount="$r['net_result']" /></div>
                 </div>
             </div>
         </div>
@@ -57,22 +57,22 @@
             <div class="col-md-3">
                 <div class="box box-primary text-center">
                     <div class="box-header bg-primary text-white">رصيد الصندوق</div>
-                    <div class="box-body fs-5 fw-bold">{{ number_format($r['cash_balance'], 2) }} ج.س</div>
+                    <div class="box-body fs-5 fw-bold"><x-report-money :amount="$r['cash_balance']" /></div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-warning text-center" style="margin:0;height:100%;">
-                    <strong>مرتجعات بضاعة:</strong><br>{{ number_format($r['returns_merchandise'], 2) }} ج.س
+                    <strong>مرتجعات بضاعة:</strong><br><x-report-money :amount="$r['returns_merchandise']" :entries="$r['fx']['returns']" />
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-info text-center" style="margin:0;height:100%;">
-                    <strong>مُسترد للعملاء (خزينة):</strong><br>{{ number_format($r['cash_refunded'], 2) }} ج.س
+                    <strong>مُسترد للعملاء (خزينة):</strong><br><x-report-money :amount="$r['cash_refunded']" />
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-secondary text-center" style="margin:0;height:100%;">
-                    <strong>ذمم عملاء (متبقي):</strong><br>{{ number_format($r['total_remaining'], 2) }} ج.س
+                    <strong>ذمم عملاء (متبقي):</strong><br><x-report-money :amount="$r['total_remaining']" :entries="$r['fx']['remaining']" />
                 </div>
             </div>
         </div>

@@ -3,13 +3,17 @@
 namespace App\Services;
 
 use App\Models\ExchangeRate;
+use App\Models\Product;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Schema;
 use App\Support\DecimalMath;
 use Illuminate\Support\Facades\Cache;
 
 class CurrencyService
 {
     public const CACHE_KEY = 'app.usd_rate';
+
+    public int $repricedProducts = 0;
 
     /** كم جنيه سوداني يساوي دولاراً واحداً */
     public function rate(): float
@@ -85,6 +89,60 @@ class CurrencyService
     }
 
     /**
+     * دين العميل: سعر الاستلام، سعر اليوم، معادل الدولار، والفرق خسارة أو ربح.
+     *
+     * @param  iterable<int, array{amount: float|int|string, rate?: float|int|string|null}>  $entries
+     * @return array{receipt_label: string, today_rate: float, then_usd: float, now_usd: float, loss_usd: float, kind: string}|null
+     */
+    public function debtChange(iterable $entries): ?array
+    {
+        $now = $this->rate();
+        if ($now <= 0) {
+            return null;
+        }
+
+        $thenUsd = 0.0;
+        $nowUsd = 0.0;
+        $rates = [];
+
+        foreach ($entries as $entry) {
+            $amount = (float) ($entry['amount'] ?? 0);
+            $rate = (float) ($entry['rate'] ?? 0);
+            if ($amount <= 0.009) {
+                continue;
+            }
+            $thenRate = $rate > 0 ? $rate : $now;
+            $pair = $this->compare($amount, $thenRate, $now);
+            $thenUsd += $pair['then_usd'];
+            $nowUsd += $pair['now_usd'];
+            $rates[] = $thenRate;
+        }
+
+        $rates = collect($rates)->filter(fn ($r) => $r > 0)->unique()->sort()->values();
+        if ($rates->isEmpty()) {
+            return null;
+        }
+
+        $loss = round($thenUsd - $nowUsd, 4);
+        if (abs($loss) < 0.00005) {
+            $loss = 0.0;
+        }
+
+        $receipt = $rates->count() === 1
+            ? number_format($rates[0], 0)
+            : number_format($rates->first(), 0).'–'.number_format($rates->last(), 0);
+
+        return [
+            'receipt_label' => $receipt,
+            'today_rate' => $now,
+            'then_usd' => round($thenUsd, 4),
+            'now_usd' => round($nowUsd, 4),
+            'loss_usd' => $loss,
+            'kind' => $loss > 0 ? 'loss' : ($loss < 0 ? 'gain' : 'flat'),
+        ];
+    }
+
+    /**
      * @return array<int, array{text: string, title: string, class: string}>
      */
     public function hints(float $sdg, ?float $frozenRate = null): array
@@ -100,25 +158,28 @@ class CurrencyService
             return [];
         }
 
-        $pair = $this->compare($sdg, $thenRate, $current > 0 ? $current : $thenRate);
+        $nowRate = $current > 0 ? $current : $thenRate;
+        $pair = $this->compare($sdg, $thenRate, $nowRate);
+        $thenLabel = number_format($thenRate, 0);
+        $nowLabel = number_format($nowRate, 0);
         if ($pair['split']) {
             return [
                 [
-                    'text' => '≈ '.$this->formatUsd($pair['then_usd']).' يومها',
-                    'title' => 'سعر يوم المعاملة: 1 $ = '.number_format($frozen, 0).' ج.س',
+                    'text' => 'يومها '.$this->formatUsd($pair['then_usd']).' · 1 $ = '.$thenLabel,
+                    'title' => 'هذا المبلغ كان يعادل '.$this->formatUsd($pair['then_usd']).' عندما كان 1 $ = '.$thenLabel.' ج.س',
                     'class' => 'money-usd money-usd-then',
                 ],
                 [
-                    'text' => '≈ '.$this->formatUsd($pair['now_usd']).' الآن',
-                    'title' => $this->rateLabel(),
+                    'text' => 'الآن '.$this->formatUsd($pair['now_usd']).' · 1 $ = '.$nowLabel,
+                    'title' => 'نفس الجنيه الآن يعادل '.$this->formatUsd($pair['now_usd']).' لأن 1 $ = '.$nowLabel.' ج.س',
                     'class' => 'money-usd',
                 ],
             ];
         }
 
         return [[
-            'text' => '≈ '.$this->formatUsd($pair['then_usd']),
-            'title' => '1 $ = '.number_format($thenRate, 0).' ج.س',
+            'text' => $this->formatUsd($pair['then_usd']).' · 1 $ = '.$thenLabel,
+            'title' => '1 $ = '.$thenLabel.' ج.س',
             'class' => 'money-usd',
         ]];
     }
@@ -140,20 +201,37 @@ class CurrencyService
         $now = $this->rate();
         $stockSdg = 0.0;
         $stockThen = 0.0;
+        $costSdg = 0.0;
+        $costUsd = 0.0;
+        $saleSdg = 0.0;
+        $saleUsd = 0.0;
+        $productColumns = ['stock', 'purchase_price', 'sale_price', 'usd_rate'];
+        if (Schema::hasColumn('products', 'sale_usd_rate')) {
+            $productColumns[] = 'sale_usd_rate';
+        }
         $products = \App\Models\Product::query()
             ->where('stock', '>', 0)
-            ->get(['stock', 'purchase_price', 'usd_rate']);
+            ->get($productColumns);
         foreach ($products as $product) {
-            $sdg = (float) $product->stock * (float) $product->purchase_price;
             $rate = (float) $product->usd_rate > 0 ? (float) $product->usd_rate : $now;
-            $stockSdg += $sdg;
+            $saleRate = (float) $product->sale_usd_rate > 0 ? (float) $product->sale_usd_rate : $rate;
+            $cost = (float) $product->stock * (float) $product->purchase_price;
+            $sale = (float) $product->stock * (float) $product->sale_price;
+            $costSdg += $cost;
+            $saleSdg += $sale;
+            $stockSdg += $cost;
             if ($rate > 0) {
-                $stockThen += $sdg / $rate;
+                $costUsd += $cost / $rate;
+                $stockThen += $cost / $rate;
+            }
+            if ($saleRate > 0) {
+                $saleUsd += $sale / $saleRate;
             }
         }
 
         $dueSdg = 0.0;
         $dueThen = 0.0;
+        $dueRates = [];
         $orders = \App\Models\Order::query()->where('remaining', '>', 0.009)->get(['remaining', 'usd_rate']);
         foreach ($orders as $order) {
             $sdg = (float) $order->remaining;
@@ -161,11 +239,13 @@ class CurrencyService
             $dueSdg += $sdg;
             if ($rate > 0) {
                 $dueThen += $sdg / $rate;
+                $dueRates[] = $rate;
             }
         }
 
         $oweSdg = 0.0;
         $oweThen = 0.0;
+        $oweRates = [];
         $invoices = \App\Models\PurchaseInvoice::query()->where('remaining', '>', 0.009)->get(['remaining', 'usd_rate']);
         foreach ($invoices as $invoice) {
             $sdg = (float) $invoice->remaining;
@@ -173,20 +253,32 @@ class CurrencyService
             $oweSdg += $sdg;
             if ($rate > 0) {
                 $oweThen += $sdg / $rate;
+                $oweRates[] = $rate;
             }
         }
 
+        $stock = $this->bucket($stockSdg, $stockThen, $now);
+        $basisUsd = $saleUsd > 0 ? $saleUsd : $costUsd;
+        $basisSdg = $saleUsd > 0 ? $saleSdg : $costSdg;
+        $sellNow = ($now > 0 && $basisUsd > 0) ? ($basisUsd * $now) : $basisSdg;
+        $stock['cost_sdg'] = round($costSdg, 2);
+        $stock['cost_usd'] = round($costUsd, 4);
+        $stock['sale_sdg'] = round($basisSdg, 2);
+        $stock['sale_usd'] = round($basisUsd, 4);
+        $stock['sell_now_sdg'] = round($sellNow, 2);
+        $stock['raise_sdg'] = round($sellNow - $basisSdg, 2);
+
         return [
-            'stock' => $this->bucket($stockSdg, $stockThen, $now),
-            'receivables' => $this->bucket($dueSdg, $dueThen, $now),
-            'payables' => $this->bucket($oweSdg, $oweThen, $now),
+            'stock' => $stock,
+            'receivables' => $this->bucket($dueSdg, $dueThen, $now, $dueRates),
+            'payables' => $this->bucket($oweSdg, $oweThen, $now, $oweRates),
         ];
     }
 
     /**
      * @return array{sdg: float, usd_then: float, usd_now: float, loss_usd: float, replacement_sdg: float, gap_sdg: float}
      */
-    protected function bucket(float $sdg, float $usdThen, float $nowRate): array
+    protected function bucket(float $sdg, float $usdThen, float $nowRate, array $rates = []): array
     {
         $usdNowRaw = $nowRate > 0 ? $sdg / $nowRate : 0.0;
         $sameRate = $nowRate > 0 && abs($usdThen - $usdNowRaw) < 0.0000005;
@@ -194,14 +286,25 @@ class CurrencyService
             $usdThen = $usdNowRaw;
         }
         $replacement = ($nowRate > 0 && ! $sameRate) ? ($usdThen * $nowRate) : $sdg;
+        $gap = $replacement - $sdg;
+        $rateList = collect($rates)->map(fn ($r) => (float) $r)->filter(fn ($r) => $r > 0)->unique()->sort()->values();
+        $rateLabel = '—';
+        if ($rateList->count() === 1) {
+            $rateLabel = number_format($rateList->first(), 0);
+        } elseif ($rateList->count() > 1) {
+            $rateLabel = number_format($rateList->first(), 0).'–'.number_format($rateList->last(), 0);
+        }
 
         return [
             'sdg' => round($sdg, 2),
-            'usd_then' => round($usdThen, 4),
-            'usd_now' => round($usdNowRaw, 4),
-            'loss_usd' => round($usdThen - $usdNowRaw, 4),
+            'usd_then' => $usdThen,
+            'usd_now' => $usdNowRaw,
+            'loss_usd' => $usdThen - $usdNowRaw,
             'replacement_sdg' => round($replacement, 2),
-            'gap_sdg' => round($replacement - $sdg, 2),
+            'gap_sdg' => round($gap, 2),
+            'inflate_pct' => $sdg > 0.009 ? round(($gap / $sdg) * 100, 2) : 0.0,
+            'rate_label' => $rateLabel,
+            'today_rate' => $nowRate,
         ];
     }
 
@@ -275,7 +378,58 @@ class CurrencyService
         }
 
         $this->clearCache();
+        $this->repricedProducts = $this->repriceProductSales($sdgPerUsd);
 
         return $row;
+    }
+
+    /**
+     * يرفع سعر البيع بنسبة زيادة الدولار، ويُبقي دولار البيع كما كان.
+     */
+    public function repriceProductSales(float $newRate): int
+    {
+        $newRate = round($newRate, 2);
+        if ($newRate <= 0 || ! Schema::hasColumn('products', 'sale_usd_rate')) {
+            return 0;
+        }
+
+        $updated = 0;
+        Product::withTrashed()
+            ->where('sale_price', '>', 0)
+            ->orderBy('id')
+            ->chunkById(100, function ($products) use ($newRate, &$updated) {
+                foreach ($products as $product) {
+                    $base = (float) $product->sale_usd_rate;
+                    if ($base <= 0) {
+                        $base = (float) $product->usd_rate;
+                    }
+                    if ($base <= 0) {
+                        $product->sale_usd_rate = $newRate;
+                        $product->saveQuietly();
+                        continue;
+                    }
+                    if ($newRate <= $base + 0.009) {
+                        continue;
+                    }
+
+                    $next = round((float) $product->sale_price * ($newRate / $base), 3);
+                    if (abs($next - (float) $product->sale_price) < 0.0005) {
+                        $product->sale_usd_rate = $newRate;
+                        $product->saveQuietly();
+                        continue;
+                    }
+
+                    if (Schema::hasColumn('products', 'previous_sale_price')) {
+                        $product->previous_sale_price = $product->sale_price;
+                        $product->previous_sale_usd_rate = $base;
+                    }
+                    $product->sale_price = $next;
+                    $product->sale_usd_rate = $newRate;
+                    $product->save();
+                    $updated++;
+                }
+            });
+
+        return $updated;
     }
 }

@@ -18,7 +18,11 @@ class ProductService
         return Product::query()
             ->with('category')
             ->when($request->filled('search'), function ($query) use ($request) {
-                $query->where('name', 'like', '%'.$request->search.'%');
+                $term = '%'.$request->search.'%';
+                $query->where(function ($inner) use ($term) {
+                    $inner->where('name', 'like', $term)
+                        ->orWhere('barcode', 'like', $term);
+                });
             })
             ->when($request->filled('category_id'), function ($query) use ($request) {
                 $query->where('category_id', $request->category_id);
@@ -45,6 +49,9 @@ class ProductService
         return [
             'category_id' => (int) $data['category_id'],
             'name' => trim((string) $data['name']),
+            'barcode' => isset($data['barcode']) && trim((string) $data['barcode']) !== ''
+                ? trim((string) $data['barcode'])
+                : null,
             'description' => $data['description'] ?? null,
             'purchase_price' => $normalized['purchase_price'],
             'sale_price' => $normalized['sale_price'],
@@ -149,6 +156,25 @@ class ProductService
         $text .= app(CurrencyService::class)->annotate($value, (float) ($product->usd_rate ?? 0) ?: null);
 
         return $text;
+    }
+
+    public function formatPieceSale(Product $product, float $piecePrice): string
+    {
+        $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
+        $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
+        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
+
+        if ($measure === SaleUnits::UNIT_KILO) {
+            return DecimalMath::display($piecePrice).' / كيلو';
+        }
+        if (
+            $mode === SaleUnits::MODE_BULK_ONLY
+            || ($measure === SaleUnits::UNIT_CARTON && $bulk > 1 && $mode !== SaleUnits::MODE_PIECE_ONLY)
+        ) {
+            return DecimalMath::moneyDisplay($piecePrice * $bulk).' / كرتونة';
+        }
+
+        return DecimalMath::moneyDisplay($piecePrice).' / حبة';
     }
 
     /**

@@ -68,6 +68,21 @@ class OrderReportsService
             ->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to]))
             ->sum('total');
 
+        $fxRows = function ($query, string $amount) {
+            if (! $query->getModel()->getConnection()->getSchemaBuilder()->hasColumn($query->getModel()->getTable(), 'usd_rate')) {
+                return [];
+            }
+
+            return (clone $query)
+                ->where($amount, '>', 0)
+                ->get([$amount, 'usd_rate'])
+                ->map(fn ($row) => [
+                    'amount' => (float) $row->{$amount},
+                    'rate' => (float) ($row->usd_rate ?? 0),
+                ])
+                ->all();
+        };
+
         return [
             'orders_count' => $ordersCount,
             'gross_sales' => $grossSales,
@@ -85,6 +100,22 @@ class OrderReportsService
             'purchases_paid' => round($totalPurchasesPaid, 2),
             'purchases_total' => round($totalPurchasesVolume, 2),
             'operating_profit' => round($ordersProfit - $totalExpenses, 2),
+            'fx' => [
+                'net_sales' => $fxRows($orderQuery, 'total_price'),
+                'gross_sales' => (clone $orderQuery)->get(['total_price', 'total_return', 'usd_rate'])
+                    ->map(fn ($row) => [
+                        'amount' => (float) $row->total_price + (float) $row->total_return,
+                        'rate' => (float) ($row->usd_rate ?? 0),
+                    ])
+                    ->filter(fn ($row) => $row['amount'] > 0)
+                    ->values()
+                    ->all(),
+                'returns' => $fxRows($orderQuery, 'total_return'),
+                'remaining' => $fxRows($orderQuery, 'remaining'),
+                'profit' => $fxRows($orderQuery, 'profit'),
+                'purchases_total' => $fxRows(PurchaseInvoice::query()->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to])), 'total'),
+                'purchases_paid' => $fxRows(PurchaseInvoice::query()->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to])), 'paid'),
+            ],
         ];
     }
 
@@ -197,10 +228,28 @@ class OrderReportsService
         $profit = $s['orders_profit'];
         $sales = $s['net_sales'];
 
+        $costQuery = Order::query();
+        if ($from && $to) {
+            $costQuery->whereBetween('created_at', [$from, $to]);
+        }
+        $costFx = $costQuery->get(['total_price', 'profit', 'usd_rate'])
+            ->map(fn ($order) => [
+                'amount' => max(0, (float) $order->total_price - (float) $order->profit),
+                'rate' => (float) ($order->usd_rate ?? 0),
+            ])
+            ->filter(fn ($row) => $row['amount'] > 0.009)
+            ->values()
+            ->all();
+
         return [
             'sales' => $sales,
             'cost' => round(max(0, $sales - $profit), 2),
             'profit' => $profit,
+            'fx' => [
+                'sales' => $s['fx']['net_sales'],
+                'profit' => $s['fx']['profit'],
+                'cost' => $costFx,
+            ],
         ];
     }
 }

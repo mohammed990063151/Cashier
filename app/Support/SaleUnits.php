@@ -60,21 +60,31 @@ class SaleUnits
         };
     }
 
-    public static function saleModeLabel(string $mode): string
+    public static function saleModeLabel(string $mode, ?string $measureUnit = null): string
     {
+        $measure = self::normalizeMeasureUnit($measureUnit);
+        if ($measure === self::UNIT_KILO) {
+            return 'كيلو فقط';
+        }
+
         return match (self::normalizeSaleMode($mode)) {
-            self::MODE_PIECE_ONLY => 'بالحبة فقط',
-            self::MODE_BULK_ONLY => 'بالكرتونة كاملة فقط',
-            default => 'مرن: حبة + نصف + كرتونة',
+            self::MODE_PIECE_ONLY => 'حبة فقط',
+            self::MODE_BULK_ONLY => 'كرتونة فقط',
+            default => 'حبة وكرتونة',
         };
     }
 
-    public static function saleModeShortHint(string $mode): string
+    public static function saleModeShortHint(string $mode, ?string $measureUnit = null): string
     {
+        $measure = self::normalizeMeasureUnit($measureUnit);
+        if ($measure === self::UNIT_KILO) {
+            return 'يُباع بالكيلو فقط. الكمية × سعر الكيلو.';
+        }
+
         return match (self::normalizeSaleMode($mode)) {
-            self::MODE_PIECE_ONLY => 'يُباع بالحبة فقط في الطلبات.',
-            self::MODE_BULK_ONLY => 'يُباع بالكرتونة الكاملة فقط.',
-            default => 'يُباع بالحبة أو نصف الكرتونة أو الكرتونة الكاملة.',
+            self::MODE_PIECE_ONLY => 'يُباع بالحبة فقط. الكمية × سعر الحبة.',
+            self::MODE_BULK_ONLY => 'يُباع بالكرتونة فقط. الكمية × سعر الكرتونة.',
+            default => 'حبة وحدها وكرتونة وحدها. كل واحدة بسعرها.',
         };
     }
 
@@ -115,14 +125,12 @@ class SaleUnits
             return 'حبة';
         }
 
-        return "كرتونة كاملة ({$piecesPerBulk} حبة)";
+        return 'كرتونة';
     }
 
     public static function halfCartonLabel(int $piecesPerBulk): string
     {
-        $half = DecimalMath::div(max(1, $piecesPerBulk), 2);
-
-        return 'نصف كرتونة ('.DecimalMath::display($half).' حبة)';
+        return 'نصف كرتونة';
     }
 
     public static function halfCartonPieces(int $piecesPerBulk): float
@@ -190,45 +198,21 @@ class SaleUnits
             ];
         }
 
-        // بيع مرن لوحدة كرتونة: الكرتونة أولاً ثم الحبة
-        if ($measure === self::UNIT_CARTON && $bulk > 1) {
+        if ($bulk <= 1) {
             return [
-                'bulk' => [
-                    'label' => self::bulkLabel($bulk),
-                    'multiplier' => $bulk,
-                    'step' => 'any',
-                ],
-                'half_carton' => [
-                    'label' => self::halfCartonLabel($bulk),
-                    'multiplier' => self::halfCartonPieces($bulk),
-                    'step' => 'any',
-                ],
                 'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => 'any'],
             ];
         }
 
-        $units = [
-            'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => 'any'],
-            'pack_3' => ['label' => '3 قطع', 'multiplier' => self::PACK_3, 'step' => 'any'],
-            'pack_6' => ['label' => '6 قطع', 'multiplier' => self::PACK_6, 'step' => 'any'],
-        ];
-
-        if ($bulk > 1) {
-            $units['half_carton'] = [
-                'label' => self::halfCartonLabel($bulk),
-                'multiplier' => self::halfCartonPieces($bulk),
-                'step' => 'any',
-            ];
-            $units['bulk'] = [
-                'label' => self::bulkLabel($bulk),
+        // حبة وكرتونة: كل وحدة بسعرها، بدون نصف كرتونة
+        return [
+            'bulk' => [
+                'label' => 'كرتونة',
                 'multiplier' => $bulk,
                 'step' => 'any',
-            ];
-        } else {
-            $units['dozen'] = ['label' => 'دستة (12)', 'multiplier' => self::DOZEN, 'step' => 'any'];
-        }
-
-        return $units;
+            ],
+            'piece' => ['label' => 'حبة', 'multiplier' => self::PIECE, 'step' => 'any'],
+        ];
     }
 
     /**
@@ -496,15 +480,10 @@ class SaleUnits
             return 0.0;
         }
 
-        $measure = self::normalizeMeasureUnit($measureUnit);
         $multiplier = self::multiplier($unitKey, $bulkSize);
         $raw = ($lineMoney / $pieces) * $multiplier;
 
-        if ($measure === self::UNIT_KILO || $unitKey === 'kilo') {
-            return DecimalMath::round($raw);
-        }
-
-        return DecimalMath::money($raw);
+        return round($raw, 2);
     }
 
     /**

@@ -24,7 +24,7 @@
                         <h3 class="box-title"><i class="fa fa-balance-scale"></i> أثر التضخم على ما عندك</h3>
                     </div>
                     <div class="box-body">
-                        <p class="text-muted" style="margin-top:0;">الجنيه ثابت. إذا زاد الدولار: «يومها» يبقى، و«الآن» ينقص. الفرق خسارة.</p>
+                        <p class="text-muted" style="margin-top:0;">دين العميل بالجنيه ثابت. إذا ارتفع الدولار، الدولار الذي يمثله هذا الدين ينقص، والفرق خسارة بنسبة التضخم. دين المورد كذلك بالجنيه، ونقص دولاره ربح لأنك ستدفع جنيهاً أضعف.</p>
                         <div class="table-responsive">
                             <table class="table table-bordered text-center">
                                 <thead>
@@ -39,24 +39,90 @@
                                 <tbody>
                                     <tr>
                                         <td>المخزون</td>
-                                        <td>{{ number_format($stock['sdg'], 2) }}</td>
-                                        <td>{{ number_format($stock['usd_then'], 4) }}</td>
-                                        <td>{{ number_format($stock['usd_now'], 4) }}</td>
-                                        <td class="{{ $stock['loss_usd'] > 0.0001 ? 'text-danger' : 'text-muted' }}">{{ number_format($stock['loss_usd'], 4) }}</td>
+                                        <td>
+                                            <div>استلام {{ number_format($stock['cost_sdg'], 2) }}</div>
+                                            <div><strong>بيع الآن {{ number_format($stock['sell_now_sdg'], 2) }}</strong></div>
+                                        </td>
+                                        <td>
+                                            <div>تكلفة {{ number_format($stock['cost_usd'], 4) }}</div>
+                                            <div>بيع {{ number_format($stock['sale_usd'], 4) }}</div>
+                                        </td>
+                                        <td>
+                                            <div>{{ number_format($stock['sale_usd'], 4) }}</div>
+                                            <small>بعد رفع السعر</small>
+                                        </td>
+                                        <td class="{{ $stock['raise_sdg'] > 0.009 ? 'text-success' : 'text-muted' }}">
+                                            @if($stock['raise_sdg'] > 0.009)
+                                                ارفع البيع {{ number_format($stock['raise_sdg'], 2) }} ج.س
+                                            @else
+                                                لا فرق
+                                            @endif
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>ديون العملاء</td>
-                                        <td>{{ number_format($due['sdg'], 2) }}</td>
-                                        <td>{{ number_format($due['usd_then'], 4) }}</td>
-                                        <td>{{ number_format($due['usd_now'], 4) }}</td>
-                                        <td class="{{ $due['loss_usd'] > 0.0001 ? 'text-danger' : 'text-muted' }}">{{ number_format($due['loss_usd'], 4) }}</td>
+                                        <td>
+                                            <div>{{ number_format($due['sdg'], 2) }}</div>
+                                            @if($due['gap_sdg'] > 0.009)
+                                                <small>قيمتها اليوم {{ number_format($due['replacement_sdg'], 2) }}</small>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div>{{ number_format($due['usd_then'], 6) }}</div>
+                                            <small>1 $ = {{ $due['rate_label'] }}</small>
+                                        </td>
+                                        <td>
+                                            <div>{{ number_format($due['usd_now'], 6) }}</div>
+                                            <small>1 $ = {{ number_format($due['today_rate'], 0) }}</small>
+                                        </td>
+                                        <td class="{{ $due['loss_usd'] > 0.0000005 ? 'text-danger' : 'text-muted' }}">
+                                            @if(abs($due['loss_usd']) > 0.0000005)
+                                                <div>{{ number_format($due['loss_usd'], 6) }} $</div>
+                                                <div>تعادل {{ number_format(abs($due['gap_sdg']), 2) }} ج.س</div>
+                                                <small>التضخم {{ $due['inflate_pct'] > 0 ? '+' : '' }}{{ number_format($due['inflate_pct'], 2) }}%</small>
+                                            @else
+                                                لا فرق
+                                            @endif
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td>دين الموردين</td>
-                                        <td>{{ number_format($owe['sdg'], 2) }}</td>
-                                        <td>{{ number_format($owe['usd_then'], 4) }}</td>
-                                        <td>{{ number_format($owe['usd_now'], 4) }}</td>
-                                        <td class="{{ $owe['loss_usd'] > 0.0001 ? 'text-success' : 'text-muted' }}">{{ number_format($owe['loss_usd'], 4) }}</td>
+                                        <td>
+                                            @if($owe['sdg'] <= 0.009)
+                                                <div>0.00</div>
+                                                <small>لا يوجد دين</small>
+                                            @else
+                                                <div>{{ number_format($owe['sdg'], 2) }}</div>
+                                                <small>تسديده اليوم {{ number_format($owe['sdg'], 2) }}</small>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div>{{ number_format($owe['usd_then'], 6) }}</div>
+                                            @if($owe['sdg'] > 0.009)
+                                                <small>1 $ = {{ $owe['rate_label'] }}</small>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            <div>{{ number_format($owe['usd_now'], 6) }}</div>
+                                            @if($owe['sdg'] > 0.009)
+                                                <small>1 $ = {{ number_format($owe['today_rate'], 0) }}</small>
+                                            @endif
+                                        </td>
+                                        <td class="{{ $owe['loss_usd'] > 0.0000005 ? 'text-success' : ($owe['loss_usd'] < -0.0000005 ? 'text-danger' : 'text-muted') }}">
+                                            @if($owe['sdg'] <= 0.009)
+                                                0.000000 $
+                                            @elseif($owe['loss_usd'] > 0.0000005)
+                                                <div>ربح {{ number_format($owe['loss_usd'], 6) }} $</div>
+                                                <div>يعادل {{ number_format($owe['gap_sdg'], 2) }} ج.س</div>
+                                                <small>التضخم +{{ number_format($owe['inflate_pct'], 2) }}%</small>
+                                            @elseif($owe['loss_usd'] < -0.0000005)
+                                                <div>خسارة {{ number_format(abs($owe['loss_usd']), 6) }} $</div>
+                                                <div>تعادل {{ number_format(abs($owe['gap_sdg']), 2) }} ج.س</div>
+                                                <small>التضخم {{ number_format($owe['inflate_pct'], 2) }}%</small>
+                                            @else
+                                                لا فرق
+                                            @endif
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -82,7 +148,7 @@
                                     <span class="text-muted">لم يُحدَّد بعد</span>
                                 @endif
                             </div>
-                            <p class="text-muted" style="margin:8px 0 0;">سعر اليوم للعمليات الجديدة. العمليات القديمة تبقى بسعر يومها.</p>
+                            <p class="text-muted" style="margin:8px 0 0;">عند حفظ سعر أعلى يُرفع سعر بيع كل منتج بنفس النسبة. من صفحة المنتج يمكنك إرجاع السعر القديم أو تعديله. سعر الشراء لا يتغير.</p>
                         </div>
 
                         <form method="post" action="{{ route('dashboard.exchange-rates.store') }}" style="margin-top:16px;">

@@ -70,9 +70,9 @@
                                     <tr>
                                         <td>{{ $invoice->supplier->name ?? '—' }}</td>
                                         <td>{{ $invoice->invoice_number  }}</td>
-                                        <td>{{ number_format($invoice->total,2) }}</td>
-                                        <td>{{ number_format($totalPaid,2) }}</td>
-                                        <td>{{ number_format($invoice->remaining,2) }}</td>
+                                        <td><x-report-money :amount="$invoice->total" :rate="$invoice->usd_rate" /></td>
+                                        <td><x-report-money :amount="$totalPaid" :rate="$invoice->usd_rate" /></td>
+                                        <td><x-report-money :amount="$invoice->remaining" :rate="$invoice->usd_rate" /></td>
                                         <td>
                                             <a href="{{ route('dashboard.reports.purchases.invoice_details',$invoice->id) }}" class="btn btn-sm btn-info">عرض التفاصيل</a>
                                         </td>
@@ -138,9 +138,9 @@
                                     <tr>
                                         <td>{{ $invoice->supplier->name ?? '—' }}</td>
                                         <td>{{ $invoice->invoice_number ?? $invoice->id }}</td>
-                                        <td>{{ number_format($invoice->total,2) }}</td>
-                                        <td>{{ number_format($totalPaid,2) }}</td>
-                                        <td>{{ number_format($invoice->remaining,2) }}</td>
+                                        <td><x-report-money :amount="$invoice->total" :rate="$invoice->usd_rate" /></td>
+                                        <td><x-report-money :amount="$totalPaid" :rate="$invoice->usd_rate" /></td>
+                                        <td><x-report-money :amount="$invoice->remaining" :rate="$invoice->usd_rate" /></td>
                                     </tr>
                                 @endforeach
                             </tbody>

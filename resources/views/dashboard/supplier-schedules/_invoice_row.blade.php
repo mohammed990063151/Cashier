@@ -14,6 +14,7 @@
         </div>
         <div class="order-detail-remaining is-due">
             {{ number_format($invoice->remaining, 2) }} <small>ج.س متبقي</small>
+            <x-debt-fx :entries="[['amount' => $invoice->remaining, 'rate' => $invoice->usd_rate]]" rate-label="استلام" :invert="true" />
         </div>
     </div>
     <div class="order-detail-stats">
@@ -27,10 +28,22 @@
         <li style="margin-bottom:6px;">
             <i class="fa fa-calendar-o"></i>
             {{ number_format($inst->amount, 2) }} ج.س — {{ $inst->due_at->format('d/m/Y') }}
+            <x-debt-fx :entries="[['amount' => $inst->amount, 'rate' => $invoice->usd_rate]]" rate-label="استلام" :invert="true" />
             <form method="POST" action="{{ route('dashboard.supplier-installments.paid', $inst) }}" style="display:inline;" onsubmit="return confirm('تسجيل سداد هذا القسط من الخزينة؟');">
                 @csrf
                 <button type="submit" class="btn btn-success btn-xs"><i class="fa fa-check"></i> سداد</button>
             </form>
+        </li>
+        @endforeach
+    </ul>
+    @endif
+    @if($invoice->payments->isNotEmpty())
+    <ul class="list-unstyled" style="font-size:13px;margin:8px 0;">
+        @foreach($invoice->payments as $payment)
+        <li style="margin-bottom:6px;">
+            <i class="fa fa-money"></i>
+            دفعة {{ number_format($payment->amount, 2) }} ج.س — {{ $payment->payment_date }}
+            <x-debt-fx :entries="[['amount' => $payment->amount, 'rate' => $payment->usd_rate]]" rate-label="عند الدفع" />
         </li>
         @endforeach
     </ul>

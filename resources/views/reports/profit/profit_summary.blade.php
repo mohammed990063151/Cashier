@@ -16,8 +16,8 @@
             </div>
             <div class="alert alert-info">
                 الأرباح محسوبة من <strong>حقل ربح الطلب</strong> (بعد الخصم والمرتجعات).
-                صافي المبيعات: {{ number_format($snapshot['net_sales'] ?? 0, 2) }} —
-                مرتجعات: {{ number_format($snapshot['returns_merchandise'] ?? 0, 2) }} ج.س
+                صافي المبيعات: <x-report-money :amount="$snapshot['net_sales'] ?? 0" :entries="$snapshot['fx']['net_sales'] ?? []" />
+                — مرتجعات: <x-report-money :amount="$snapshot['returns_merchandise'] ?? 0" :entries="$snapshot['fx']['returns'] ?? []" />
             </div>
             <div class="box-body table-responsive">
                 <table class="table table-hover text-center">
@@ -31,9 +31,9 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>{{ number_format($totalSales, 2) }} ج.س</td>
-                            <td>{{ number_format($totalCost, 2) }} ج.س</td>
-                            <td class="text-success"><strong>{{ number_format($totalProfit, 2) }} ج.س</strong></td>
+                            <td><x-report-money :amount="$totalSales" :entries="$snapshot['fx']['net_sales'] ?? []" /></td>
+                            <td><x-report-money :amount="$totalCost" :entries="$costFx ?? []" /></td>
+                            <td class="text-success"><x-report-money :amount="$totalProfit" :entries="$snapshot['fx']['profit'] ?? []" /></td>
                             <td>{{ $totalSales > 0 ? number_format(($totalProfit / $totalSales) * 100, 2) : 0 }}%</td>
                         </tr>
                     </tbody>

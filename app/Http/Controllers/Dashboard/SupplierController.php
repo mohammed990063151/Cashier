@@ -177,6 +177,7 @@ class SupplierController extends Controller
                     'amount' => $amount,
                     'payment_date' => $request->payment_date,
                     'note' => $request->note,
+                    'usd_rate' => app(\App\Services\CurrencyService::class)->rate() ?: null,
                 ]);
 
                 $this->cashService->record(

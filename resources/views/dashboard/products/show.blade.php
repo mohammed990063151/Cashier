@@ -29,7 +29,7 @@
                         <h3 style="margin-top:12px;">{{ $product->name }}</h3>
                         <p class="text-muted">{{ $product->category->name ?? '—' }}</p>
                         <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
-                            {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                            {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}
                         </span>
                     </div>
                 </div>
@@ -75,7 +75,7 @@
                         <div class="info-row"><span>حبات العبوة</span><strong>{{ $productService->cartonSummary($product) }}</strong></div>
                         <div class="info-row">
                             <span>طريقة البيع في الطلبات</span>
-                            <strong>{{ \App\Support\SaleUnits::saleModeShortHint($product->sale_mode ?? 'flexible') }}</strong>
+                            <strong>{{ \App\Support\SaleUnits::saleModeShortHint($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}</strong>
                         </div>
                         <div class="info-row"><span>عدد الطلبات</span><strong>{{ $product->orders()->count() }}</strong></div>
                     </div>

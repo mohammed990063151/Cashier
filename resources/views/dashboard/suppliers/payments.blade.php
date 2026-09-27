@@ -71,7 +71,9 @@
                                 </td>
                                 <td>
                                     @foreach($groupedPayments as $payment)
-                                    <span class="badge-payment" title="{{ $payment->payment_date }}">{{ number_format($payment->amount, 2) }}</span><br><br>
+                                    <span class="badge-payment" title="{{ $payment->payment_date }}">{{ number_format($payment->amount, 2) }}</span>
+                                    <x-debt-fx :entries="[['amount' => $payment->amount, 'rate' => $payment->usd_rate]]" rate-label="عند الدفع" />
+                                    <br>
                                     @endforeach
                                 </td>
                                 <td>

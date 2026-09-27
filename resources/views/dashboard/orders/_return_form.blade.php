@@ -71,14 +71,13 @@
                             $measure
                         );
                         $multiplier = (float) $unitMeta['multiplier'];
-                        $maxUnit = $multiplier > 0 ? floor($soldPieces / $multiplier + 1e-9) : 0;
-                        if ($unitKey === 'kilo') {
-                            $maxUnit = $soldPieces;
-                        }
+                        $maxUnit = $multiplier > 0
+                            ? \App\Support\DecimalMath::div($soldPieces, $multiplier)
+                            : 0;
                     @endphp
                     <div class="return-unit-block">
                         <label>{{ $unitMeta['label'] }}</label>
-                        <small class="text-muted">سعر الوحدة: {{ \App\Support\DecimalMath::display($unitPrice) }} ج.س</small>
+                        <small class="text-muted">{{ \App\Support\DecimalMath::display($unitPrice) }} ج.س / {{ $unitMeta['label'] }}</small>
                         <input type="number"
                                name="lines[{{ $product->id }}][{{ $unitKey }}][qty]"
                                class="form-control return-qty-input"
@@ -90,7 +89,7 @@
                                data-multiplier="{{ $multiplier }}"
                                data-product="{{ $product->id }}">
                         <input type="hidden" name="lines[{{ $product->id }}][{{ $unitKey }}][price]" value="{{ $unitPrice }}">
-                        <small class="text-muted">الحد الأقصى: {{ \App\Support\DecimalMath::display($maxUnit) }}</small>
+                        <small class="text-muted">الحد: {{ \App\Support\DecimalMath::display($maxUnit) }} {{ $unitMeta['label'] }}</small>
                     </div>
                 @endforeach
             </div>

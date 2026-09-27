@@ -25,6 +25,54 @@
         updateSum();
     }
 
+    function formatDate(d) {
+        var month = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + month + '-' + day;
+    }
+
+    function parseLocalDate(value) {
+        var parts = String(value || '').split('-');
+        if (parts.length !== 3) {
+            return new Date();
+        }
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    function autoSplit(preserveAmounts) {
+        var count = parseInt($('#splitCount').val(), 10) || 1;
+        count = Math.min(24, Math.max(1, count));
+        var start = $('#splitStart').val();
+        var interval = parseInt($('#splitInterval').val(), 10) || 30;
+        if (!start || remaining <= 0) {
+            return;
+        }
+
+        var existing = [];
+        if (preserveAmounts) {
+            $('#installmentRows .inst-amount').each(function () {
+                existing.push($(this).val());
+            });
+            if (existing.length !== count) {
+                preserveAmounts = false;
+            }
+        }
+
+        var part = Math.floor((remaining / count) * 100) / 100;
+        var last = Math.round((remaining - part * (count - 1)) * 100) / 100;
+
+        $('#installmentRows').empty();
+        rowIndex = 0;
+
+        var due = parseLocalDate(start);
+        for (var i = 0; i < count; i++) {
+            var generated = (i === count - 1 ? last : part).toFixed(2);
+            var amount = preserveAmounts && existing[i] !== '' ? existing[i] : generated;
+            addRow(amount, formatDate(due), 'قسط ' + (i + 1));
+            due.setDate(due.getDate() + interval);
+        }
+    }
+
     $('#installmentModal').on('show.bs.modal', function (e) {
         var btn = $(e.relatedTarget);
         var orderId = btn.data('order-id');
@@ -36,13 +84,13 @@
         $('#modalRemaining').text(remaining.toFixed(2));
         $('#installmentTarget').text(remaining.toFixed(2));
 
-        var today = new Date().toISOString().slice(0, 10);
-        $('#splitStart').val(today);
+        $('#splitStart').val(formatDate(new Date()));
+        $('#splitCount').val(3);
+        $('#splitInterval').val(30);
 
         $('#installmentRows').empty();
         rowIndex = 0;
-        addRow('', today, '');
-        addRow('', '', '');
+        autoSplit(false);
     });
 
     $('#btnAddRow').on('click', function () {
@@ -58,29 +106,20 @@
 
     $(document).on('input', '.inst-amount', updateSum);
 
-    $('#btnAutoSplit').on('click', function () {
-        var count = parseInt($('#splitCount').val(), 10) || 1;
-        var start = $('#splitStart').val();
-        var interval = parseInt($('#splitInterval').val(), 10) || 30;
+    $('#splitCount').on('input change', function () {
+        autoSplit(false);
+    });
 
-        if (!start) {
+    $('#splitStart, #splitInterval').on('input change', function () {
+        autoSplit(true);
+    });
+
+    $('#btnAutoSplit').on('click', function () {
+        if (!$('#splitStart').val()) {
             alert('حدد تاريخ أول قسط');
             return;
         }
-
-        var part = Math.floor((remaining / count) * 100) / 100;
-        var last = Math.round((remaining - part * (count - 1)) * 100) / 100;
-
-        $('#installmentRows').empty();
-        rowIndex = 0;
-
-        var d = new Date(start);
-        for (var i = 0; i < count; i++) {
-            var amt = i === count - 1 ? last : part;
-            var due = d.toISOString().slice(0, 10);
-            addRow(amt.toFixed(2), due, 'قسط ' + (i + 1));
-            d.setDate(d.getDate() + interval);
-        }
+        autoSplit(false);
     });
 
     $('#installmentForm').on('submit', function (e) {

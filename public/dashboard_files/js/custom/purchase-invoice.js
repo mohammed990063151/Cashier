@@ -292,10 +292,20 @@
             }
             $('#quickProductAlert').hide();
             $('#quickProductForm')[0].reset();
+            $('#qpSaleMethod').val('piece');
             $('#qpBulk').val(12);
-            $('#qpSaleMode').val('flexible');
+            syncQuickSaleMethod();
             $('#quickProductModal').modal('show');
         });
+
+        function syncQuickSaleMethod() {
+            var method = $('#qpSaleMethod').val();
+            var needsCarton = method === 'carton' || method === 'both';
+            $('#qpBulkWrap').toggle(needsCarton);
+        }
+
+        $('#qpSaleMethod').on('change', syncQuickSaleMethod);
+        syncQuickSaleMethod();
 
         $('#qpPurchasePrice').on('input', function () {
             var p = parseFloat($(this).val()) || 0;
@@ -309,18 +319,35 @@
             var $btn = $('#qpSubmitBtn').prop('disabled', true);
             $('#quickProductAlert').hide();
 
+            var method = $('#qpSaleMethod').val() || 'piece';
+            var measure = 'piece';
+            var saleMode = 'piece_only';
+            var bulk = 1;
+            if (method === 'kilo') {
+                measure = 'kilo';
+            } else if (method === 'carton') {
+                measure = 'carton';
+                saleMode = 'bulk_only';
+                bulk = Math.max(2, parseInt($('#qpBulk').val(), 10) || 12);
+            } else if (method === 'both') {
+                measure = 'carton';
+                saleMode = 'flexible';
+                bulk = Math.max(2, parseInt($('#qpBulk').val(), 10) || 12);
+            }
+
             $.ajax({
                 url: window.quickProductStoreUrl,
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': window.csrfToken || $('meta[name="csrf-token"]').attr('content') },
-                data: {
+                    data: {
                     category_id: $('#qpCategory').val(),
                     name: $('#qpName').val(),
+                    barcode: $('#qpBarcode').val(),
                     purchase_price: $('#qpPurchasePrice').val(),
                     sale_price: $('#qpSalePrice').val(),
-                    pieces_per_carton: $('#qpBulk').val(),
-                    sale_mode: $('#qpSaleMode').val(),
-                    measure_unit: $('#qpMeasureUnit').val() || 'piece',
+                    pieces_per_carton: bulk,
+                    sale_mode: saleMode,
+                    measure_unit: measure,
                     stock: 0,
                 },
             })
@@ -344,6 +371,38 @@
                     $btn.prop('disabled', false);
                 });
         });
+
+        window.addScannedPurchaseProduct = function (product, qty) {
+            appendProductToSelects(product);
+            var $row = $('#purchaseItemsBody .purchase-item-row').filter(function () {
+                return !$(this).find('.product-select').val();
+            }).first();
+            if (!$row.length) {
+                addRow();
+                $row = $('#purchaseItemsBody .purchase-item-row').last();
+            }
+            $row.find('.product-select').val(String(product.id)).trigger('change');
+            $row.find('.entered-qty').val(qty).trigger('input');
+            if ($row[0]) {
+                $row[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        window.openQuickProductForBarcode = function (code) {
+            if (!$activeProductSelect || !$activeProductSelect.length) {
+                $activeProductSelect = $('#purchaseItemsBody .purchase-item-row:last .product-select');
+            }
+            $('#quickProductAlert').hide();
+            $('#quickProductForm')[0].reset();
+            $('#qpBarcode').val(code || '');
+            $('#qpSaleMethod').val('piece');
+            $('#qpBulk').val(12);
+            syncQuickSaleMethod();
+            $('#quickProductModal').modal('show');
+            setTimeout(function () {
+                $('#qpName').trigger('focus');
+            }, 350);
+        };
 
         $('#addPurchaseRow').on('click', addRow);
         $('#paidAmount').on('input change', refreshTotals);

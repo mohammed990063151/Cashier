@@ -124,4 +124,15 @@
         </div>
     </nav>
 
+    @if($fxHeader->enabled())
+        <a href="{{ route('dashboard.exchange-rates.index') }}" class="fx-phone-rate" title="تحديث سعر الدولار">
+            <span class="fx-phone-rate-label"><i class="fa fa-dollar"></i> سعر اليوم</span>
+            @if($fxHeader->rate() > 0)
+                <strong dir="ltr">1 $ = {{ number_format($fxHeader->rate(), 0) }} <span>ج.س</span></strong>
+            @else
+                <strong>لم يُحدَّد سعر الدولار</strong>
+            @endif
+        </a>
+    @endif
+
 </header>

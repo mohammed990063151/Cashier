@@ -64,6 +64,7 @@
 
     <div class="clearfix" style="margin-bottom:8px;">
         <h4 class="pi-section-title pull-right" style="margin:0;border:none;"><i class="fa fa-cubes"></i> بنود الشراء</h4>
+        @include('dashboard.partials._barcode_scanner', ['mode' => 'purchase'])
         <button type="button" class="btn btn-info pull-left" id="btnOpenQuickProduct" style="margin-top:4px;">
             <i class="fa fa-plus-circle"></i> منتج جديد
         </button>

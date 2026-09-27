@@ -1,7 +1,7 @@
 @extends('layouts.dashboard.app')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('dashboard_files/css/client-groups.css') }}">
+<link rel="stylesheet" href="{{ asset('dashboard_files/css/client-groups.css') }}?v={{ filemtime(public_path('dashboard_files/css/client-groups.css')) }}">
 <style>
 .collection-page .stat-card {
     border-radius: 10px;
@@ -88,7 +88,7 @@
 window.collectionInstallmentUrl = @json(url('/dashboard/collection-schedules/__ORDER__/installments'));
 window.paymentsClientOrdersUrl = @json(route('dashboard.payments.client-orders', ['client' => '__CLIENT__']));
 </script>
-<script src="{{ asset('dashboard_files/js/custom/collection-schedule.js') }}"></script>
+<script src="{{ asset('dashboard_files/js/custom/collection-schedule.js') }}?v={{ filemtime(public_path('dashboard_files/js/custom/collection-schedule.js')) }}"></script>
 <script src="{{ asset('dashboard_files/js/custom/payments-page.js') }}"></script>
 <script>
 $(function() {

@@ -35,7 +35,7 @@
                             <td>{{ $client->name }} <x-debt-rate :rates="$debtRates[$client->id] ?? []" :remaining="$client->remaining_balance" /></td>
                             <td>{{ is_array($client->phone) ? implode(' - ', $client->phone) : $client->phone }}</td>
                             <td>{{ $client->orders->count() }}</td>
-                            <td>{{ number_format($client->remaining_balance,2) }} ج.س</td>
+                            <td><x-report-money :amount="$client->remaining_balance" :entries="$debtEntries[$client->id] ?? []" /></td>
                             <td>
                                 <a href="{{ route('dashboard.reports.reports.show', $client->id) }}" class="btn btn-sm btn-info">تفاصيل</a>
                             </td>

@@ -13,7 +13,7 @@
     <section class="content">
         <div class="alert alert-warning text-center">
             <strong>إجمالي الذمم المستحقة على العملاء:</strong>
-            {{ number_format($totalRemaining, 2) }} ج.س
+            <x-report-money :amount="$totalRemaining" :entries="$unpaidOrders->map(fn ($order) => ['amount' => $order->remaining, 'rate' => $order->usd_rate])->all()" />
             — عدد الطلبات: {{ $unpaidOrders->count() }}
         </div>
 
@@ -37,10 +37,10 @@
                             <tr>
                                 <td>{{ $order->order_number }}</td>
                                 <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
-                                <td class="text-success">{{ number_format($order->total_price, 2) }}</td>
-                                <td>{{ number_format($order->invoice_discount, 2) }}</td>
-                                <td>{{ number_format($paid, 2) }}</td>
-                                <td class="text-danger"><strong>{{ number_format($order->remaining, 2) }}</strong></td>
+                                <td class="text-success"><x-report-money :amount="$order->total_price" :rate="$order->usd_rate" /></td>
+                                <td><x-report-money :amount="$order->invoice_discount" :rate="$order->usd_rate" /></td>
+                                <td><x-report-money :amount="$paid" :rate="$order->usd_rate" /></td>
+                                <td class="text-danger"><x-report-money :amount="$order->remaining" :rate="$order->usd_rate" /></td>
                                 <td>{{ $order->created_at->format('Y-m-d') }}</td>
                             </tr>
                         @endforeach
@@ -48,7 +48,7 @@
                     <tfoot>
                         <tr style="font-weight:bold;background:#f5f5f5;">
                             <td colspan="5" class="text-right">الإجمالي المتبقي:</td>
-                            <td class="text-danger">{{ number_format($totalRemaining, 2) }} ج.س</td>
+                            <td class="text-danger"><x-report-money :amount="$totalRemaining" :entries="$unpaidOrders->map(fn ($order) => ['amount' => $order->remaining, 'rate' => $order->usd_rate])->all()" /></td>
                             <td></td>
                         </tr>
                     </tfoot>

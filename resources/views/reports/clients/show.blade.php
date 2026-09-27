@@ -4,7 +4,7 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>تفاصيل العميل: {{ $client->name }} <x-debt-rate :rates="$invoices->pluck('usd_rate')" :remaining="$remainingBalance" /></h1>
-        <small>الرصيد المتبقي: {{ number_format($remainingBalance,2) }} ج.س</small>
+        <small>الرصيد المتبقي: <x-report-money :amount="$remainingBalance" :entries="$invoices->map(fn ($inv) => ['amount' => $inv->remaining, 'rate' => $inv->usd_rate])->all()" /></small>
     </section>
 
     <section class="content">
@@ -40,9 +40,9 @@
                                 <tr>
                                     <td>{{ $inv->id }}</td>
                                     <td>{{ $inv->order_number }}</td>
-                                    <td>{{ number_format($inv->total,2) }} ج.س</td>
-                                    <td>{{ number_format($inv->paid,2) }} ج.س</td>
-                                    <td>{{ number_format($inv->remaining,2) }} ج.س <x-debt-rate :rate="$inv->usd_rate" :remaining="$inv->remaining" /></td>
+                                    <td><x-report-money :amount="$inv->total" :rate="$inv->usd_rate" /></td>
+                                    <td><x-report-money :amount="$inv->paid" :rate="$inv->usd_rate" /></td>
+                                    <td><x-report-money :amount="$inv->remaining" :rate="$inv->usd_rate" /></td>
                                     <td>{{ $inv->created_at->format('Y-m-d') }}</td>
                                 </tr>
                                 @endforeach
@@ -67,7 +67,7 @@
                                     <td>{{ $index+1 }}</td>
                                     <td>{{ $p->product_name }}</td>
                                     <td>{{ $p->quantity_label ?? $p->quantity }}</td>
-                                    <td>{{ number_format($p->total_sales,2) }} ج.س</td>
+                                    <td><x-report-money :amount="$p->total_sales" /></td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -91,9 +91,9 @@
                                 <tr>
                                     <td>{{ $s->order_number }}</td>
                                     <td>{{ $s->date->format('Y-m-d') }}</td>
-                                    <td>{{ number_format($s->total,2) }} ج.س</td>
-                                    <td>{{ number_format($s->paid,2) }} ج.س</td>
-                                    <td>{{ number_format($s->remaining,2) }} ج.س <x-debt-rate :rate="$s->usd_rate" :remaining="$s->remaining" /></td>
+                                    <td><x-report-money :amount="$s->total" :rate="$s->usd_rate" /></td>
+                                    <td><x-report-money :amount="$s->paid" :rate="$s->usd_rate" /></td>
+                                    <td><x-report-money :amount="$s->remaining" :rate="$s->usd_rate" /></td>
                                 </tr>
                                 @endforeach
                             </tbody>

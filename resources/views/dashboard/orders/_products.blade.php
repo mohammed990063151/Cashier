@@ -25,21 +25,21 @@
         @if($invoiceDiscount > 0)
         <div class="preview-row">
             <span>الخصم</span>
-            <span class="money money-discount">-{{ number_format($invoiceDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></span>
+            <span class="money money-discount">-{{ number_format($invoiceDiscount, 2) }}</span>
         </div>
         @endif
         <div class="preview-row">
             <span>بعد الخصم</span>
-            <span class="money">{{ number_format($totalAfterDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></span>
+            <span class="money">{{ number_format($totalAfterDiscount, 2) }}</span>
         </div>
         <div class="preview-row preview-row--paid">
             <span>{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</span>
-            <span class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? $totalPaid" /></span>
+            <span class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }}</span>
         </div>
         @if(($totalRefundedToCustomer ?? 0) > 0)
         <div class="preview-row">
             <span>مُسترد</span>
-            <span class="money text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></span>
+            <span class="money text-danger">-{{ number_format($totalRefundedToCustomer, 2) }}</span>
         </div>
         @endif
         <div class="preview-row">
@@ -58,9 +58,9 @@
             <div class="preview-product-item">
                 <div class="preview-product-top">
                     <strong>{{ $product->name }}</strong>
-                    <span class="money">{{ number_format($lineTotal, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$lineTotal" /></span>
+                    <span class="money">{{ number_format($lineTotal, 2) }}</span>
                 </div>
-                @php $saleLine = $fin->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null); @endphp
+                @php $saleLine = $fin->formatProductSaleLine($product); @endphp
                 <div class="preview-product-meta">
                     {{ $saleLine['quantity'] }} — {{ $saleLine['price'] }}
                 </div>

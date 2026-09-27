@@ -34,6 +34,7 @@ use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Dashboard\AiAssistantController;
 use App\Http\Controllers\Dashboard\StockAlertController;
+use App\Http\Controllers\Dashboard\CollectionAlertController;
 
 // Home route (optional)
 Route::get('/home', function () {
@@ -60,10 +61,13 @@ Route::get('/admin/{type}/restore/{id}', [WelcomeController::class, 'restore'])-
 
     // Stock alerts (mobile / online notifications)
     Route::get('stock-alerts', [StockAlertController::class, 'index'])->name('stock-alerts');
+    Route::get('collection-alerts', [CollectionAlertController::class, 'index'])->name('collection-alerts');
     // Category routes
     Route::resource('categories', CategoryController::class)->except(['show']);
 
     // Product routes
+    Route::get('products/lookup-barcode', [ProductController::class, 'lookupBarcode'])->name('products.lookup-barcode');
+    Route::post('products/{product}/restore-sale-price', [ProductController::class, 'restoreSalePrice'])->name('products.restore-sale');
     Route::resource('products', ProductController::class);
     Route::post('products/quick-store', [ProductController::class, 'quickStore'])->name('products.quick-store');
 

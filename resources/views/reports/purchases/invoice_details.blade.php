@@ -22,9 +22,9 @@
                         <th>تاريخ الفاتورة</th>
                     </tr>
                     <tr>
-                        <td>{{ number_format($invoice->total, 2) }}</td>
-                        <td>{{ number_format($invoice->paid, 2) }}</td>
-                        <td>{{ number_format($invoice->remaining, 2) }}</td>
+                        <td><x-report-money :amount="$invoice->total" :rate="$invoice->usd_rate" /></td>
+                        <td><x-report-money :amount="$invoice->paid" :rate="$invoice->usd_rate" /></td>
+                        <td><x-report-money :amount="$invoice->remaining" :rate="$invoice->usd_rate" /></td>
                         <td>{{ optional($invoice->invoice_date)->format('Y-m-d') ?? $invoice->created_at->format('Y-m-d') }}</td>
                     </tr>
                 </table>
@@ -70,7 +70,7 @@
                         @foreach($invoice->payments as $payment)
                         <tr>
                             <td>{{ $loop->iteration }}</td>
-                            <td>{{ number_format($payment->amount,2) }}</td>
+                            <td>{{ number_format($payment->amount,2) }} <x-debt-fx :entries="[['amount' => $payment->amount, 'rate' => $payment->usd_rate]]" rate-label="عند الدفع" /></td>
                             <td>{{ $payment->payment_date ?? $payment->created_at->format('Y-m-d') }}</td>
                             <td>{{ $payment->note ?? '—' }}</td>
                         </tr>

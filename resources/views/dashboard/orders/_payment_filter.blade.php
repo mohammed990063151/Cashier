@@ -4,7 +4,7 @@
         $filterBase = array_merge($filterBase, array_filter($filters, fn ($v, $k) => $k !== 'payment_status' && $v !== '' && $v !== null, ARRAY_FILTER_USE_BOTH));
     }
 @endphp
-<div class="payment-status-filter btn-group btn-group-lg" role="group" style="display:flex;flex-wrap:wrap;gap:6px;">
+<div class="payment-status-filter" role="group">
     <a href="{{ route(request()->route()->getName(), array_merge($filterBase, ['payment_status' => 'all'])) }}"
        class="btn {{ ($paymentStatus ?? 'all') === 'all' || empty($paymentStatus) ? 'btn-primary' : 'btn-default' }}">الكل</a>
     <a href="{{ route(request()->route()->getName(), array_merge($filterBase, ['payment_status' => 'paid'])) }}"

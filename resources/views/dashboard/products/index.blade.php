@@ -64,9 +64,9 @@
                             <label class="visible-xs">طريقة البيع</label>
                             <select name="sale_mode" class="form-control">
                                 <option value="">كل طرق البيع</option>
-                                <option value="piece_only" {{ request('sale_mode') === 'piece_only' ? 'selected' : '' }}>بالحبة فقط</option>
-                                <option value="bulk_only" {{ request('sale_mode') === 'bulk_only' ? 'selected' : '' }}>بالعبوة فقط</option>
-                                <option value="flexible" {{ request('sale_mode') === 'flexible' ? 'selected' : '' }}>بيع مرن</option>
+                                <option value="piece_only" {{ request('sale_mode') === 'piece_only' ? 'selected' : '' }}>حبة فقط</option>
+                                <option value="bulk_only" {{ request('sale_mode') === 'bulk_only' ? 'selected' : '' }}>كرتونة فقط</option>
+                                <option value="flexible" {{ request('sale_mode') === 'flexible' ? 'selected' : '' }}>حبة وكرتونة</option>
                             </select>
                         </div>
                         <div class="col-md-2 col-sm-12" style="margin-bottom:8px;">
@@ -88,6 +88,9 @@
                             <div class="phone-product-title">
                                 <strong>{{ $product->name }}</strong>
                                 <span>{{ $product->category->name ?? '—' }}</span>
+                                @if($product->barcode)
+                                    <span class="text-muted" style="display:block;font-size:12px;">باركود {{ $product->barcode }}</span>
+                                @endif
                             </div>
                         </div>
 
@@ -100,6 +103,12 @@
                                 <span>سعر البيع</span>
                                 <strong class="money text-success">{{ $productService->priceDisplay($product, 'sale') }}</strong>
                             </div>
+                            @if((float) ($product->previous_sale_price ?? 0) > 0)
+                            <div class="phone-meta-row">
+                                <span>قبل الرفع</span>
+                                <span>{{ $productService->formatPieceSale($product, (float) $product->previous_sale_price) }}</span>
+                            </div>
+                            @endif
                             <div class="phone-meta-row">
                                 <span>الربح</span>
                                 <strong>{{ $product->profit_percent }}%</strong>
@@ -117,7 +126,7 @@
                                         {{ \App\Support\SaleUnits::measureUnitLabel($product->measure_unit ?? 'piece') }}
                                     </span>
                                     <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
-                                        {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                                        {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}
                                     </span>
                                 </span>
                             </div>
@@ -135,6 +144,12 @@
                             <a href="{{ route('dashboard.products.edit', $product->id) }}" class="btn btn-warning">
                                 <i class="fa fa-pencil"></i> تعديل
                             </a>
+                            @if((float) ($product->previous_sale_price ?? 0) > 0)
+                            <form action="{{ route('dashboard.products.restore-sale', $product) }}" method="post">
+                                @csrf
+                                <button type="submit" class="btn btn-default"><i class="fa fa-undo"></i> السعر القديم</button>
+                            </form>
+                            @endif
                             @endif
                             @if (auth()->user()->hasPermission('delete_products'))
                             <form action="{{ route('dashboard.products.destroy', $product->id) }}" method="post" class="delete-form">
@@ -175,10 +190,18 @@
                                     <img src="{{ $product->image_path }}" class="product-thumb" alt="{{ $product->name }}"
                                          onerror="this.onerror=null;this.src='{{ \App\Models\Product::defaultImageUrl() }}';">
                                     {{ $product->name }}
+                                    @if($product->barcode)
+                                        <div><small class="text-muted">{{ $product->barcode }}</small></div>
+                                    @endif
                                 </td>
                                 <td>{{ $product->category->name ?? '—' }}</td>
                                 <td><span class="money">{{ $productService->priceDisplay($product, 'purchase') }}</span></td>
-                                <td><span class="money text-success">{{ $productService->priceDisplay($product, 'sale') }}</span></td>
+                                <td>
+                                    <span class="money text-success">{{ $productService->priceDisplay($product, 'sale') }}</span>
+                                    @if((float) ($product->previous_sale_price ?? 0) > 0)
+                                        <div><small class="text-muted">قبل الرفع: {{ $productService->formatPieceSale($product, (float) $product->previous_sale_price) }}</small></div>
+                                    @endif
+                                </td>
                                 <td>{{ $product->profit_percent }}%</td>
                                 <td>
                                     <span class="label {{ $productService->stockBadgeClass((float) $product->stock) }}">
@@ -191,7 +214,7 @@
                                     </span>
                                     <div style="margin-top:4px;">
                                         <span class="label {{ $productService->saleModeBadgeClass($product->sale_mode ?? 'flexible') }}">
-                                            {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}
+                                            {{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}
                                         </span>
                                     </div>
                                 </td>
@@ -205,6 +228,14 @@
                                         <a href="{{ route('dashboard.products.edit', $product->id) }}" class="btn btn-warning btn-sm" title="تعديل">
                                             <i class="fa fa-pencil"></i>
                                         </a>
+                                        @if((float) ($product->previous_sale_price ?? 0) > 0)
+                                        <form action="{{ route('dashboard.products.restore-sale', $product) }}" method="post" style="display:inline;">
+                                            @csrf
+                                            <button type="submit" class="btn btn-default btn-sm" title="إرجاع السعر القديم">
+                                                <i class="fa fa-undo"></i>
+                                            </button>
+                                        </form>
+                                        @endif
                                         @endif
                                         @if (auth()->user()->hasPermission('delete_products'))
                                         <form action="{{ route('dashboard.products.destroy', $product->id) }}" method="post" class="delete-form" style="display:inline;">

@@ -36,25 +36,25 @@
                             <div class="col-sm-3">
                                 <div class="alert alert-success text-center" style="margin:0;">
                                     <small>صافي المبيعات</small><br>
-                                    <strong>{{ number_format($snapshot['net_sales'], 2) }} ج.س</strong>
+                                    <x-report-money :amount="$snapshot['net_sales']" :entries="$snapshot['fx']['net_sales']" />
                                 </div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="alert alert-info text-center" style="margin:0;">
                                     <small>إجمالي أصلي (قبل المرتجع)</small><br>
-                                    <strong>{{ number_format($snapshot['gross_sales'], 2) }} ج.س</strong>
+                                    <x-report-money :amount="$snapshot['gross_sales']" :entries="$snapshot['fx']['gross_sales']" />
                                 </div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="alert alert-warning text-center" style="margin:0;">
                                     <small>قيمة مرتجعات البضاعة</small><br>
-                                    <strong>{{ number_format($snapshot['returns_merchandise'], 2) }} ج.س</strong>
+                                    <x-report-money :amount="$snapshot['returns_merchandise']" :entries="$snapshot['fx']['returns']" />
                                 </div>
                             </div>
                             <div class="col-sm-3">
                                 <div class="alert alert-danger text-center" style="margin:0;">
                                     <small>مُسترد من الخزينة</small><br>
-                                    <strong>{{ number_format($snapshot['cash_refunded'], 2) }} ج.س</strong>
+                                    <x-report-money :amount="$snapshot['cash_refunded']" />
                                 </div>
                             </div>
                         </div>
@@ -79,9 +79,9 @@
                                         <tr>
                                             <td>{{ $order->order_number }}</td>
                                             <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
-                                            <td>{{ number_format($order->total_price, 2) }}</td>
-                                            <td>{{ $order->total_return > 0 ? number_format($order->total_return, 2) : '—' }}</td>
-                                            <td>{{ number_format($order->profit ?? 0, 2) }}</td>
+                                            <td><x-report-money :amount="$order->total_price" :rate="$order->usd_rate" /></td>
+                                            <td>@if($order->total_return > 0)<x-report-money :amount="$order->total_return" :rate="$order->usd_rate" />@else — @endif</td>
+                                            <td><x-report-money :amount="$order->profit ?? 0" :rate="$order->usd_rate" /></td>
                                             <td>
                                                 <span class="label {{ $fin->paymentStatusClass($st) }}">
                                                     {{ $fin->paymentStatusLabel($st) }}
@@ -108,8 +108,8 @@
                     <div class="box-header"><h3 class="box-title">ملخص سريع</h3></div>
                     <div class="box-body">
                         <p><strong>عدد الطلبات:</strong> {{ $snapshot['orders_count'] }}</p>
-                        <p><strong>ذمم متبقية:</strong> {{ number_format($snapshot['total_remaining'], 2) }} ج.س</p>
-                        <p><strong>ربح المبيعات:</strong> {{ number_format($snapshot['orders_profit'], 2) }} ج.س</p>
+                        <p><strong>ذمم متبقية:</strong> <x-report-money :amount="$snapshot['total_remaining']" :entries="$snapshot['fx']['remaining']" /></p>
+                        <p><strong>ربح المبيعات:</strong> <x-report-money :amount="$snapshot['orders_profit']" :entries="$snapshot['fx']['profit']" /></p>
                     </div>
                 </div>
             </div>

@@ -21,6 +21,10 @@
                         <label>اسم المنتج <span class="text-danger">*</span></label>
                         <input type="text" name="name" id="qpName" class="form-control" required placeholder="مثال: شاي أحمر 250غ">
                     </div>
+                    <div class="form-group">
+                        <label>الباركود</label>
+                        <input type="text" name="barcode" id="qpBarcode" class="form-control" inputmode="numeric" placeholder="يُملأ تلقائياً عند المسح">
+                    </div>
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="form-group">
@@ -36,30 +40,22 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-sm-4">
-                            <div class="form-group">
-                                <label>وحدة القياس</label>
-                                <select name="measure_unit" id="qpMeasureUnit" class="form-control">
-                                    <option value="piece">بالحبة</option>
-                                    <option value="carton">بالكرتونة</option>
-                                    <option value="kilo">بالكيلو</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
-                            <div class="form-group">
-                                <label>حبات العبوة</label>
-                                <input type="number" min="1" name="pieces_per_carton" id="qpBulk" class="form-control" value="12">
-                            </div>
-                        </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-6">
                             <div class="form-group">
                                 <label>طريقة البيع</label>
-                                <select name="sale_mode" id="qpSaleMode" class="form-control">
-                                    <option value="flexible">مرن (حبة + عبوة)</option>
-                                    <option value="piece_only">بالحبة فقط</option>
-                                    <option value="bulk_only">بالعبوة فقط</option>
+                                <select id="qpSaleMethod" class="form-control">
+                                    <option value="piece">حبة فقط</option>
+                                    <option value="kilo">كيلو فقط</option>
+                                    <option value="carton">كرتونة فقط</option>
+                                    <option value="both">حبة وكرتونة</option>
                                 </select>
+                                <small class="text-muted">كل وحدة تُحسب بسعرها، بدون خلط.</small>
+                            </div>
+                        </div>
+                        <div class="col-sm-6" id="qpBulkWrap" style="display:none;">
+                            <div class="form-group">
+                                <label>حبات الكرتونة</label>
+                                <input type="number" min="2" id="qpBulk" class="form-control" value="12">
                             </div>
                         </div>
                     </div>

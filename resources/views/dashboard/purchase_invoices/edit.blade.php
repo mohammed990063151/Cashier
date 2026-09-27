@@ -33,5 +33,5 @@ window.purchaseProductsCatalog = @json($productsCatalog);
 window.quickProductStoreUrl = @json(route('dashboard.products.quick-store'));
 window.csrfToken = @json(csrf_token());
 </script>
-<script src="{{ asset('dashboard_files/js/custom/purchase-invoice.js') }}?v=2"></script>
+<script src="{{ asset('dashboard_files/js/custom/purchase-invoice.js') }}?v={{ filemtime(public_path('dashboard_files/js/custom/purchase-invoice.js')) }}"></script>
 @endpush

@@ -25,15 +25,15 @@
                 <div class="row text-center">
                     <div class="col-md-3">
                         <h4>صافي المبيعات</h4>
-                        <strong class="text-success">{{ number_format($snapshot['net_sales'], 2) }} ج.س</strong>
+                        <strong class="text-success"><x-report-money :amount="$snapshot['net_sales']" :entries="$snapshot['fx']['net_sales']" /></strong>
                     </div>
                     <div class="col-md-3">
                         <h4>إجمالي أصلي</h4>
-                        <strong>{{ number_format($snapshot['gross_sales'], 2) }} ج.س</strong>
+                        <strong><x-report-money :amount="$snapshot['gross_sales']" :entries="$snapshot['fx']['gross_sales']" /></strong>
                     </div>
                     <div class="col-md-3">
                         <h4>المرتجعات</h4>
-                        <strong class="text-warning">{{ number_format($snapshot['returns_merchandise'], 2) }} ج.س</strong>
+                        <strong class="text-warning"><x-report-money :amount="$snapshot['returns_merchandise']" :entries="$snapshot['fx']['returns']" /></strong>
                     </div>
                     <div class="col-md-3">
                         <h4>عدد الطلبات</h4>

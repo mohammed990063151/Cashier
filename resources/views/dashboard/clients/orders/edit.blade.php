@@ -4,6 +4,28 @@
 
 @include('dashboard.clients.orders._order_units_styles')
 
+<style>
+.edit-order-layout {
+    display: flex;
+    flex-direction: column;
+}
+.edit-order-layout > .edit-invoice-col,
+.edit-order-layout > .edit-cats-col {
+    width: 100%;
+    float: none;
+}
+.edit-order-layout > .edit-invoice-col { order: 1; }
+.edit-order-layout > .edit-cats-col { order: 2; }
+.edit-invoice-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+.edit-invoice-head strong { font-size: 16px; }
+</style>
+
 <div class="content-wrapper">
 
     <section class="content-header">
@@ -19,9 +41,11 @@
 
     <section class="content">
 
-        <div class="row">
+        @include('dashboard.partials._barcode_scanner', ['mode' => 'sale'])
 
-            <div class="col-md-6">
+        <div class="row edit-order-layout">
+
+            <div class="col-md-12 edit-cats-col">
 
                 <div class="box box-primary">
 
@@ -70,7 +94,7 @@
                                             @endphp
                                             <tr>
                                                 <td>{{ $product->name }}</td>
-                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible') }}</small></td>
+                                                <td><small>{{ \App\Support\SaleUnits::saleModeLabel($product->sale_mode ?? 'flexible', $product->measure_unit ?? null) }}</small></td>
                                                 <td><small>{{ $stockLabel }}</small></td>
                                                 <td><strong>{{ $listPrice }}</strong></td>
                                                 <td>
@@ -111,13 +135,13 @@
 
             </div><!-- نهاية العمود -->
 
-            <div class="col-md-6">
+            <div class="col-md-12 edit-invoice-col">
 
                 <div class="box box-primary">
 
                     <div class="box-header">
 
-                        <h3 class="box-title">الطلبات</h3>
+                        <h3 class="box-title">فاتورة {{ $order->order_number }}</h3>
 
                     </div><!-- نهاية رأس الصندوق -->
 
@@ -134,10 +158,13 @@
                             {{ csrf_field() }}
                             {{ method_field('put') }}
 
-                            <p class="text-muted" style="margin-bottom:10px;">
-                                وحدات البيع تُحدَّد من إعداد المنتج (حبة فقط / عبوة فقط / مرن).
-                            </p>
+                            <div class="edit-invoice-head">
+                                <strong>{{ $client->name }}</strong>
+                                <span class="text-muted">{{ $order->created_at->format('d/m/Y') }}</span>
+                                <span class="text-muted">غيّر الكمية والسعر ثم احفظ</span>
+                            </div>
 
+                            <div class="table-responsive">
                             <table class="table table-hover order-list-table">
                                 <thead>
                                     <tr>
@@ -155,12 +182,13 @@
                                 </tbody>
 
                             </table><!-- نهاية الجدول -->
+                            </div>
 
                             <h4>الإجمالي: <span class="total-price" style="color:#046b0a;font-weight:bold;">{{ number_format($order->total_price, 2) }}</span></h4>
                             <div class="form-group">
                                 <label for="invoice_discount">خصم الفاتورة</label>
                                 <input type="number" name="invoice_discount" id="invoice_discount" class="form-control" min="0" step="any"
-                                       value="{{ $order->invoice_discount ?? 0 }}">
+                                       value="{{ number_format((float) ($order->invoice_discount ?? 0), 2, '.', '') }}">
                             </div>
                             <h4>الإجمالي بعد الخصم:
                                 <span id="discounted-total" style="color:#007bff;font-weight:bold;">
@@ -169,7 +197,7 @@
                             </h4>
                             <div class="form-group">
                                 <label for="paid_at_sale">المدفوع الآن</label>
-                                <input type="number" name="paid_at_sale" id="paid_at_sale" class="form-control" min="0" step="any" value="{{ $order->paid_at_sale }}">
+                                <input type="number" name="paid_at_sale" id="paid_at_sale" class="form-control" min="0" step="any" value="{{ number_format((float) $order->paid_at_sale, 2, '.', '') }}">
                                 <small class="text-muted">0 = لم يُدفع شيء عند الطلب؛ يمكن تحصيل المتبقي لاحقاً من صفحة المدفوعات.</small>
                             </div>
                             <div class="form-group">

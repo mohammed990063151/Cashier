@@ -62,8 +62,8 @@
                                         $paid = $finance['netPaid'] ?? $finance['totalPaid'] ?? $order->paid_amount ?? 0;
                                         $remaining = $finance['remaining'] ?? $order->remaining_amount ?? 0;
                                     @endphp
-                                    <tr>
-                                        <td class="details-control hidden-xs"></td>
+                                    <tr data-order-id="{{ $order->id }}">
+                                        <td class="details-control"></td>
                                         <td data-label="رقم الطلب"><strong>{{ $order->order_number }}</strong></td>
                                         <td data-label="العميل">{{ $order->client->name ?? '—' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$remaining" /></td>
                                         <td data-label="الإجمالي" style="color: #01941f; font-weight: bold;">
@@ -113,27 +113,55 @@
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 
+@php
+    $saleInvoiceLines = $orders->getCollection()->load('products')->mapWithKeys(function ($order) {
+        return [$order->id => [
+            'products' => $order->products->map(function ($product) {
+                $qty = (float) $product->pivot->quantity;
+                $bulk = max(1, (int) ($product->pieces_per_carton ?? 1));
+                $mode = \App\Support\SaleUnits::normalizeSaleMode($product->sale_mode);
+                $measure = \App\Support\SaleUnits::normalizeMeasureUnit($product->measure_unit);
+                $lineTotal = \App\Support\SaleUnits::lineMoney($product);
+                $salePrice = (float) $product->pivot->sale_price;
+                $costPrice = (float) $product->pivot->cost_price;
+                if (
+                    $measure !== \App\Support\SaleUnits::UNIT_KILO
+                    && ($mode === \App\Support\SaleUnits::MODE_BULK_ONLY || $measure === \App\Support\SaleUnits::UNIT_CARTON)
+                    && $bulk > 1
+                ) {
+                    $cartons = $qty / $bulk;
+                    $salePrice = $cartons > 0 ? round($lineTotal / $cartons, 2) : round($salePrice * $bulk, 2);
+                    $costPrice = round($costPrice * $bulk, 2);
+                }
+
+                return [
+                    'name' => $product->name,
+                    'qty_label' => \App\Support\SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure),
+                    'sale_price' => number_format($salePrice, 2, '.', ''),
+                    'cost_price' => number_format($costPrice, 2, '.', ''),
+                    'line_total' => number_format($lineTotal, 2, '.', ''),
+                ];
+            })->values(),
+        ]];
+    });
+@endphp
 <script>
 $(document).ready(function () {
 
-    // تجهيز بيانات الطلبات مع المنتجات
-    var ordersData = @json($orders->load('products'));
+    var ordersData = @json($saleInvoiceLines);
 
     // دالة لإنشاء جدول المنتجات
     function format(order) {
         var html = '<table class="table table-sm table-bordered mb-0">';
         html += '<thead><tr><th>اسم المنتج</th><th>الكمية</th><th>سعر البيع</th><th>سعر الشراء</th><th>الإجمالي</th></tr></thead>';
         html += '<tbody>';
-        order.products.forEach(function (p) {
+        (order.products || []).forEach(function (p) {
             html += '<tr>';
-            var lineTotal = (p.pivot.line_total != null && p.pivot.line_total !== '')
-                ? parseFloat(p.pivot.line_total)
-                : (p.pivot.quantity * p.pivot.sale_price);
             html += '<td>' + p.name + '</td>';
-            html += '<td>' + p.pivot.quantity + '</td>';
-            html += '<td>' + parseFloat(p.pivot.sale_price).toFixed(2) + '</td>';
-            html += '<td>' + parseFloat(p.pivot.cost_price).toFixed(2) + '</td>';
-            html += '<td>' + Math.round(lineTotal * 100) / 100 + '</td>';
+            html += '<td>' + p.qty_label + '</td>';
+            html += '<td>' + p.sale_price + '</td>';
+            html += '<td>' + p.cost_price + '</td>';
+            html += '<td>' + p.line_total + '</td>';
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -141,32 +169,49 @@ $(document).ready(function () {
     }
 
     // DataTable الأساسي (سطح المكتب فقط — الهاتف يعتمد على البطاقات)
-    if (window.innerWidth <= 767) {
-        return;
-    }
-    var table = $('#ordersTable').DataTable({
-        dom: 'Bfrtip',
-        buttons: ['copy', 'excel', 'csv', 'pdf', 'print'],
-        order: [[1, 'desc']],
-        pageLength: 25,
-        language: {
-            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json"
+    var table = null;
+    if (window.innerWidth > 767 && $.fn.DataTable) {
+        try {
+            table = $('#ordersTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: ['copy', 'excel', 'csv', 'pdf', 'print'],
+                order: [[1, 'desc']],
+                pageLength: 25,
+                language: {
+                    url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ar.json"
+                }
+            });
+        } catch (e) {
+            table = null;
         }
-    });
+    }
 
-    // حدث الضغط على أيقونة التفاصيل
     $('#ordersTable tbody').on('click', 'td.details-control', function () {
         var tr = $(this).closest('tr');
-        var row = table.row(tr);
-        var orderIndex = row.index();
-        var order = ordersData[orderIndex];
+        var order = ordersData[tr.data('order-id')];
+        if (!order) {
+            return;
+        }
 
-        if (row.child.isShown()) {
-            row.child.hide();
+        if (table) {
+            var row = table.row(tr);
+            if (row.child.isShown()) {
+                row.child.hide();
+                tr.removeClass('shown');
+            } else {
+                row.child(format(order)).show();
+                tr.addClass('shown');
+            }
+            return;
+        }
+
+        var next = tr.next('tr.order-products-row');
+        if (next.length) {
+            next.remove();
             tr.removeClass('shown');
         } else {
-            row.child(format(order)).show();
             tr.addClass('shown');
+            tr.after('<tr class="order-products-row"><td colspan="8">' + format(order) + '</td></tr>');
         }
     });
 
@@ -176,7 +221,7 @@ $(document).ready(function () {
         var to = $('#toDate').val();
         var search = $('#searchInput').val().toLowerCase();
         var name = data[2].toLowerCase();
-        var dateText = data[6];
+        var dateText = data[7];
         var rowDate = new Date(dateText);
 
         var matchesSearch = name.includes(search);
@@ -189,7 +234,9 @@ $(document).ready(function () {
     });
 
     $('#searchInput, #fromDate, #toDate').on('input change', function () {
-        table.draw();
+        if (table) {
+            table.draw();
+        }
     });
 
 });

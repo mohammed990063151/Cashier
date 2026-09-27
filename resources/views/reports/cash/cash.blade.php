@@ -12,25 +12,25 @@
             <div class="col-md-3">
                 <div class="alert alert-success text-center" style="margin:0;">
                     <small>وارد (الفترة)</small><br>
-                    <strong>{{ number_format($totalAdded, 2) }} ج.س</strong>
+                    <x-report-money :amount="$totalAdded" />
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-danger text-center" style="margin:0;">
                     <small>صادر (الفترة)</small><br>
-                    <strong>{{ number_format($totalDeducted, 2) }} ج.س</strong>
+                    <x-report-money :amount="$totalDeducted" />
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-info text-center" style="margin:0;">
                     <small>صافي الحركات (الفترة)</small><br>
-                    <strong>{{ number_format($netFiltered, 2) }} ج.س</strong>
+                    <x-report-money :amount="$netFiltered" />
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="alert alert-primary text-center" style="margin:0;">
                     <small>رصيد الصندوق الفعلي</small><br>
-                    <strong>{{ number_format($cashBalance, 2) }} ج.س</strong>
+                    <x-report-money :amount="$cashBalance" />
                 </div>
             </div>
         </div>
