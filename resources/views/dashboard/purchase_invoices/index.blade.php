@@ -80,9 +80,9 @@
                                     <small class="text-muted">({{ $item->quantity }} حبة)</small><br>
                                     @endforeach
                                 </td>
-                                <td data-label="الإجمالي">{{ number_format($invoice->total, 2) }}</td>
-                                <td data-label="المدفوع">{{ number_format($invoice->paid, 2) }}</td>
-                                <td data-label="المتبقي">{{ number_format($invoice->remaining, 2) }}</td>
+                                <td data-label="الإجمالي">{{ number_format($invoice->total, 2) }} <x-usd :rate="$invoice->usd_rate" :amount="$invoice->total" /></td>
+                                <td data-label="المدفوع">{{ number_format($invoice->paid, 2) }} <x-usd :rate="$invoice->usd_rate" :amount="$invoice->paid" /></td>
+                                <td data-label="المتبقي">{{ number_format($invoice->remaining, 2) }} <x-usd :rate="$invoice->usd_rate" :amount="$invoice->remaining" /></td>
                                 <td data-label="التاريخ">{{ $invoice->created_at->format('Y-m-d') }}</td>
                                 <td data-label="الإجراءات">
                                     <div class="phone-action-bar purchase-action-bar">

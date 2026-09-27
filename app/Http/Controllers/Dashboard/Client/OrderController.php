@@ -70,9 +70,6 @@ class OrderController extends Controller
         $client = Client::findOrFail($client);
 
         $total_price = 0;
-        $hasKilo = false;
-
-        // تحقق من المخزون باستخدام الكميات المحوّلة للحبة (أو الكيلو)
         foreach ($products as $productId => $data) {
             $product = Product::findOrFail($productId);
 
@@ -85,21 +82,12 @@ class OrderController extends Controller
                     ->with('error', $stockError);
             }
 
-            if (SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null) === SaleUnits::UNIT_KILO) {
-                $hasKilo = true;
-                $total_price += DecimalMath::round($lineTotal);
-            } else {
-                $total_price += DecimalMath::money($lineTotal);
-            }
+            $total_price += DecimalMath::round($lineTotal);
         }
-        $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
+        $total_price = DecimalMath::round($total_price);
 
-        $paidAtSale = (float) ($request->paid_at_sale ?? 0);
-        $invoiceDiscount = (float) ($request->invoice_discount ?? 0);
-        if (! $hasKilo) {
-            $paidAtSale = DecimalMath::money($paidAtSale);
-            $invoiceDiscount = DecimalMath::money($invoiceDiscount);
-        }
+        $paidAtSale = DecimalMath::round($request->paid_at_sale ?? 0);
+        $invoiceDiscount = DecimalMath::round($request->invoice_discount ?? 0);
         $totalAfterDiscount = max($total_price - $invoiceDiscount, 0);
 
         if ($invoiceDiscount > $total_price + 0.0005) {
@@ -203,12 +191,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
                 ->with('error', $stockError);
         }
 
-        if ($measure === SaleUnits::UNIT_KILO) {
-            $hasKilo = true;
-            $lineTotal = DecimalMath::round($lineTotal);
-        } else {
-            $lineTotal = DecimalMath::money($lineTotal);
-        }
+        $lineTotal = DecimalMath::round($lineTotal);
 
         $productData[$productId] = [
             'quantity'   => $quantity,
@@ -220,11 +203,9 @@ public function update(Request $request, Client $client, Order $order, CashServi
         $total_price  += $lineTotal;
         $total_profit += $lineTotal - ((float) $product->purchase_price * $quantity);
     }
-    $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
-    if (! $hasKilo) {
-        $paidAtSale = DecimalMath::money($paidAtSale);
-        $invoiceDiscount = DecimalMath::money($invoiceDiscount);
-    }
+    $total_price = DecimalMath::round($total_price);
+    $paidAtSale = DecimalMath::round($paidAtSale);
+    $invoiceDiscount = DecimalMath::round($invoiceDiscount);
      if ($invoiceDiscount > $total_price + 0.0005) {
         return redirect()->back()
             ->withInput()
@@ -361,12 +342,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
                 throw new \RuntimeException($stockError);
             }
 
-            if ($measure === SaleUnits::UNIT_KILO) {
-                $hasKilo = true;
-                $lineTotal = DecimalMath::round($lineTotal);
-            } else {
-                $lineTotal = DecimalMath::money($lineTotal);
-            }
+            $lineTotal = DecimalMath::round($lineTotal);
 
             $productData[$productId] = [
                 'quantity' => $quantity,
@@ -378,11 +354,9 @@ public function update(Request $request, Client $client, Order $order, CashServi
             $total_price += $lineTotal;
             $total_profit += $lineTotal - ((float) $product->purchase_price * $quantity);
         }
-        $total_price = $hasKilo ? DecimalMath::round($total_price) : DecimalMath::money($total_price);
-        if (! $hasKilo) {
-            $paidAtSale = DecimalMath::money($paidAtSale);
-            $invoiceDiscount = DecimalMath::money($invoiceDiscount);
-        }
+        $total_price = DecimalMath::round($total_price);
+        $paidAtSale = DecimalMath::round($paidAtSale);
+        $invoiceDiscount = DecimalMath::round($invoiceDiscount);
         $total_after_discount = max($total_price - $invoiceDiscount, 0);
         $remaining = max($total_after_discount - $paidAtSale, 0);
         $total_profit = floor(max($total_profit - $invoiceDiscount, 0));
@@ -396,6 +370,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
             'total_after_discount' => $total_after_discount,
             'client_id' => $client->id,
             'invoice_discount' => $invoiceDiscount,
+            'usd_rate' => app(\App\Services\CurrencyService::class)->rate() ?: null,
         ]);
 
         // ربط المنتجات وتحديث المخزون

@@ -27,12 +27,14 @@ class Product extends Model
         'sale_mode',
         'measure_unit',
         'image',
+        'usd_rate',
     ];
 
     protected $casts = [
         'purchase_price' => 'float',
         'sale_price' => 'float',
         'stock' => 'float',
+        'usd_rate' => 'float',
         'pieces_per_carton' => 'integer',
     ];
 

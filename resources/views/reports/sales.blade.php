@@ -78,7 +78,7 @@
                                         @php $st = $fin->paymentStatus($order); @endphp
                                         <tr>
                                             <td>{{ $order->order_number }}</td>
-                                            <td>{{ $order->client->name ?? '-' }}</td>
+                                            <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
                                             <td>{{ number_format($order->total_price, 2) }}</td>
                                             <td>{{ $order->total_return > 0 ? number_format($order->total_return, 2) : '—' }}</td>
                                             <td>{{ number_format($order->profit ?? 0, 2) }}</td>

@@ -32,7 +32,7 @@
                         @foreach($clients as $client)
                         <tr>
                             <td>{{ $client->id }}</td>
-                            <td>{{ $client->name }}</td>
+                            <td>{{ $client->name }} <x-debt-rate :rates="$debtRates[$client->id] ?? []" :remaining="$client->remaining_balance" /></td>
                             <td>{{ is_array($client->phone) ? implode(' - ', $client->phone) : $client->phone }}</td>
                             <td>{{ $client->orders->count() }}</td>
                             <td>{{ number_format($client->remaining_balance,2) }} ج.س</td>

@@ -18,6 +18,7 @@
         </div>
         <div class="order-detail-remaining {{ $finData['remaining'] > 0 ? 'is-due' : 'is-paid' }}">
             {{ number_format($finData['remaining'], 2) }} <small>ج.س متبقي</small>
+            <x-debt-rate :rate="$order->usd_rate" :remaining="$finData['remaining']" />
         </div>
     </div>
 

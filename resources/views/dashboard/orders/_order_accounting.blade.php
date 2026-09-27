@@ -14,47 +14,47 @@
     <table class="oar-table">
         <tr>
             <td>إجمالي البيع الأصلي (قبل المرتجع)</td>
-            <td class="oar-num">{{ number_format($originalTotalSale, 2) }} ج.س</td>
+            <td class="oar-num">{{ number_format($originalTotalSale, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalSale" /></td>
         </tr>
         @if(($invoiceDiscount ?? 0) > 0)
         <tr>
             <td>خصم الفاتورة</td>
-            <td class="oar-num text-warning">-{{ number_format($invoiceDiscount, 2) }} ج.س</td>
+            <td class="oar-num text-warning">-{{ number_format($invoiceDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></td>
         </tr>
         <tr>
             <td>الصافي الأصلي بعد الخصم</td>
-            <td class="oar-num">{{ number_format($originalTotalAfterDiscount, 2) }} ج.س</td>
+            <td class="oar-num">{{ number_format($originalTotalAfterDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalAfterDiscount" /></td>
         </tr>
         @endif
         <tr class="oar-highlight">
             <td>قيمة المرتجعات (بضاعة)</td>
-            <td class="oar-num text-danger">-{{ number_format($totalReturnedMerchandise, 2) }} ج.س</td>
+            <td class="oar-num text-danger">-{{ number_format($totalReturnedMerchandise, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalReturnedMerchandise" /></td>
         </tr>
         <tr>
             <td>صافي البيع الحالي (بعد المرتجع)</td>
-            <td class="oar-num">{{ number_format($totalSale, 2) }} ج.س</td>
+            <td class="oar-num">{{ number_format($totalSale, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalSale" /></td>
         </tr>
         <tr>
             <td>بعد الخصم (حالياً)</td>
-            <td class="oar-num">{{ number_format($totalAfterDiscount, 2) }} ج.س</td>
+            <td class="oar-num">{{ number_format($totalAfterDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></td>
         </tr>
         <tr>
             <td>إجمالي المدفوع من العميل</td>
-            <td class="oar-num text-success">{{ number_format($totalPaid, 2) }} ج.س</td>
+            <td class="oar-num text-success">{{ number_format($totalPaid, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalPaid" /></td>
         </tr>
         @if(($totalRefundedToCustomer ?? 0) > 0)
         <tr class="oar-highlight">
             <td>مُسترد للعميل من الخزينة</td>
-            <td class="oar-num text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} ج.س</td>
+            <td class="oar-num text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></td>
         </tr>
         <tr>
             <td>صافي المدفوع (بعد الاسترداد)</td>
-            <td class="oar-num text-primary">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} ج.س</td>
+            <td class="oar-num text-primary">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer)" /></td>
         </tr>
         @endif
         <tr>
             <td>المتبقي على العميل</td>
-            <td class="oar-num {{ ($remaining ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($remaining ?? 0, 2) }} ج.س</td>
+            <td class="oar-num {{ ($remaining ?? 0) > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($remaining ?? 0, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$remaining ?? 0" /></td>
         </tr>
     </table>
 
@@ -65,9 +65,9 @@
         <div class="oar-return-item">
             <span>{{ $ret->return_number }}</span>
             <span class="text-muted">{{ $ret->return_date->format('d/m/Y') }}</span>
-            <span>بضاعة: {{ number_format($ret->items_total, 2) }}</span>
+            <span>بضاعة: {{ number_format($ret->items_total, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->items_total" /></span>
             @if($ret->refund_amount > 0)
-            <span class="text-danger">مُسترد: {{ number_format($ret->refund_amount, 2) }}</span>
+            <span class="text-danger">مُسترد: {{ number_format($ret->refund_amount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->refund_amount" /></span>
             @endif
         </div>
         @endforeach

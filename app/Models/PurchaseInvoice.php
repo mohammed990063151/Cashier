@@ -20,6 +20,7 @@ class PurchaseInvoice extends Model
         'payment_notes',
         'paid_amount',
         'total_amount',
+        'usd_rate',
     ];
 
     protected $casts = [
@@ -28,6 +29,7 @@ class PurchaseInvoice extends Model
         'total' => 'decimal:2',
         'paid' => 'decimal:2',
         'remaining' => 'decimal:2',
+        'usd_rate' => 'float',
     ];
 
     public function items(): HasMany

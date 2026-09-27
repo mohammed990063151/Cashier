@@ -3,7 +3,7 @@
 @section('content')
 <div class="content-wrapper">
     <section class="content-header">
-        <h1>تفاصيل العميل: {{ $client->name }}</h1>
+        <h1>تفاصيل العميل: {{ $client->name }} <x-debt-rate :rates="$invoices->pluck('usd_rate')" :remaining="$remainingBalance" /></h1>
         <small>الرصيد المتبقي: {{ number_format($remainingBalance,2) }} ج.س</small>
     </section>
 
@@ -42,7 +42,7 @@
                                     <td>{{ $inv->order_number }}</td>
                                     <td>{{ number_format($inv->total,2) }} ج.س</td>
                                     <td>{{ number_format($inv->paid,2) }} ج.س</td>
-                                    <td>{{ number_format($inv->remaining,2) }} ج.س</td>
+                                    <td>{{ number_format($inv->remaining,2) }} ج.س <x-debt-rate :rate="$inv->usd_rate" :remaining="$inv->remaining" /></td>
                                     <td>{{ $inv->created_at->format('Y-m-d') }}</td>
                                 </tr>
                                 @endforeach
@@ -93,7 +93,7 @@
                                     <td>{{ $s->date->format('Y-m-d') }}</td>
                                     <td>{{ number_format($s->total,2) }} ج.س</td>
                                     <td>{{ number_format($s->paid,2) }} ج.س</td>
-                                    <td>{{ number_format($s->remaining,2) }} ج.س</td>
+                                    <td>{{ number_format($s->remaining,2) }} ج.س <x-debt-rate :rate="$s->usd_rate" :remaining="$s->remaining" /></td>
                                 </tr>
                                 @endforeach
                             </tbody>

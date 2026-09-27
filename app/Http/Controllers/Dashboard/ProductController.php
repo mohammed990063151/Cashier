@@ -57,7 +57,10 @@ class ProductController extends Controller
         $validated['sale_mode'] = $validated['sale_mode'] ?? 'flexible';
 
         $product = Product::create(
-            array_merge($this->productService->preparePayload($validated), ['image' => Product::DEFAULT_IMAGE])
+            array_merge($this->productService->preparePayload($validated), [
+                'image' => Product::DEFAULT_IMAGE,
+                'usd_rate' => $this->currentUsdRate(),
+            ])
         );
 
         return response()->json([
@@ -86,6 +89,7 @@ class ProductController extends Controller
             $payload['image'] = Product::DEFAULT_IMAGE;
         }
 
+        $payload['usd_rate'] = $this->currentUsdRate();
         Product::create($payload);
 
         session()->flash('success', 'تم إضافة المنتج بنجاح');
@@ -112,6 +116,11 @@ class ProductController extends Controller
         $validated = $request->validate($this->rules($product->id), $this->messages());
 
         $payload = $this->productService->preparePayload($validated);
+        $priceChanged = abs((float) $product->purchase_price - (float) ($payload['purchase_price'] ?? 0)) > 0.0001
+            || abs((float) $product->sale_price - (float) ($payload['sale_price'] ?? 0)) > 0.0001;
+        if ($priceChanged) {
+            $payload['usd_rate'] = $this->currentUsdRate();
+        }
 
         if ($request->hasFile('image')) {
             $this->deleteImageFile($product->image);
@@ -184,6 +193,13 @@ class ProductController extends Controller
             'image.image' => 'الملف يجب أن يكون صورة.',
             'image.max' => 'حجم الصورة كبير جداً (الحد 2 ميجا).',
         ];
+    }
+
+    protected function currentUsdRate(): ?float
+    {
+        $rate = app(\App\Services\CurrencyService::class)->rate();
+
+        return $rate > 0 ? $rate : null;
     }
 
     protected function storeImage($file): string

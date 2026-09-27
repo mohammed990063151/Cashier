@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
             showCarton: true
         },
         carton: {
-            help: 'حدّد يدوياً كم حبة داخل الكرتونة (مثلاً 12 أو 24). في الطلبات يمكنك البيع: حبة أو نصف كرتونة أو كرتونة كاملة.',
+            help: 'الأسعار والمخزون بالكرتونة كما تدخلها. لا تُحوَّل إلى سعر الحبة.',
             purchase: 'سعر الشراء (للكرتونة الكاملة)',
             sale: 'سعر البيع (للكرتونة الكاملة)',
             stock: 'المخزون (بعدد الكراتين)',
@@ -134,13 +134,14 @@ document.addEventListener('DOMContentLoaded', function () {
         var html = '';
 
         if (unit === 'carton' && bulk > 1) {
-            var piecePurchase = round3(purchase / bulk);
-            var pieceSale = round3(sale / bulk);
-            var totalPieces = round3(stock * bulk);
-            html = '<i class="fa fa-exchange"></i> يُحفظ كـ: شراء '
-                + display3(piecePurchase) + ' / حبة — بيع '
-                + display3(pieceSale) + ' / حبة — مخزون '
-                + display3(totalPieces) + ' حبة';
+            var cartonPurchase = Math.round(purchase);
+            var cartonSale = Math.round(sale);
+            var cartonStock = Math.round(stock);
+            html = '<i class="fa fa-check-circle"></i> يُحفظ بالكرتونة: شراء '
+                + cartonPurchase + ' / كرتونة — بيع '
+                + cartonSale + ' / كرتونة — مخزون '
+                + cartonStock + ' كرتونة — القيمة '
+                + (cartonStock * cartonSale) + ' ج.س';
         } else if (unit === 'kilo') {
             html = '<i class="fa fa-check-circle"></i> يُحفظ بالكيلو بدقة 3 منازل: '
                 + display3(stock) + ' كيلو × ' + display3(sale) + ' = '

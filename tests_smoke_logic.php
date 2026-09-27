@@ -17,6 +17,7 @@ use App\Models\OrderReturn;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Services\AiAssistant\AssistantEngine;
+use App\Services\CurrencyService;
 use App\Services\OrderFinancialService;
 use App\Services\OrderLineNormalizer;
 use App\Services\ProductService;
@@ -112,12 +113,27 @@ try {
     ], 1, 'piece_only', 'piece');
     assert_true($pieceMoney['line_total'] === 80.0, 'piece line_total 80');
 
+    $halfCarton = SaleUnits::toPieceLine([
+        'bulk' => ['qty' => 1.5, 'price' => 120],
+    ], 24, 'bulk_only', 'carton');
+    assert_true(abs($halfCarton['quantity'] - 36) < 0.001, '1.5 cartons of 24 = 36 pieces');
+    assert_true(abs($halfCarton['line_total'] - 180) < 0.001, '1.5×120 carton money = 180');
+    assert_true(($halfCarton['line_total'] ?? 0) !== 240.0, '1.5 is not rounded up to 2 cartons');
+
     // 4e) سعر الكرتونة من line_total: 35 على 60 حبة = 7 للكرتونة
     $fromLine = SaleUnits::unitPriceFromLineMoney('bulk', 35.0, 60.0, 12, 'carton');
     assert_true($fromLine === 7.0, 'unitPriceFromLineMoney carton = 7');
     $cartonBreak = SaleUnits::breakdownLines(60, 12, 'bulk_only', 'carton');
-    assert_true(($cartonBreak[0]['label'] ?? '') === 'كرتونة (12 حبة)', 'breakdown uses كرتونة not دستة');
-    assert_true((int) ($cartonBreak[0]['count'] ?? 0) === 5, 'breakdown 5 cartons');
+    assert_true(($cartonBreak[0]['label'] ?? '') === 'كرتونة', 'breakdown uses كرتونة not دستة');
+    assert_true(count($cartonBreak) === 1, 'carton breakdown is one unit');
+    assert_true((float) ($cartonBreak[0]['count'] ?? 0) === 5.0, 'breakdown 5 cartons');
+    $halfLabel = SaleUnits::formatQuantityLabel(18, 12, 'bulk_only', 'carton');
+    assert_true($halfLabel === '1.5 كرتونة', '1.5 cartons stay cartons');
+    $halfBreak = SaleUnits::breakdownLines(18, 12, 'bulk_only', 'carton');
+    assert_true(count($halfBreak) === 1 && (float) $halfBreak[0]['count'] === 1.5, '1.5 carton chip is not split into pieces');
+    $pieceBreak = SaleUnits::breakdownLines(1.5, 1, 'piece_only', 'piece');
+    assert_true(count($pieceBreak) === 1 && (float) $pieceBreak[0]['count'] === 1.5, '1.5 pieces stay pieces');
+    assert_true(SaleUnits::formatQuantityLabel(1.5, 1, 'piece_only', 'piece') === '1.5 حبة', 'piece label keeps fraction');
 
     // 5) Create real products and sell
     $pieceProduct = Product::create([
@@ -264,6 +280,12 @@ try {
     $roundTrip = SaleUnits::toEntryValues($cartonProduct->fresh(), 'carton');
     assert_true(abs($roundTrip['sale_price'] - 180) < 0.01, 'entry sale price back to carton');
     assert_true(abs($roundTrip['stock'] - 1.0) < 0.01, 'entry stock back to 1 carton after sale');
+
+    $fx = app(CurrencyService::class)->compare(8800, 8000, 8800);
+    assert_true(abs($fx['then_usd'] - 1.10) < 0.001, '8800 SDG at 8000 = 1.10 USD');
+    assert_true(abs($fx['now_usd'] - 1.00) < 0.001, 'same pounds at 8800 = 1.00 USD');
+    assert_true(abs($fx['loss_usd'] - 0.10) < 0.001, 'inflation loss 0.10 USD');
+    assert_true(abs($fx['replacement_sdg'] - 9680) < 0.01, 'pounds needed today to keep 1.10 USD');
 
     echo "\nResult: {$passed} passed, {$failed} failed\n";
 } catch (Throwable $e) {

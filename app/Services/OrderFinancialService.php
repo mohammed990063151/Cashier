@@ -17,25 +17,20 @@ class OrderFinancialService
         $order->loadMissing(['products', 'payments', 'returns']);
 
         $totalSale = 0.0;
-        $hasKilo = false;
         foreach ($order->products as $product) {
-            $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
-            if ($measure === SaleUnits::UNIT_KILO) {
-                $hasKilo = true;
-            }
             $totalSale += SaleUnits::lineMoney($product);
         }
-        $totalSale = $hasKilo ? DecimalMath::round($totalSale) : DecimalMath::money($totalSale);
+        $totalSale = round($totalSale, 2);
 
-        $paidAtSale = (float) ($order->paid_at_sale ?? 0);
-        $invoiceDiscount = (float) ($order->invoice_discount ?? 0);
+        $paidAtSale = round((float) ($order->paid_at_sale ?? 0), 2);
+        $invoiceDiscount = round((float) ($order->invoice_discount ?? 0), 2);
 
         if ($paidAtSale <= 0 && $invoiceDiscount > 0 && $invoiceDiscount >= $totalSale) {
             $paidAtSale = $invoiceDiscount;
             $invoiceDiscount = 0;
         }
 
-        $totalAfterDiscount = max($totalSale - $invoiceDiscount, 0);
+        $totalAfterDiscount = round(max($totalSale - $invoiceDiscount, 0), 2);
         $paymentsTotal = (float) $order->payments->sum('amount');
         $initialFromPayments = (float) $order->payments
             ->where('method', 'cash_at_sale')
@@ -52,8 +47,9 @@ class OrderFinancialService
 
         // المسترد نقداً لا يُحذف من جدول الدفعات — نخصمه لصافي المدفوع والمتبقي
         $totalRefundedToCustomer = round((float) $order->returns->sum('refund_amount'), 2);
+        $totalPaid = round($totalPaid, 2);
         $netPaid = round(max(0, $totalPaid - $totalRefundedToCustomer), 2);
-        $remaining = max($totalAfterDiscount - $netPaid, 0);
+        $remaining = round(max($totalAfterDiscount - $netPaid, 0), 2);
 
         $totalPurchase = $order->products->sum(
             fn ($product) => $product->pivot->quantity * $product->pivot->cost_price
@@ -202,7 +198,7 @@ class OrderFinancialService
     /**
      * @return array{quantity: string, price: string, line_total: float}
      */
-    public function formatProductSaleLine($product): array
+    public function formatProductSaleLine($product, ?float $frozenRate = null): array
     {
         $pieces = (float) $product->pivot->quantity;
         $piecePrice = (float) $product->pivot->sale_price;
@@ -213,17 +209,22 @@ class OrderFinancialService
 
         $quantityText = SaleUnits::formatQuantityLabel($pieces, $bulkSize, $mode, $measure);
 
+        $currency = app(CurrencyService::class);
+        $usdOf = fn (float $amount): string => $currency->annotate($amount, $frozenRate);
+
         if ($measure === SaleUnits::UNIT_KILO) {
-            $priceText = DecimalMath::display($piecePrice).' ج.س / كيلو';
+            $unitPrice = (float) $piecePrice;
+            $priceText = DecimalMath::display($unitPrice).' ج.س'.$usdOf($unitPrice).' / كيلو';
         } elseif (
             ($mode === SaleUnits::MODE_BULK_ONLY || $measure === SaleUnits::UNIT_CARTON)
             && $bulkSize > 1
         ) {
             $cartons = $bulkSize > 0 ? $pieces / $bulkSize : 0;
-            $unitPrice = $cartons > 0 ? DecimalMath::money($lineTotal / $cartons) : DecimalMath::money($piecePrice * $bulkSize);
-            $priceText = DecimalMath::moneyDisplay($unitPrice).' ج.س / كرتونة';
+            $unitPrice = $cartons > 0 ? round($lineTotal / $cartons, 2) : round($piecePrice * $bulkSize, 2);
+            $priceText = DecimalMath::display($unitPrice).' ج.س'.$usdOf($unitPrice).' / كرتونة';
         } else {
-            $priceText = DecimalMath::moneyDisplay(DecimalMath::money($piecePrice)).' ج.س / حبة';
+            $unitPrice = round($piecePrice, 2);
+            $priceText = DecimalMath::display($unitPrice).' ج.س'.$usdOf($unitPrice).' / حبة';
         }
 
         return [
@@ -241,7 +242,6 @@ class OrderFinancialService
         $pieces = (float) $product->pivot->quantity;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
         $lineMoney = SaleUnits::lineMoney($product);
-        $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
         $lines = SaleUnits::breakdownLines(
             $pieces,
             $bulkSize,
@@ -249,15 +249,11 @@ class OrderFinancialService
             $product->measure_unit ?? null
         );
 
-        return array_map(function ($line) use ($lineMoney, $pieces, $measure) {
+        return array_map(function ($line) use ($lineMoney, $pieces) {
             $share = $pieces > 0 ? ($lineMoney * ((float) $line['pieces'] / $pieces)) : 0;
-            $lineTotal = $measure === SaleUnits::UNIT_KILO
-                ? DecimalMath::round($share)
-                : DecimalMath::money($share);
+            $lineTotal = round($share, 2);
             $count = max((float) $line['count'], 0.0001);
-            $unitPrice = $measure === SaleUnits::UNIT_KILO
-                ? DecimalMath::round($lineTotal / $count)
-                : DecimalMath::money($lineTotal / $count);
+            $unitPrice = round($lineTotal / $count, 2);
 
             return array_merge($line, [
                 'piece_price' => $pieces > 0 ? ($lineMoney / $pieces) : 0,

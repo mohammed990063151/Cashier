@@ -47,7 +47,7 @@
                             @foreach($clients as $index => $client)
                                 <tr>
                                     <td data-label="#">{{ $clients->firstItem() + $index }}</td>
-                                    <td data-label="الاسم"><strong>{{ $client->name }}</strong></td>
+                                    <td data-label="الاسم"><strong>{{ $client->name }}</strong> <x-debt-rate :rates="$client->orders->pluck('usd_rate')" :remaining="$client->orders->sum('remaining')" /></td>
                                     <td data-label="الهاتف">{{ is_array($client->phone) ? implode('-', $client->phone) : $client->phone }}</td>
                                     <td data-label="العنوان">{{ $client->address }}</td>
                                     <td data-label="طلب جديد">

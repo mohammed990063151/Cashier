@@ -20,9 +20,9 @@
                     <div class="box-body">
                         <p><strong>المورد:</strong> {{ $purchaseInvoice->supplier->name ?? '—' }}</p>
                         <p><strong>تاريخ الفاتورة:</strong> {{ optional($purchaseInvoice->invoice_date)->format('d/m/Y') ?? '—' }}</p>
-                        <p><strong>إجمالي:</strong> {{ number_format($purchaseInvoice->total, 2) }} ج.س</p>
-                        <p><strong>مدفوع:</strong> <span class="text-success">{{ number_format($purchaseInvoice->paid, 2) }}</span></p>
-                        <p><strong>متبقي:</strong> <span class="text-danger">{{ number_format($purchaseInvoice->remaining, 2) }}</span></p>
+                        <p><strong>إجمالي:</strong> {{ number_format($purchaseInvoice->total, 2) }} ج.س <x-usd :rate="$purchaseInvoice->usd_rate" :amount="$purchaseInvoice->total" /></p>
+                        <p><strong>مدفوع:</strong> <span class="text-success">{{ number_format($purchaseInvoice->paid, 2) }}</span> <x-usd :rate="$purchaseInvoice->usd_rate" :amount="$purchaseInvoice->paid" /></p>
+                        <p><strong>متبقي:</strong> <span class="text-danger">{{ number_format($purchaseInvoice->remaining, 2) }}</span> <x-usd :rate="$purchaseInvoice->usd_rate" :amount="$purchaseInvoice->remaining" /></p>
                         @if($purchaseInvoice->payment_notes)
                             <p><strong>ملاحظات:</strong> {{ $purchaseInvoice->payment_notes }}</p>
                         @endif

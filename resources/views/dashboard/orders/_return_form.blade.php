@@ -84,7 +84,7 @@
                                class="form-control return-qty-input"
                                min="0"
                                max="{{ $maxUnit }}"
-                               step="{{ $unitMeta['step'] ?? '1' }}"
+                               step="any"
                                value="0"
                                data-price="{{ $unitPrice }}"
                                data-multiplier="{{ $multiplier }}"

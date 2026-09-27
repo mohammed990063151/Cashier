@@ -42,7 +42,7 @@
                     @endphp
                                 <tr>
                                     <td>{{ $order->id }}</td>
-                                    <td>{{ $order->client->name ?? '-' }}</td>
+                                    <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
                                     <td>{{ $product->name }}</td>
                                     @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
                                     <td>{{ $line['quantity'] }}</td>

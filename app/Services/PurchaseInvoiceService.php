@@ -101,6 +101,7 @@ class PurchaseInvoiceService
                 'remaining' => $remaining,
                 'payment_due_at' => $data['payment_due_at'] ?? null,
                 'payment_notes' => $data['payment_notes'] ?? null,
+                'usd_rate' => app(\App\Services\CurrencyService::class)->rate() ?: null,
             ]);
 
             foreach ($built['lines'] as $line) {
@@ -242,9 +243,22 @@ class PurchaseInvoiceService
             ]);
         }
 
+        $invoiceRate = (float) ($invoice->usd_rate ?? 0);
+        $oldRate = (float) ($product->usd_rate ?? 0);
+        if ($oldRate <= 0) {
+            $oldRate = $invoiceRate;
+        }
+        $oldUsd = ($oldRate > 0 && $oldQuantity > 0) ? ($oldQuantity * $oldPrice) / $oldRate : 0;
+        $newUsd = ($invoiceRate > 0 && $pieces > 0) ? ($pieces * $pricePerPiece) / $invoiceRate : 0;
+        $bookSdg = $totalQuantity * $avgPrice;
+        $blendedRate = ($oldUsd + $newUsd) > 0 && $bookSdg > 0
+            ? round($bookSdg / ($oldUsd + $newUsd), 2)
+            : ($invoiceRate > 0 ? $invoiceRate : null);
+
         $product->update([
             'stock' => $totalQuantity,
             'purchase_price' => $avgPrice,
+            'usd_rate' => $blendedRate,
         ]);
     }
 

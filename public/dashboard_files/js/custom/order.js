@@ -1,8 +1,8 @@
 const SALE_UNITS = {
-    piece: { label: 'حبة', multiplier: 1, step: '1' },
-    pack_3: { label: '3 قطع', multiplier: 3, step: '1' },
-    pack_6: { label: '6 قطع', multiplier: 6, step: '1' },
-    dozen: { label: 'دستة (12)', multiplier: 12, step: '1' },
+    piece: { label: 'حبة', multiplier: 1, step: 'any' },
+    pack_3: { label: '3 قطع', multiplier: 3, step: 'any' },
+    pack_6: { label: '6 قطع', multiplier: 6, step: 'any' },
+    dozen: { label: 'دستة (12)', multiplier: 12, step: 'any' },
 };
 
 function parseNumber(value) {
@@ -41,11 +41,7 @@ function displayQty(value) {
 }
 
 function unitMoney(piecePrice, multiplier, measureUnit) {
-    const raw = parseNumber(piecePrice) * parseNumber(multiplier);
-    if (measureUnit === 'kilo') {
-        return round3(raw);
-    }
-    return Math.round(raw);
+    return round3(parseNumber(piecePrice) * parseNumber(multiplier));
 }
 
 function halfCartonPieces(bulkSize) {
@@ -78,13 +74,13 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
     }
 
     if (mode === 'bulk_only') {
-        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1', isMaster: true }];
+        return [{ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true }];
     }
 
     // بيع مرن — وحدة كرتونة: الكرتونة أولاً ثم الحبة
     if (measure === 'carton' && bulk > 1) {
         return [
-            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1', isMaster: true },
+            { key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001', isMaster: true },
             { key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' },
             { key: 'piece', ...SALE_UNITS.piece },
         ];
@@ -98,7 +94,7 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
 
     if (bulk > 1) {
         units.push({ key: 'half_carton', label: halfCartonLabel(bulk), multiplier: halfCartonPieces(bulk), step: '1' });
-        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '1' });
+        units.push({ key: 'bulk', label: bulkLabel(bulk), multiplier: bulk, step: '0.001' });
     } else {
         units.push({ key: 'dozen', ...SALE_UNITS.dozen });
     }
@@ -107,11 +103,10 @@ function unitsForProduct(bulkSize, saleMode, measureUnit) {
 }
 
 function unitBlockHtml(productId, unit, unitPrice, measureUnit) {
-    const allowDecimal = measureUnit === 'kilo';
-    const priceVal = formatPriceInput(unitPrice, allowDecimal);
+    const priceVal = formatPriceInput(unitPrice, true);
     const masterClass = unit.isMaster ? ' unit-price-master' : '';
-    const step = unit.step || '1';
-    const priceStep = allowDecimal ? '0.001' : '1';
+    const step = 'any';
+    const priceStep = 'any';
     const hintUnit = unit.key === 'kilo' ? 'كيلو' : (unit.key === 'bulk' ? 'كرتونة' : (unit.multiplier + ' حبة'));
 
     return `
@@ -177,7 +172,7 @@ function syncUnitPricesFromMaster($row) {
     $row.find('.order-unit-block').each(function () {
         const multiplier = parseFloat($(this).data('multiplier')) || 1;
         const $priceInput = $(this).find('.unit-price');
-        $priceInput.val(formatPriceInput(unitMoney(piecePrice, multiplier, measure), measure === 'kilo'));
+        $priceInput.val(formatPriceInput(unitMoney(piecePrice, multiplier, measure), true));
     });
 }
 
@@ -194,19 +189,17 @@ function calculateRowTotal($row) {
         const price = round3($(this).find('.unit-price').val());
         const multiplier = parseFloat($(this).data('multiplier')) || 1;
 
-        if (measure === 'kilo') {
-            lineTotal = round3(lineTotal + round3(qty * price));
-        } else {
-            lineTotal += Math.round(parseNumber(qty) * parseNumber(price));
-        }
+        const raw = round3(round3(qty) * round3(price));
+        lineTotal = round3(lineTotal + raw);
         totalPieces = round3(totalPieces + round3(qty * multiplier));
     });
 
-    if (measure !== 'kilo') {
+    const showDecimals = measure === 'kilo' || Math.abs(lineTotal - Math.round(lineTotal)) >= 0.0005;
+    if (!showDecimals) {
         lineTotal = Math.round(lineTotal);
     }
 
-    $row.find('.product-price').text(formatMoney(lineTotal, measure === 'kilo'));
+    $row.find('.product-price').text(formatMoney(lineTotal, showDecimals));
     let qtyHint = '0';
     if (totalPieces > 0) {
         if (measure === 'kilo') {
@@ -219,7 +212,7 @@ function calculateRowTotal($row) {
         }
     }
     $row.find('.total-pieces-hint').text(qtyHint);
-    $row.find('input[name$="[total_price]"]').val(measure === 'kilo' ? round3(lineTotal) : Math.round(lineTotal));
+    $row.find('input[name$="[total_price]"]').val(showDecimals ? round3(lineTotal) : Math.round(lineTotal));
 
     const $warn = $row.find('.stock-warning');
     if ($warn.length) {
@@ -236,39 +229,31 @@ function calculateRowTotal($row) {
 
 function calculateTotal() {
     let total = 0;
-    let hasKilo = false;
 
     $('.order-list tr.order-item').each(function () {
-        const measure = $(this).data('measure-unit') || 'piece';
-        if (measure === 'kilo') {
-            hasKilo = true;
-        }
         total = round3(total + calculateRowTotal($(this)));
     });
 
-    if (!hasKilo) {
-        total = Math.round(total);
-    }
+    const showTotalDecimals = Math.abs(total - Math.round(total)) >= 0.0005;
+    $('.total-price').text(formatMoney(total, showTotalDecimals));
 
-    $('.total-price').text(formatMoney(total, hasKilo));
-
-    const invoiceDiscount = hasKilo ? round3($('#invoice_discount').val()) : Math.round(parseNumber($('#invoice_discount').val()));
-    let discountedTotal = hasKilo ? round3(total - invoiceDiscount) : Math.round(total - invoiceDiscount);
+    const invoiceDiscount = round3($('#invoice_discount').val());
+    let discountedTotal = round3(total - invoiceDiscount);
     if (discountedTotal < 0) {
         discountedTotal = 0;
     }
 
-    $('#discounted-total').text(formatMoney(discountedTotal, hasKilo));
+    $('#discounted-total').text(formatMoney(discountedTotal, Math.abs(discountedTotal - Math.round(discountedTotal)) >= 0.0005));
 
-    const paid = hasKilo ? round3($('#paid_at_sale').val()) : Math.round(parseNumber($('#paid_at_sale').val()));
-    let remaining = hasKilo ? round3(discountedTotal - paid) : Math.round(discountedTotal - paid);
+    const paid = round3($('#paid_at_sale').val());
+    let remaining = round3(discountedTotal - paid);
     if (remaining < 0) {
         remaining = 0;
     }
 
     const $remainingDisplay = $('#remaining-display');
     if ($remainingDisplay.length) {
-        $remainingDisplay.text(formatMoney(remaining, hasKilo));
+        $remainingDisplay.text(formatMoney(remaining, Math.abs(remaining - Math.round(remaining)) >= 0.0005));
         $remainingDisplay.toggleClass('text-danger', remaining > 0);
         $remainingDisplay.toggleClass('text-success', remaining <= 0);
     }

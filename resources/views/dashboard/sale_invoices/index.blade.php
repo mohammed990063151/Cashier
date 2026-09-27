@@ -65,7 +65,7 @@
                                     <tr>
                                         <td class="details-control hidden-xs"></td>
                                         <td data-label="رقم الطلب"><strong>{{ $order->order_number }}</strong></td>
-                                        <td data-label="العميل">{{ $order->client->name ?? '—' }}</td>
+                                        <td data-label="العميل">{{ $order->client->name ?? '—' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$remaining" /></td>
                                         <td data-label="الإجمالي" style="color: #01941f; font-weight: bold;">
                                             {{ number_format($total, 2) }}
                                         </td>

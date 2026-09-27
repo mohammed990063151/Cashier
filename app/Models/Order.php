@@ -18,6 +18,7 @@ class Order extends Model
         'total_after_discount' => 'float',
         'remaining' => 'float',
         'profit' => 'float',
+        'usd_rate' => 'float',
         'payment_due_at' => 'date',
     ];
 

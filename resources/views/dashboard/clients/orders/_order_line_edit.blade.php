@@ -10,8 +10,7 @@
     $units = SaleUnits::unitsForOrderForm($bulkSize, $saleMode, $measureUnit);
     $masterUnit = SaleUnits::masterUnitKey($saleMode, $measureUnit);
     $qtyHint = SaleUnits::formatQuantityLabel($qtyStored, $bulkSize, $saleMode, $measureUnit);
-    $allowDecimalPrice = $measureUnit === SaleUnits::UNIT_KILO;
-    $priceStep = $allowDecimalPrice ? '0.001' : '1';
+    $priceStep = 'any';
 @endphp
 <tr class="order-item" data-id="{{ $product->id }}" data-bulk-size="{{ $bulkSize }}" data-sale-mode="{{ $saleMode }}" data-measure-unit="{{ $measureUnit }}" data-stock="{{ $product->stock }}">
     <td>
@@ -24,9 +23,7 @@
                 @php
                     $initial = SaleUnits::initialUnitInput($product, $unitKey);
                     $qty = $initial['qty'];
-                    $price = $allowDecimalPrice
-                        ? DecimalMath::round($initial['price'])
-                        : DecimalMath::money($initial['price']);
+                    $price = DecimalMath::round($initial['price']);
                     $step = $unit['step'] ?? '1';
                     $hint = $unitKey === 'kilo'
                         ? 'كيلو'
@@ -37,7 +34,7 @@
                     <div class="row" style="margin:0 -5px;">
                         <div class="col-xs-6" style="padding:0 5px;">
                             <label class="order-unit-label">الكمية</label>
-                            <input type="number" min="0" step="{{ $step }}" value="{{ $qty }}"
+                            <input type="number" min="0" step="any" value="{{ $qty }}"
                                 name="products[{{ $product->id }}][{{ $unitKey }}][qty]"
                                 class="form-control input-sm unit-qty">
                         </div>

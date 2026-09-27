@@ -79,7 +79,7 @@
                                     <li>
                                         <a href="{{ route('dashboard.payments.index', ['client_id' => $alertOrder->client_id, 'order_id' => $alertOrder->id]) }}">
                                             <i class="fa fa-warning text-{{ $alertStatus === 'overdue' ? 'red' : 'yellow' }}"></i>
-                                            {{ $alertOrder->client->name }} — {{ $alertOrder->order_number }}
+                                            {{ $alertOrder->client->name }} <x-debt-rate :rate="$alertOrder->usd_rate" :remaining="$alertOrder->remaining ?: 1" /> — {{ $alertOrder->order_number }}
                                             <br>
                                             <small>
                                                 قسط {{ number_format($alertInst->amount, 2) }} ج.س —

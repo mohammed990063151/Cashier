@@ -14,7 +14,7 @@
         <div class="client-group-info">
             <div class="client-avatar"><i class="fa fa-user"></i></div>
             <div>
-                <h3 class="client-group-name">{{ $client->name }}</h3>
+                <h3 class="client-group-name">{{ $client->name }} <x-debt-rate :rates="$group['orders']->pluck('usd_rate')" :remaining="$group['total_remaining']" /></h3>
                 <p class="client-group-meta">
                     <span class="badge bg-blue">{{ $group['orders_count'] }} طلب</span>
                     @if($group['orders_count'] > 1)

@@ -25,6 +25,7 @@ class ExchangeRateController extends Controller
             'currentRate' => $current,
             'showUsd' => (bool) ($setting->show_usd ?? true),
             'rateLabel' => $currency->rateLabel(),
+            'holdings' => $currency->holdings(),
         ]);
     }
 

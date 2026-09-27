@@ -9,7 +9,7 @@
     <div class="od-header">
         <div class="od-header-main">
             <h4 class="od-order-no">{{ $order->order_number }}</h4>
-            <p class="od-meta">{{ $order->client->name }} — {{ $order->created_at->format('d-m-Y H:i') }}</p>
+            <p class="od-meta">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$remaining ?? 0" /> — {{ $order->created_at->format('d-m-Y H:i') }}</p>
         </div>
         <span class="label od-status-badge {{ $payClass }}">{{ $payLabel }}</span>
     </div>
@@ -19,41 +19,41 @@
     <div class="od-stats-grid">
         <div class="od-stat">
             <span class="od-stat-label">{{ ($hasReturns ?? false) ? 'الصافي الحالي' : 'الإجمالي' }}</span>
-            <strong class="od-stat-value text-success">{{ number_format($totalSale, 2) }}</strong>
+            <strong class="od-stat-value text-success">{{ number_format($totalSale, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalSale" /></strong>
         </div>
         @if($hasReturns ?? false)
         <div class="od-stat">
             <span class="od-stat-label">الأصلي قبل المرتجع</span>
-            <strong class="od-stat-value">{{ number_format($originalTotalSale, 2) }}</strong>
+            <strong class="od-stat-value">{{ number_format($originalTotalSale, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalSale" /></strong>
         </div>
         @endif
         @if($invoiceDiscount > 0)
         <div class="od-stat">
             <span class="od-stat-label">الخصم</span>
-            <strong class="od-stat-value text-warning">{{ number_format($invoiceDiscount, 2) }}</strong>
+            <strong class="od-stat-value text-warning">{{ number_format($invoiceDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></strong>
         </div>
         @endif
         <div class="od-stat">
             <span class="od-stat-label">بعد الخصم</span>
-            <strong class="od-stat-value">{{ number_format($totalAfterDiscount, 2) }}</strong>
+            <strong class="od-stat-value">{{ number_format($totalAfterDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></strong>
         </div>
         <div class="od-stat od-stat--highlight">
             <span class="od-stat-label">{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</span>
-            <strong class="od-stat-value text-primary">{{ number_format($netPaid ?? $totalPaid, 2) }}</strong>
+            <strong class="od-stat-value text-primary">{{ number_format($netPaid ?? $totalPaid, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? $totalPaid" /></strong>
         </div>
         @if(($totalRefundedToCustomer ?? 0) > 0)
         <div class="od-stat">
             <span class="od-stat-label">مُسترد</span>
-            <strong class="od-stat-value text-danger">{{ number_format($totalRefundedToCustomer, 2) }}</strong>
+            <strong class="od-stat-value text-danger">{{ number_format($totalRefundedToCustomer, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></strong>
         </div>
         @endif
         <div class="od-stat">
             <span class="od-stat-label">المتبقي</span>
-            <strong class="od-stat-value {{ $remaining > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($remaining, 2) }}</strong>
+            <strong class="od-stat-value {{ $remaining > 0 ? 'text-danger' : 'text-success' }}">{{ number_format($remaining, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$remaining" /></strong>
         </div>
         <div class="od-stat">
             <span class="od-stat-label">الربح</span>
-            <strong class="od-stat-value text-info">{{ number_format($profitAfterDiscount, 2) }}</strong>
+            <strong class="od-stat-value text-info">{{ number_format($profitAfterDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$profitAfterDiscount" /></strong>
         </div>
     </div>
 
@@ -67,9 +67,9 @@
         <div class="od-product-card">
             <div class="od-product-head">
                 <strong>{{ $product->name }}</strong>
-                <span class="od-product-total">{{ number_format($lineTotal, 2) }} ج.س</span>
+                <span class="od-product-total">{{ number_format($lineTotal, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$lineTotal" /></span>
             </div>
-            @php $saleLine = $financial->formatProductSaleLine($product); @endphp
+            @php $saleLine = $financial->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null); @endphp
             <div class="od-product-summary">
                 <span class="od-pieces-total">{{ $saleLine['quantity'] }}</span>
                 <span class="od-piece-price">{{ $saleLine['price'] }}</span>
@@ -79,9 +79,8 @@
                 @foreach($breakdown as $line)
                 <div class="od-unit-chip">
                     <span class="od-unit-chip-label">{{ $line['label'] }}</span>
-                    <span class="od-unit-chip-qty">× {{ $line['count'] }}</span>
-                    <span class="od-unit-chip-pieces">({{ $line['pieces'] }} حبة)</span>
-                    <span class="od-unit-chip-sub">{{ number_format($line['line_total'], 2) }}</span>
+                    <span class="od-unit-chip-qty">× {{ \App\Support\DecimalMath::display($line['count']) }}</span>
+                    <span class="od-unit-chip-sub">{{ number_format($line['line_total'], 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$line['line_total']" /></span>
                 </div>
                 @endforeach
             </div>
@@ -96,13 +95,13 @@
         @if($paidAtSale > 0)
         <li>
             <span>دفعة عند البيع</span>
-            <strong>{{ number_format($paidAtSale, 2) }} ج.س</strong>
+            <strong>{{ number_format($paidAtSale, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$paidAtSale" /></strong>
         </li>
         @endif
         @foreach($order->payments->where('method', '!=', 'cash_at_sale') as $payment)
         <li>
             <span>{{ $payment->created_at->format('Y-m-d') }} — {{ $payment->method ?? 'دفعة' }}</span>
-            <strong>{{ number_format($payment->amount, 2) }} ج.س</strong>
+            <strong>{{ number_format($payment->amount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$payment->amount" /></strong>
         </li>
         @endforeach
         @if($totalPaid <= 0)
@@ -152,7 +151,7 @@
 }
 .od-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 8px;
     margin-bottom: 16px;
 }
@@ -175,7 +174,11 @@
 }
 .od-stat-value {
     font-size: 15px;
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
 }
 .od-section-title {
     font-size: 14px;

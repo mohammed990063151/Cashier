@@ -18,6 +18,24 @@
     border-radius: 999px;
     padding: 1px 8px;
     direction: ltr;
+    white-space: nowrap;
+}
+.money-usd-then {
+    color: #9a3412;
+    background: #fff7ed;
+    border-color: #fdba74;
+}
+.debt-rate {
+    display: inline-block;
+    margin-inline-start: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9a3412;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 999px;
+    padding: 1px 8px;
+    white-space: nowrap;
 }
 .fx-rate-chip {
     display: inline-flex;

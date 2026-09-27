@@ -46,6 +46,9 @@ protected $messages = [
                          ->orWhere('phone', 'like', '%' . $this->search . '%')
                          ->orWhere('address', 'like', '%' . $this->search . '%');
             })
+            ->with(['orders' => function ($q) {
+                $q->where('remaining', '>', 0.009)->select('id', 'client_id', 'remaining', 'usd_rate');
+            }])
             ->latest()
             ->paginate(5);
 

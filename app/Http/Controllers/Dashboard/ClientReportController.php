@@ -49,7 +49,14 @@ class ClientReportController extends Controller
     }
 
     $clients = $query->distinct()->get();
-     return view('reports.clients.index', compact('clients'));
+    $debtRates = Order::query()
+        ->whereIn('client_id', $clients->pluck('id'))
+        ->where('remaining', '>', 0.009)
+        ->get(['client_id', 'usd_rate'])
+        ->groupBy('client_id')
+        ->map(fn ($rows) => $rows->pluck('usd_rate'));
+
+    return view('reports.clients.index', compact('clients', 'debtRates'));
     }
 
     // صفحة تفاصيل العميل: فواتيره - المنتجات المباعة - كشف الحساب
@@ -67,6 +74,7 @@ class ClientReportController extends Controller
                 'total' => $calc['totalAfterDiscount'],
                 'paid' => $calc['netPaid'] ?? $calc['totalPaid'],
                 'remaining' => $calc['remaining'],
+                'usd_rate' => $order->usd_rate,
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
                 'created_at' => $order->created_at,
             ];
@@ -111,6 +119,7 @@ class ClientReportController extends Controller
                 'total' => $calc['totalAfterDiscount'],
                 'paid' => $calc['netPaid'] ?? $calc['totalPaid'],
                 'remaining' => $calc['remaining'],
+                'usd_rate' => $order->usd_rate,
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
                 'payments' => $paidItems,
             ];

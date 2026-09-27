@@ -254,7 +254,7 @@
     @foreach ($order->products as $product)
             @php
                 $breakdown = $fin->productUnitBreakdown($product);
-                $saleLine = $fin->formatProductSaleLine($product);
+                $saleLine = $fin->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null);
                 $lineTotal = $saleLine['line_total'];
                 $qtyLabel = $fin->formatProductQuantity($product);
             @endphp
@@ -266,8 +266,8 @@
                 <table class="unit-line">
                     <tr>
                         <td class="u-label">{{ $line['label'] }}</td>
-                        <td class="u-qty" style="width:18%;text-align:center;">× {{ $line['count'] }}</td>
-                        <td class="u-amt" style="width:32%;">{{ number_format($line['line_total'], 2) }}</td>
+                        <td class="u-qty" style="width:18%;text-align:center;">× {{ \App\Support\DecimalMath::display($line['count']) }}</td>
+                        <td class="u-amt" style="width:32%;">{{ number_format($line['line_total'], 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$line['line_total']" /></td>
                     </tr>
                 </table>
                 @endforeach
@@ -276,7 +276,7 @@
             <table class="item-subtotal">
                 <tr>
                     <td class="pieces-info">{{ $qtyLabel }} — {{ $saleLine['price'] }}</td>
-                    <td class="line-total" style="width:38%;">{{ number_format($lineTotal, 2) }}</td>
+                    <td class="line-total" style="width:38%;">{{ number_format($lineTotal, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$lineTotal" /></td>
                 </tr>
             </table>
         </div>
@@ -288,9 +288,9 @@
     @foreach($order->returns->sortByDesc('return_date') as $ret)
     <div style="font-size:8pt;margin-bottom:6px;padding:4px;border:1px dashed #ccc;">
         <strong>{{ $ret->return_number }}</strong> — {{ $ret->return_date->format('d/m/Y') }}<br>
-        قيمة بضاعة: {{ number_format($ret->items_total, 2) }}
+        قيمة بضاعة: {{ number_format($ret->items_total, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->items_total" />
         @if($ret->refund_amount > 0)
-        | مُسترد نقداً: {{ number_format($ret->refund_amount, 2) }}
+        | مُسترد نقداً: {{ number_format($ret->refund_amount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->refund_amount" />
         @endif
         @if($ret->items->isNotEmpty())
         <table class="ret-table">
@@ -298,7 +298,7 @@
             <tr>
                 <td>{{ $item->product->name ?? '—' }}</td>
                 <td style="text-align:center;">{{ $item->quantity }}</td>
-                <td style="text-align:center;">{{ number_format($item->subtotal, 2) }}</td>
+                <td style="text-align:center;">{{ number_format($item->subtotal, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$item->subtotal" /></td>
             </tr>
             @endforeach
         </table>
@@ -315,48 +315,48 @@
             @if($hasReturns ?? false)
             <tr>
                 <td class="t-label">إجمالي البيع الأصلي</td>
-                <td class="t-value">{{ number_format($originalTotalSale, 2) }}</td>
+                <td class="t-value">{{ number_format($originalTotalSale, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$originalTotalSale" /></td>
             </tr>
             <tr>
                 <td class="t-label">إجمالي المرتجعات</td>
-                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalReturnedMerchandise, 2) }}</td>
+                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalReturnedMerchandise, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalReturnedMerchandise" /></td>
             </tr>
             @endif
             <tr>
                 <td class="t-label">{{ ($hasReturns ?? false) ? 'صافي المبيعات الحالي' : 'إجمالي المبيعات' }}</td>
-                <td class="t-value">{{ number_format($totalSale, 2) }}</td>
+                <td class="t-value">{{ number_format($totalSale, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalSale" /></td>
             </tr>
             @if($invoiceDiscount > 0)
             <tr>
                 <td class="t-label">خصم الفاتورة</td>
-                <td class="t-value" style="color:#c2410c;">- {{ number_format($invoiceDiscount, 2) }}</td>
+                <td class="t-value" style="color:#c2410c;">- {{ number_format($invoiceDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></td>
             </tr>
             @endif
             <tr>
                 <td class="t-label">بعد الخصم</td>
-                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }}</td>
+                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></td>
             </tr>
             <tr>
                 <td class="t-label">إجمالي المدفوع</td>
-                <td class="t-value paid-val">{{ number_format($totalPaid, 2) }}</td>
+                <td class="t-value paid-val">{{ number_format($totalPaid, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalPaid" /></td>
             </tr>
             @if(($totalRefundedToCustomer ?? 0) > 0)
             <tr>
                 <td class="t-label">مُسترد للعميل (خزينة)</td>
-                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalRefundedToCustomer, 2) }}</td>
+                <td class="t-value" style="color:#b91c1c;">- {{ number_format($totalRefundedToCustomer, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></td>
             </tr>
             <tr>
                 <td class="t-label">صافي المدفوع</td>
-                <td class="t-value paid-val">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }}</td>
+                <td class="t-value paid-val">{{ number_format($netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer), 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? max(0, $totalPaid - $totalRefundedToCustomer)" /></td>
             </tr>
             @endif
             <tr>
                 <td class="t-label">المتبقي</td>
-                <td class="t-value {{ $remaining > 0 ? 'remain-val' : 'zero-val' }}">{{ number_format($remaining, 2) }}</td>
+                <td class="t-value {{ $remaining > 0 ? 'remain-val' : 'zero-val' }}">{{ number_format($remaining, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$remaining" /></td>
             </tr>
             <tr class="grand-total">
                 <td class="t-label">الإجمالي النهائي</td>
-                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }} ج.س</td>
+                <td class="t-value">{{ number_format($totalAfterDiscount, 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></td>
             </tr>
         </table>
     </div>

@@ -16,6 +16,56 @@
         @endif
         @include('partials._errors')
 
+        @php $stock = $holdings['stock']; $due = $holdings['receivables']; $owe = $holdings['payables']; @endphp
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-warning fx-box">
+                    <div class="box-header with-border">
+                        <h3 class="box-title"><i class="fa fa-balance-scale"></i> أثر التضخم على ما عندك</h3>
+                    </div>
+                    <div class="box-body">
+                        <p class="text-muted" style="margin-top:0;">الجنيه ثابت. إذا زاد الدولار: «يومها» يبقى، و«الآن» ينقص. الفرق خسارة.</p>
+                        <div class="table-responsive">
+                            <table class="table table-bordered text-center">
+                                <thead>
+                                    <tr>
+                                        <th>البند</th>
+                                        <th>جنيه</th>
+                                        <th>$ يومها</th>
+                                        <th>$ الآن</th>
+                                        <th>الخسارة $</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>المخزون</td>
+                                        <td>{{ number_format($stock['sdg'], 2) }}</td>
+                                        <td>{{ number_format($stock['usd_then'], 4) }}</td>
+                                        <td>{{ number_format($stock['usd_now'], 4) }}</td>
+                                        <td class="{{ $stock['loss_usd'] > 0.0001 ? 'text-danger' : 'text-muted' }}">{{ number_format($stock['loss_usd'], 4) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>ديون العملاء</td>
+                                        <td>{{ number_format($due['sdg'], 2) }}</td>
+                                        <td>{{ number_format($due['usd_then'], 4) }}</td>
+                                        <td>{{ number_format($due['usd_now'], 4) }}</td>
+                                        <td class="{{ $due['loss_usd'] > 0.0001 ? 'text-danger' : 'text-muted' }}">{{ number_format($due['loss_usd'], 4) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>دين الموردين</td>
+                                        <td>{{ number_format($owe['sdg'], 2) }}</td>
+                                        <td>{{ number_format($owe['usd_then'], 4) }}</td>
+                                        <td>{{ number_format($owe['usd_now'], 4) }}</td>
+                                        <td class="{{ $owe['loss_usd'] > 0.0001 ? 'text-success' : 'text-muted' }}">{{ number_format($owe['loss_usd'], 4) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-5">
                 <div class="box box-primary fx-box">
@@ -32,10 +82,7 @@
                                     <span class="text-muted">لم يُحدَّد بعد</span>
                                 @endif
                             </div>
-                            <p class="text-muted" style="margin:8px 0 0;font-size:13px;line-height:1.6;">
-                                الفكرة بسيطة: الجنيه يتغيّر يومياً، فتُثبّت الأرباح بوحدة مرجعية (الدولار).
-                                كل مبلغ بالجنيه يظهر تلقائياً بما يعادله بالدولار حسب آخر سعر حفظته.
-                            </p>
+                            <p class="text-muted" style="margin:8px 0 0;">سعر اليوم للعمليات الجديدة. العمليات القديمة تبقى بسعر يومها.</p>
                         </div>
 
                         <form method="post" action="{{ route('dashboard.exchange-rates.store') }}" style="margin-top:16px;">
@@ -60,7 +107,7 @@
                             <div class="checkbox">
                                 <label>
                                     <input type="checkbox" name="show_usd" value="1" {{ $showUsd ? 'checked' : '' }}>
-                                    إظهار معادل الدولار بجانب مبالغ الجنيه في النظام
+                                    إظهار الدولار بجانب المبلغ
                                 </label>
                             </div>
                             <button type="submit" class="btn btn-primary btn-block btn-lg">

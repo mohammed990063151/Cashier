@@ -248,13 +248,13 @@
                 bulk = Math.max(2, bulk);
                 var half = Math.floor(bulk / 2) || 1;
                 return [
-                    { key: 'piece', label: 'حبة', multiplier: 1, step: '1' },
-                    { key: 'half_carton', label: 'نصف كرتونة (' + half + ' حبة)', multiplier: half, step: '1' },
-                    { key: 'bulk', label: 'كرتونة كاملة (' + bulk + ' حبة)', multiplier: bulk, step: '0.001' },
+                    { key: 'piece', label: 'حبة', multiplier: 1, step: 'any' },
+                    { key: 'half_carton', label: 'نصف كرتونة (' + half + ' حبة)', multiplier: half, step: 'any' },
+                    { key: 'bulk', label: 'كرتونة كاملة (' + bulk + ' حبة)', multiplier: bulk, step: 'any' },
                 ];
             }
 
-            return [{ key: 'piece', label: 'حبة', multiplier: 1, step: '1' }];
+            return [{ key: 'piece', label: 'حبة', multiplier: 1, step: 'any' }];
         },
         // توافق مع الاستدعاءات القديمة
         unitsForProduct: function (bulk, mode, measure) {

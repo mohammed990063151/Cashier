@@ -211,7 +211,7 @@
                                         $alertInst = $alert['installment'];
                                     @endphp
                                     <tr>
-                                        <td>{{ $alertOrder->client->name }}</td>
+                                        <td>{{ $alertOrder->client->name }} <x-debt-rate :rate="$alertOrder->usd_rate" :remaining="$alertOrder->remaining ?: 1" /></td>
                                         <td>{{ $alertOrder->order_number }}</td>
                                         <td class="text-danger">{{ number_format($alertInst->amount, 2) }}</td>
                                         <td>{{ $alertInst->due_at->format('d/m/Y') }}</td>

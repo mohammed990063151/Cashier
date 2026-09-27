@@ -159,7 +159,7 @@
                             <h4>الإجمالي: <span class="total-price" style="color:#046b0a;font-weight:bold;">{{ number_format($order->total_price, 2) }}</span></h4>
                             <div class="form-group">
                                 <label for="invoice_discount">خصم الفاتورة</label>
-                                <input type="number" name="invoice_discount" id="invoice_discount" class="form-control" min="0" step="1"
+                                <input type="number" name="invoice_discount" id="invoice_discount" class="form-control" min="0" step="any"
                                        value="{{ $order->invoice_discount ?? 0 }}">
                             </div>
                             <h4>الإجمالي بعد الخصم:
@@ -169,7 +169,7 @@
                             </h4>
                             <div class="form-group">
                                 <label for="paid_at_sale">المدفوع الآن</label>
-                                <input type="number" name="paid_at_sale" id="paid_at_sale" class="form-control" min="0" step="1" value="{{ $order->paid_at_sale }}">
+                                <input type="number" name="paid_at_sale" id="paid_at_sale" class="form-control" min="0" step="any" value="{{ $order->paid_at_sale }}">
                                 <small class="text-muted">0 = لم يُدفع شيء عند الطلب؛ يمكن تحصيل المتبقي لاحقاً من صفحة المدفوعات.</small>
                             </div>
                             <div class="form-group">
@@ -232,12 +232,12 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($order->products as $product)
-                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
+                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null); @endphp
                                                     <tr>
                                                         <td class="fw-bold text-start">{{ $product->name }}</td>
                                                         <td>{{ $line['quantity'] }}</td>
                                                         <td class="text-success fw-bold">{{ $line['price'] }}</td>
-                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س</td>
+                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$line['line_total']" /></td>
                                                     </tr>
                                                     @endforeach
                                                 </tbody>

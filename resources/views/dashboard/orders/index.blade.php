@@ -90,20 +90,21 @@
                                     @endphp
                                     <tr class="orders-row" data-order-id="{{ $order->id }}">
                                         <td class="col-order-no">{{ $order->order_number }}</td>
-                                        <td class="col-client">{{ $order->client->name }}</td>
-                                        <td><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span></td>
-                                        <td><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span></td>
-                                        <td><span class="money money-after">{{ number_format($fin['totalAfterDiscount'], 2) }}</span></td>
-                                        <td><span class="money money-paid">{{ number_format($fin['netPaid'] ?? $fin['totalPaid'], 2) }}</span></td>
+                                        <td class="col-client">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$fin['remaining']" /></td>
+                                        <td><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalSale']" /></td>
+                                        <td><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['invoiceDiscount']" /></td>
+                                        <td><span class="money money-after">{{ number_format($fin['totalAfterDiscount'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalAfterDiscount']" /></td>
+                                        <td><span class="money money-paid">{{ number_format($fin['netPaid'] ?? $fin['totalPaid'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['netPaid'] ?? $fin['totalPaid']" /></td>
                                         <td>
                                             <span class="money {{ $fin['remaining'] > 0 ? 'money-remain-due' : 'money-remain-zero' }}">
                                                 {{ number_format($fin['remaining'], 2) }}
                                             </span>
+                                            <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['remaining']" />
                                         </td>
                                         <td class="col-date">{{ $order->created_at->format('d/m/Y') }}</td>
                                         <td>
                                             @if(($order->total_return ?? 0) > 0)
-                                            <span class="money text-danger">{{ number_format($order->total_return, 2) }}</span>
+                                            <span class="money text-danger">{{ number_format($order->total_return, 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$order->total_return" />
                                             @else
                                             <span class="text-muted">—</span>
                                             @endif

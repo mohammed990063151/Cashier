@@ -59,7 +59,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $order->order_number }}</td>
-                                <td>{{ $order->client->name ?? '-' }}</td>
+                                <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
                                 <td>
                                     <span class="label {{ $fin->paymentStatusClass($st) }}">
                                         {{ $fin->paymentStatusLabel($st) }}

@@ -5,7 +5,7 @@
         <strong>تنبيه سداد اليوم:</strong>
         @foreach($collectionDueToday as $item)
             <span class="collection-due-item">
-                {{ $item['order']->client->name }} — طلب {{ $item['order']->order_number }}:
+                {{ $item['order']->client->name }} <x-debt-rate :rate="$item['order']->usd_rate" :remaining="$item['order']->remaining ?: 1" /> — طلب {{ $item['order']->order_number }}:
                 <strong>{{ number_format($item['installment']->amount, 2) }} ج.س</strong>
             </span>@if(!$loop->last)<span class="text-muted"> | </span>@endif
         @endforeach

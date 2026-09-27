@@ -160,14 +160,14 @@
                             <h4>الإجمالي: <span class="total-price" style="color:#01941f;font-weight:bold;">0</span></h4>
                             <div class="form-group">
                                 <label>خصم الفاتورة (اختياري):</label>
-                                <input type="number" step="1" min="0" name="invoice_discount" id="invoice_discount" class="form-control" value="{{ old('invoice_discount', 0) }}">
+                                <input type="number" step="any" min="0" name="invoice_discount" id="invoice_discount" class="form-control" value="{{ old('invoice_discount', 0) }}">
                             </div>
                             <h4>الإجمالي بعد الخصم:
                                 <span id="discounted-total" style="color:#007bff;font-weight:bold;">0</span>
                             </h4>
                             <div class="form-group">
                                 <label>المدفوع الآن:</label>
-                                <input type="number" step="1" min="0" name="paid_at_sale" id="paid_at_sale" class="form-control" value="{{ old('paid_at_sale', 0) }}">
+                                <input type="number" step="any" min="0" name="paid_at_sale" id="paid_at_sale" class="form-control" value="{{ old('paid_at_sale', 0) }}">
                                 <small class="text-muted">اتركه <strong>0</strong> إذا لم يدفع العميل الآن (بيع آجل — يُسجّل المتبقي تلقائياً).</small>
                             </div>
                             <div class="form-group">
@@ -226,12 +226,12 @@
                                                 </thead>
                                                 <tbody>
                                                     @foreach ($order->products as $product)
-                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product); @endphp
+                                                    @php $line = app(\App\Services\OrderFinancialService::class)->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null); @endphp
                                                     <tr>
                                                         <td class="fw-bold text-start">{{ $product->name }}</td>
                                                         <td>{{ $line['quantity'] }}</td>
                                                         <td class="text-success fw-bold">{{ $line['price'] }}</td>
-                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س</td>
+                                                        <td class="text-primary fw-bold">{{ number_format($line['line_total'], 2) }} ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$line['line_total']" /></td>
                                                     </tr>
                                                     @endforeach
                                                 </tbody>

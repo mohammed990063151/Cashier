@@ -33,20 +33,20 @@
                 <tr>
                     <td>{{ $p->name ?? '—' }}</td>
                     <td class="text-center">{{ $qtyLabel }}</td>
-                    <td class="text-center">{{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-center">{{ number_format($item->subtotal, 2) }}</td>
+                    <td class="text-center">{{ number_format($item->unit_price, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$item->unit_price" /></td>
+                    <td class="text-center">{{ number_format($item->subtotal, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$item->subtotal" /></td>
                 </tr>
                 @endforeach
             </tbody>
         </table>
         @endif
         <div class="ord-ret-foot">
-            <span>قيمة المرتجع: <strong>{{ number_format($ret->items_total, 2) }}</strong> ج.س</span>
+            <span>قيمة المرتجع: <strong>{{ number_format($ret->items_total, 2) }}</strong> ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->items_total" /></span>
             @if($ret->remaining_reduced > 0)
-            <span>خُصم من المتبقي: <strong>{{ number_format($ret->remaining_reduced, 2) }}</strong> ج.س</span>
+            <span>خُصم من المتبقي: <strong>{{ number_format($ret->remaining_reduced, 2) }}</strong> ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->remaining_reduced" /></span>
             @endif
             @if($ret->refund_amount > 0)
-            <span class="text-danger">مُسترد من الخزينة: <strong>{{ number_format($ret->refund_amount, 2) }}</strong> ج.س</span>
+            <span class="text-danger">مُسترد من الخزينة: <strong>{{ number_format($ret->refund_amount, 2) }}</strong> ج.س <x-usd :rate="$order->usd_rate ?? null" :amount="$ret->refund_amount" /></span>
             @elseif($ret->remaining_reduced <= 0)
             <span class="text-muted">بدون أثر مالي إضافي</span>
             @endif

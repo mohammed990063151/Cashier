@@ -36,7 +36,7 @@
                             @php $paid = (float) $order->paid_at_sale + (float) $order->payments->sum('amount'); @endphp
                             <tr>
                                 <td>{{ $order->order_number }}</td>
-                                <td>{{ $order->client->name ?? '-' }}</td>
+                                <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
                                 <td class="text-success">{{ number_format($order->total_price, 2) }}</td>
                                 <td>{{ number_format($order->invoice_discount, 2) }}</td>
                                 <td>{{ number_format($paid, 2) }}</td>

@@ -94,7 +94,7 @@
                                         <tr>
                                             <td data-label="التاريخ">{{ $row['order']->created_at->format('Y-m-d H:i') }}</td>
                                             <td data-label="رقم الطلب"><strong>{{ $row['order']->order_number }}</strong></td>
-                                            <td data-label="العميل">{{ $row['client_name'] }}</td>
+                                            <td data-label="العميل">{{ $row['client_name'] }} <x-debt-rate :rate="$row['order']->usd_rate" :remaining="$row['remaining']" /></td>
                                             <td data-label="الإجمالي" class="money-total">{{ number_format($row['total'], 2) }}</td>
                                             <td data-label="المدفوع" class="money-paid">{{ number_format($row['paid'], 2) }}</td>
                                             <td data-label="المتبقي" class="money-remain">{{ number_format($row['remaining'], 2) }}</td>

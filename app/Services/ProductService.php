@@ -146,10 +146,7 @@ class ProductService
             $text = DecimalMath::moneyDisplay($value).' / حبة';
         }
 
-        $currency = app(CurrencyService::class);
-        if ($currency->enabled()) {
-            $text .= ' ≈ '.$currency->formatUsd($currency->toUsd($value));
-        }
+        $text .= app(CurrencyService::class)->annotate($value, (float) ($product->usd_rate ?? 0) ?: null);
 
         return $text;
     }
@@ -164,8 +161,6 @@ class ProductService
         $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
         $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
-        $currency = app(CurrencyService::class);
-
         if ($measure === SaleUnits::UNIT_KILO) {
             $value = $piece;
             $text = DecimalMath::display($value).' / كيلو';
@@ -180,9 +175,7 @@ class ProductService
             $text = DecimalMath::moneyDisplay($value).' / حبة';
         }
 
-        if ($currency->enabled()) {
-            $text .= ' ≈ '.$currency->formatUsd($currency->toUsd($value));
-        }
+        $text .= app(CurrencyService::class)->annotate($value, (float) ($product->usd_rate ?? 0) ?: null);
 
         return $text;
     }

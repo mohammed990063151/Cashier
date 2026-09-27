@@ -9,7 +9,7 @@
     <div class="preview-head">
         <div>
             <strong class="preview-order-no">{{ $order->order_number }}</strong>
-            <div class="preview-client">{{ $order->client->name }}</div>
+            <div class="preview-client">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$remaining ?? 0" /></div>
             <small class="text-muted">{{ $order->created_at->format('d/m/Y H:i') }}</small>
         </div>
         <span class="label {{ $statusClass }}" style="font-size:12px;">{{ $statusLabel }}</span>
@@ -20,31 +20,31 @@
     <div class="preview-totals">
         <div class="preview-row">
             <span>{{ ($hasReturns ?? false) ? 'الصافي الحالي' : 'الإجمالي' }}</span>
-            <span class="money money-total">{{ number_format($totalSale, 2) }}</span>
+            <span class="money money-total">{{ number_format($totalSale, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalSale" /></span>
         </div>
         @if($invoiceDiscount > 0)
         <div class="preview-row">
             <span>الخصم</span>
-            <span class="money money-discount">-{{ number_format($invoiceDiscount, 2) }}</span>
+            <span class="money money-discount">-{{ number_format($invoiceDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$invoiceDiscount" /></span>
         </div>
         @endif
         <div class="preview-row">
             <span>بعد الخصم</span>
-            <span class="money">{{ number_format($totalAfterDiscount, 2) }}</span>
+            <span class="money">{{ number_format($totalAfterDiscount, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalAfterDiscount" /></span>
         </div>
         <div class="preview-row preview-row--paid">
             <span>{{ ($totalRefundedToCustomer ?? 0) > 0 ? 'صافي المدفوع' : 'المدفوع' }}</span>
-            <span class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }}</span>
+            <span class="money money-paid">{{ number_format($netPaid ?? $totalPaid, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$netPaid ?? $totalPaid" /></span>
         </div>
         @if(($totalRefundedToCustomer ?? 0) > 0)
         <div class="preview-row">
             <span>مُسترد</span>
-            <span class="money text-danger">-{{ number_format($totalRefundedToCustomer, 2) }}</span>
+            <span class="money text-danger">-{{ number_format($totalRefundedToCustomer, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$totalRefundedToCustomer" /></span>
         </div>
         @endif
         <div class="preview-row">
             <span>المتبقي</span>
-            <span class="money {{ $remaining > 0 ? 'money-remain-due' : 'money-remain-zero' }}">{{ number_format($remaining, 2) }}</span>
+            <span class="money {{ $remaining > 0 ? 'money-remain-due' : 'money-remain-zero' }}">{{ number_format($remaining, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$remaining" /></span>
         </div>
     </div>
 
@@ -58,16 +58,16 @@
             <div class="preview-product-item">
                 <div class="preview-product-top">
                     <strong>{{ $product->name }}</strong>
-                    <span class="money">{{ number_format($lineTotal, 2) }}</span>
+                    <span class="money">{{ number_format($lineTotal, 2) }} <x-usd :rate="$order->usd_rate ?? null" :amount="$lineTotal" /></span>
                 </div>
-                @php $saleLine = $fin->formatProductSaleLine($product); @endphp
+                @php $saleLine = $fin->formatProductSaleLine($product, isset($order->usd_rate) ? (float) $order->usd_rate : null); @endphp
                 <div class="preview-product-meta">
                     {{ $saleLine['quantity'] }} — {{ $saleLine['price'] }}
                 </div>
                 @if(count($breakdown) > 0)
                 <div class="preview-units">
                     @foreach($breakdown as $line)
-                    <span class="preview-unit-tag">{{ $line['label'] }} ×{{ $line['count'] }}</span>
+                    <span class="preview-unit-tag">{{ $line['label'] }} ×{{ \App\Support\DecimalMath::display($line['count']) }}</span>
                     @endforeach
                 </div>
                 @endif
