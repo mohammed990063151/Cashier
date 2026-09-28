@@ -145,4 +145,43 @@ class WhatsAppOrderNotificationTest extends TestCase
         $this->assertSame('966563243208', $fresh->whatsapp_staff_phone);
         $this->assertTrue($fresh->whatsapp_enabled);
     }
+
+    public function test_empty_saved_keys_fall_back_to_env_and_a_trailing_plus_is_removed(): void
+    {
+        config([
+            'services.whatsapp.enabled' => true,
+            'services.whatsapp.base_url' => 'http://whatsapp.test',
+            'services.whatsapp.username' => 'admin',
+            'services.whatsapp.password' => 'secret',
+            'services.whatsapp.device_id' => 'device-1',
+            'services.whatsapp.staff_phone' => '249990063151+',
+        ]);
+
+        $setting = Setting::query()->create(['name' => 'الشركة', 'whatsapp_enabled' => true]);
+
+        Http::fake(['*' => Http::response(['code' => 'SUCCESS'], 200)]);
+
+        $result = app(WhatsAppService::class)->sendTest($setting);
+
+        $this->assertTrue($result['ok']);
+        Http::assertSent(fn ($request) => $request['phone'] === '249990063151'
+            && $request->hasHeader('X-Device-Id', 'device-1'));
+    }
+
+    public function test_test_message_explains_when_sending_is_turned_off(): void
+    {
+        $setting = Setting::query()->create([
+            'whatsapp_enabled' => false,
+            'whatsapp_base_url' => 'http://whatsapp.test',
+            'whatsapp_username' => 'admin',
+            'whatsapp_password' => 'secret',
+            'whatsapp_device_id' => 'device-1',
+            'whatsapp_staff_phone' => '249990063151',
+        ]);
+
+        $result = app(WhatsAppService::class)->sendTest($setting);
+
+        $this->assertFalse($result['ok']);
+        $this->assertStringContainsString('فعّل', $result['message']);
+    }
 }

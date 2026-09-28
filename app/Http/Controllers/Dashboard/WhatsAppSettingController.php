@@ -10,11 +10,12 @@ use Illuminate\Http\Request;
 
 class WhatsAppSettingController extends Controller
 {
-    public function edit()
+    public function edit(WhatsAppService $whatsApp)
     {
         $setting = Setting::query()->first();
+        $whatsapp = $whatsApp->connection($setting);
 
-        return view('dashboard.settings.whatsapp', compact('setting'));
+        return view('dashboard.settings.whatsapp', compact('setting', 'whatsapp'));
     }
 
     public function logs()
@@ -43,7 +44,9 @@ class WhatsAppSettingController extends Controller
         $setting->whatsapp_base_url = $data['whatsapp_base_url'] ?? null;
         $setting->whatsapp_username = $data['whatsapp_username'] ?? null;
         $setting->whatsapp_device_id = $data['whatsapp_device_id'] ?? null;
-        $setting->whatsapp_staff_phone = $data['whatsapp_staff_phone'] ?? null;
+        $setting->whatsapp_staff_phone = filled($data['whatsapp_staff_phone'] ?? null)
+            ? preg_replace('/\D+/', '', (string) $data['whatsapp_staff_phone'])
+            : null;
 
         if (filled($data['whatsapp_password'] ?? null)) {
             $setting->whatsapp_password = $data['whatsapp_password'];

@@ -41,4 +41,13 @@ return [
         'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
     ],
 
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_ENABLED', false),
+        'base_url' => env('WHATSAPP_BASE_URL'),
+        'username' => env('WHATSAPP_USERNAME'),
+        'password' => env('WHATSAPP_PASSWORD'),
+        'device_id' => env('WHATSAPP_DEVICE_ID'),
+        'staff_phone' => env('WHATSAPP_STAFF_PHONE'),
+    ],
+
 ];

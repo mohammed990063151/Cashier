@@ -13,7 +13,8 @@ class WhatsAppService
     public function notifyNewOrder(Order $order): array
     {
         $setting = Setting::query()->first();
-        if (! $this->isReady($setting)) {
+        $connection = $this->connection($setting);
+        if (! $connection['enabled'] || ! $this->hasKeys($connection)) {
             return ['sent' => false, 'skipped' => true, 'message' => 'واتساب غير مفعّل أو المفاتيح ناقصة.'];
         }
 
@@ -28,7 +29,7 @@ class WhatsAppService
             $results['client'] = $this->record($order->id, 'client', null, null, $message, 'failed', 'لا يوجد رقم هاتف للعميل');
         }
 
-        $staffPhone = (string) $setting->whatsapp_staff_phone;
+        $staffPhone = (string) $connection['staff_phone'];
         if (trim($staffPhone) !== '') {
             $results['staff'] = $this->deliver($setting, $staffPhone, $message, 'staff', $order->id);
         }
@@ -38,17 +39,23 @@ class WhatsAppService
 
     public function sendTest(Setting $setting): array
     {
-        if (! $this->isReady($setting)) {
+        $connection = $this->connection($setting);
+
+        if (! $connection['enabled']) {
+            return ['ok' => false, 'message' => 'فعّل «إرسال رسائل الطلبات» ثم اضغط حفظ. الاختبار لا يُرسل والخيار مطفأ.'];
+        }
+
+        if (! $this->hasKeys($connection)) {
             return ['ok' => false, 'message' => 'احفظ عنوان الخدمة واسم المستخدم وكلمة السر ومعرّف الجهاز أولاً.'];
         }
 
-        if (trim((string) $setting->whatsapp_staff_phone) === '') {
+        if (trim((string) $connection['staff_phone']) === '') {
             return ['ok' => false, 'message' => 'أدخل رقم واتساب المستخدم داخل النظام ثم احفظ الإعدادات.'];
         }
 
         $result = $this->deliver(
             $setting,
-            $setting->whatsapp_staff_phone,
+            $connection['staff_phone'],
             'رسالة اختبار من نظام الكاشير. الربط يعمل.',
             'test',
             null
@@ -64,12 +71,22 @@ class WhatsAppService
 
     public function isReady(?Setting $setting): bool
     {
-        return $setting
-            && $setting->whatsapp_enabled
-            && filled($setting->whatsapp_base_url)
-            && filled($setting->whatsapp_username)
-            && filled($setting->whatsapp_password)
-            && filled($setting->whatsapp_device_id);
+        $connection = $this->connection($setting);
+
+        return $connection['enabled'] && $this->hasKeys($connection);
+    }
+
+    /** @return array{enabled: bool, base_url: ?string, username: ?string, password: ?string, device_id: ?string, staff_phone: ?string} */
+    public function connection(?Setting $setting): array
+    {
+        return [
+            'enabled' => (bool) ($setting?->whatsapp_enabled ?? config('services.whatsapp.enabled')),
+            'base_url' => $this->prefer($setting?->whatsapp_base_url, config('services.whatsapp.base_url')),
+            'username' => $this->prefer($setting?->whatsapp_username, config('services.whatsapp.username')),
+            'password' => $this->prefer($setting?->whatsapp_password, config('services.whatsapp.password')),
+            'device_id' => $this->prefer($setting?->whatsapp_device_id, config('services.whatsapp.device_id')),
+            'staff_phone' => $this->cleanStaffPhone($this->prefer($setting?->whatsapp_staff_phone, config('services.whatsapp.staff_phone'))),
+        ];
     }
 
     public function deliver(Setting $setting, string $phone, string $message, string $recipient, ?int $orderId): array
@@ -83,12 +100,13 @@ class WhatsAppService
             return ['ok' => false, 'error' => $error];
         }
 
-        $url = rtrim($setting->whatsapp_base_url, '/').'/send/message';
+        $connection = $this->connection($setting);
+        $url = rtrim((string) $connection['base_url'], '/').'/send/message';
 
         try {
             $response = Http::timeout(20)
-                ->withBasicAuth($setting->whatsapp_username, $setting->whatsapp_password)
-                ->withHeaders(['X-Device-Id' => $setting->whatsapp_device_id])
+                ->withBasicAuth((string) $connection['username'], (string) $connection['password'])
+                ->withHeaders(['X-Device-Id' => (string) $connection['device_id']])
                 ->acceptJson()
                 ->post($url, [
                     'phone' => $normalized,
@@ -204,6 +222,35 @@ class WhatsAppService
         }
 
         return null;
+    }
+
+    private function cleanStaffPhone(?string $phone): ?string
+    {
+        if (! filled($phone)) {
+            return null;
+        }
+
+        $digits = $this->normalizePhone($phone);
+
+        return $digits !== '' ? $digits : trim($phone);
+    }
+
+    private function prefer(mixed $saved, mixed $fallback): ?string
+    {
+        if (filled($saved)) {
+            return (string) $saved;
+        }
+
+        return filled($fallback) ? (string) $fallback : null;
+    }
+
+    /** @param  array{base_url: ?string, username: ?string, password: ?string, device_id: ?string}  $connection */
+    private function hasKeys(array $connection): bool
+    {
+        return filled($connection['base_url'])
+            && filled($connection['username'])
+            && filled($connection['password'])
+            && filled($connection['device_id']);
     }
 
     private function normalizePhone(?string $phone): string
