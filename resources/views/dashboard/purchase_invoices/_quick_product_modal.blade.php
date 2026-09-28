@@ -39,6 +39,11 @@
                             </div>
                         </div>
                     </div>
+                    <div class="form-group" id="qpStockWrap" style="display:none;">
+                        <label>المخزون الحالي <span class="text-danger">*</span></label>
+                        <input type="number" min="1" step="any" id="qpStock" class="form-control" value="1">
+                        <small class="text-muted">لازم يكون أكبر من صفر حتى يظهر في البيع.</small>
+                    </div>
                     <div class="row">
                         <div class="col-sm-6">
                             <div class="form-group">

@@ -1,5 +1,7 @@
 @php
     $scanMode = $mode ?? 'sale';
+    $scanButtonLabel = $buttonLabel ?? 'مسح الباركود بالكاميرا';
+    $scanTarget = $target ?? '';
 @endphp
 @once
 <style>
@@ -31,9 +33,9 @@
 .barcode-qty-ok { min-height: 52px; font-size: 18px; font-weight: 800; }
 </style>
 @endonce
-<div class="barcode-scan-wrap" data-mode="{{ $scanMode }}" data-lookup="{{ route('dashboard.products.lookup-barcode') }}">
+<div class="barcode-scan-wrap" data-mode="{{ $scanMode }}" data-lookup="{{ route('dashboard.products.lookup-barcode') }}" data-target="{{ $scanTarget }}">
     <button type="button" class="btn btn-info btn-block barcode-scan-open">
-        <i class="fa fa-camera"></i> مسح الباركود بالكاميرا
+        <i class="fa fa-camera"></i> {{ $scanButtonLabel }}
     </button>
     <div class="barcode-scan-panel" hidden>
         <div class="barcode-scan-top">

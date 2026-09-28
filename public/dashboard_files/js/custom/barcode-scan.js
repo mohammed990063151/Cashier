@@ -81,6 +81,18 @@
             }
             lastCode = code;
             lastAt = now;
+
+            if (mode === 'capture') {
+                var target = $wrap.data('target');
+                if (target) {
+                    $(target).val(code).trigger('change');
+                }
+                setStatus('تم التقاط الباركود. احفظ المنتج ليبقى المسح دائماً.');
+                stopCamera();
+                $panel.prop('hidden', true);
+                return;
+            }
+
             setStatus('جارٍ البحث…');
             $.get(lookupUrl, { barcode: code })
                 .done(function (res) {
@@ -94,7 +106,7 @@
                         showQty(res.product, code);
                         return;
                     }
-                    if (mode === 'purchase' && typeof window.openQuickProductForBarcode === 'function') {
+                    if ((mode === 'purchase' || mode === 'sale') && typeof window.openQuickProductForBarcode === 'function') {
                         setStatus('منتج غير مسجّل. أدخل اسمه.');
                         window.openQuickProductForBarcode(code);
                         hideQty();

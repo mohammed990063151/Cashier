@@ -377,4 +377,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
 @endpush
 
+@include('dashboard.purchase_invoices._quick_product_modal')
+@push('scripts')
+<script>
+    window.quickProductStoreUrl = @json(route('dashboard.products.quick-store'));
+</script>
+<script src="{{ asset('dashboard_files/js/custom/quick-product-sale.js') }}?v={{ filemtime(public_path('dashboard_files/js/custom/quick-product-sale.js')) }}"></script>
+@endpush
+
 @endsection

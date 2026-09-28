@@ -35,9 +35,14 @@
             </div>
             <div class="form-group">
                 <label>باركود الشركة</label>
-                <input type="text" name="barcode" class="form-control" inputmode="numeric" autocomplete="off"
+                <input type="text" name="barcode" id="product_barcode" class="form-control" inputmode="numeric" autocomplete="off"
                        value="{{ old('barcode', $item->barcode ?? '') }}" placeholder="الرقم المكتوب خلف المنتج">
-                <small class="text-muted">يُستخدم في مسح كاميرا الهاتف عند البيع والشراء.</small>
+                @include('dashboard.partials._barcode_scanner', [
+                    'mode' => 'capture',
+                    'target' => '#product_barcode',
+                    'buttonLabel' => 'اعمل مسح لمنتج الشركة',
+                ])
+                <small class="text-muted">بعد المسح احفظ المنتج. من بعدها يظهر عند المسح في البيع والشراء حسب وحدته (حبة أو كرتونة أو كيلو).</small>
             </div>
             <div class="form-group">
                 <label>الوصف</label>

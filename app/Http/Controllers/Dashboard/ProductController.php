@@ -110,6 +110,8 @@ class ProductController extends Controller
                 'pieces_per_carton' => max(1, (int) $product->pieces_per_carton),
                 'sale_mode' => $product->sale_mode,
                 'measure_unit' => $product->measure_unit,
+                'barcode' => $product->barcode,
+                'stock' => (float) $product->stock,
             ],
         ]);
     }
