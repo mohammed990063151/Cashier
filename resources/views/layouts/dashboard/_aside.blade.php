@@ -166,6 +166,16 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('dashboard.settings.whatsapp') }}">
+                    <i class="fa fa-whatsapp"></i> <span>إعدادات واتساب</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('dashboard.settings.whatsapp.logs') }}">
+                    <i class="fa fa-list"></i> <span>سجل واتساب</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('dashboard.exchange-rates.index') }}">
                     <i class="fa fa-dollar"></i> <span>سعر الدولار</span>
                 </a>

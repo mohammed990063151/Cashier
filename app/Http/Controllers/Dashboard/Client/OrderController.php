@@ -406,6 +406,13 @@ public function update(Request $request, Client $client, Order $order, CashServi
         }
 
         session()->flash('success', __('تم إضافة الطلب بنجاح'));
+
+        try {
+            app(\App\Services\WhatsAppService::class)->notifyNewOrder($order);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return $order;
     }
 

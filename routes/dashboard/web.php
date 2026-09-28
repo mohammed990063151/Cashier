@@ -30,6 +30,7 @@ use App\Http\Controllers\Dashboard\ClientReportController;
 use App\Http\Controllers\Dashboard\CashReportController;
 use App\Http\Controllers\Dashboard\ExchangeRateController;
 use App\Http\Controllers\Dashboard\SettingController;
+use App\Http\Controllers\Dashboard\WhatsAppSettingController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderController;
 use App\Http\Controllers\Dashboard\AiAssistantController;
@@ -122,6 +123,10 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     //     ->name('dashboard.payments.edit');
     Route::get('settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    Route::get('settings/whatsapp/logs', [WhatsAppSettingController::class, 'logs'])->name('settings.whatsapp.logs');
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'edit'])->name('settings.whatsapp');
+    Route::put('settings/whatsapp', [WhatsAppSettingController::class, 'update'])->name('settings.whatsapp.update');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'test'])->name('settings.whatsapp.test');
 
     Route::get('exchange-rates', [ExchangeRateController::class, 'index'])->name('exchange-rates.index');
     Route::post('exchange-rates', [ExchangeRateController::class, 'store'])->name('exchange-rates.store');
