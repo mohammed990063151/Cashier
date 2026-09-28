@@ -21,4 +21,11 @@ class Setting extends Model
         'show_usd' => 'boolean',
         'whatsapp_enabled' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            cache()->forget('app.setting');
+        });
+    }
 }

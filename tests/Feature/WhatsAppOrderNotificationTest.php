@@ -123,4 +123,26 @@ class WhatsAppOrderNotificationTest extends TestCase
         $this->assertTrue($result['skipped']);
         Http::assertNothingSent();
     }
-};
+
+    public function test_saving_whatsapp_settings_clears_the_cached_setting_shown_on_the_page(): void
+    {
+        $setting = Setting::query()->create(['name' => 'الشركة']);
+        cache()->put('app.setting', $setting, 3600);
+
+        $setting->whatsapp_base_url = 'http://76.13.77.29:3001';
+        $setting->whatsapp_username = 'admin';
+        $setting->whatsapp_device_id = 'device-1';
+        $setting->whatsapp_staff_phone = '966563243208';
+        $setting->whatsapp_enabled = true;
+        $setting->save();
+
+        $this->assertNull(cache()->get('app.setting'));
+
+        $fresh = Setting::query()->first();
+        $this->assertSame('http://76.13.77.29:3001', $fresh->whatsapp_base_url);
+        $this->assertSame('admin', $fresh->whatsapp_username);
+        $this->assertSame('device-1', $fresh->whatsapp_device_id);
+        $this->assertSame('966563243208', $fresh->whatsapp_staff_phone);
+        $this->assertTrue($fresh->whatsapp_enabled);
+    }
+}
