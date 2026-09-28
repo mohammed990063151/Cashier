@@ -85,6 +85,11 @@
             $.get(lookupUrl, { barcode: code })
                 .done(function (res) {
                     if (res && res.found && res.product) {
+                        if (mode === 'sale' && !(parseFloat(res.product.stock) > 0)) {
+                            setStatus('نفد مخزون ' + res.product.name + ' ولا يمكن بيعه.');
+                            hideQty();
+                            return;
+                        }
                         setStatus('تم العثور على ' + res.product.name);
                         showQty(res.product, code);
                         return;

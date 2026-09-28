@@ -289,6 +289,9 @@ function buildOrderRow(name, id, piecePrice, bulkSize, saleMode, measureUnit, st
 }
 
 window.addScannedSaleProduct = function (product, qty) {
+    if (round3(product.stock) <= 0) {
+        return;
+    }
     const id = product.id;
     let $row = $('.order-list tr.order-item[data-id="' + id + '"]');
     if (!$row.length) {
@@ -324,6 +327,10 @@ $(document).ready(function () {
         const saleMode = $(this).data('sale-mode') || 'flexible';
         const measureUnit = $(this).data('measure-unit') || 'piece';
         const stock = $(this).data('stock');
+
+        if (round3(stock) <= 0) {
+            return;
+        }
 
         if ($('.order-list tr.order-item[data-id="' + id + '"]').length) {
             return;

@@ -22,7 +22,7 @@ class OrderController extends Controller
     // =================== إنشاء طلب جديد ===================
     public function create(Client $client)
     {
-        $categories = Category::with('products')->get();
+        $categories = $this->categoriesWithStock();
         if (!$client || !$client->exists) {
             // العميل الافتراضي
             $client = $this->getDefaultClient();
@@ -315,7 +315,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
     public function edit(Client $client, Order $order)
     {
         $order->load('products');
-        $categories = Category::with('products')->get();
+        $categories = $this->categoriesWithStock();
         $orders = $client->orders()->with('products', 'payments')->paginate(5);
         return view('dashboard.clients.orders.edit', compact('client', 'order', 'categories', 'orders'));
     }
@@ -414,6 +414,13 @@ public function update(Request $request, Client $client, Order $order, CashServi
         }
 
         return $order;
+    }
+
+    private function categoriesWithStock()
+    {
+        return Category::with(['products' => function ($query) {
+            $query->where('stock', '>', 0);
+        }])->get();
     }
 
     /**
