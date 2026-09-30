@@ -20,7 +20,18 @@ class Order extends Model
         'profit' => 'float',
         'usd_rate' => 'float',
         'payment_due_at' => 'date',
+        'is_opening_balance' => 'boolean',
+        'opening_date' => 'date',
+        'written_off_at' => 'datetime',
+        'written_off_amount' => 'float',
     ];
+
+    public function scopeWithoutOpening($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('is_opening_balance', false)->orWhereNull('is_opening_balance');
+        });
+    }
 
     public function client()
     {
@@ -30,7 +41,7 @@ class Order extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class, 'product_order')
-            ->withPivot('quantity', 'sale_price', 'cost_price', 'line_total');
+            ->withPivot('quantity', 'sale_price', 'cost_price', 'line_total', 'unit_lines');
     }
 
     public function payments()

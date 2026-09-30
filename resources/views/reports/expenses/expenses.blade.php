@@ -8,6 +8,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-body">
 

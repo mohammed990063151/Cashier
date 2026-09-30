@@ -34,7 +34,13 @@ class WelcomeController extends Controller
         $total_purchases = DB::table('purchase_invoices')->sum('total');
 
         // العملاء والموردين
-        $total_due_clients = Order::sum('remaining');
+        $hasWriteOff = \Illuminate\Support\Facades\Schema::hasColumn('orders', 'written_off_at');
+        $total_due_clients = $hasWriteOff
+            ? Order::query()->whereNull('written_off_at')->sum('remaining')
+            : Order::sum('remaining');
+        $badDebt = $hasWriteOff
+            ? (float) Order::whereNotNull('written_off_at')->sum('written_off_amount')
+            : 0.0;
         $total_due_suppliers = DB::table('suppliers')->sum('balance');
 
         // بيانات مالية
@@ -52,6 +58,7 @@ class WelcomeController extends Controller
         ];
         $clientsOverview = [
             'total_due' => $total_due_clients,
+            'bad_debt' => $badDebt,
         ];
         $suppliersOverview = [
             'total_due' => $total_due_suppliers,

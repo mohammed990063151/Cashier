@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Models\Client;
+use App\Services\OpeningBalanceService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -21,32 +22,67 @@ class ClientController extends Controller
 
     }//end of create
 
-    public function store(Request $request)
+    public function store(Request $request, OpeningBalanceService $openingBalances)
     {
-     $request->validate([
-    'name' => 'required',
-    'phone' => 'required|array|min:1',
-    'phone.0' => 'required',
-    'address' => 'required',
-], [
-    'name.required' => 'اسم العميل مطلوب.',
-    'phone.required' => 'رقم الهاتف مطلوب.',
-    'phone.array' => 'يجب أن يكون رقم الهاتف في شكل قائمة (مصفوفة).',
-    'phone.min' => 'يجب إدخال رقم هاتف واحد على الأقل.',
-    'phone.0.required' => 'الرقم الأول للهاتف مطلوب.',
-    'address.required' => 'العنوان مطلوب.',
-]);
+        $request->validate([
+            'name' => 'required',
+            'phone' => 'required|array|min:1',
+            'phone.0' => 'required',
+            'address' => 'required',
+            'opening_amount' => 'nullable|numeric|min:0',
+            'opening_paid' => 'nullable|numeric|min:0',
+            'opening_date' => 'nullable|date',
+            'opening_reference' => 'nullable|string|max:80',
+            'opening_details' => 'nullable|string|max:2000',
+            'opening_photo' => 'nullable|image|max:5120',
+        ], [
+            'name.required' => 'اسم العميل مطلوب.',
+            'phone.required' => 'رقم الهاتف مطلوب.',
+            'phone.array' => 'يجب أن يكون رقم الهاتف في شكل قائمة (مصفوفة).',
+            'phone.min' => 'يجب إدخال رقم هاتف واحد على الأقل.',
+            'phone.0.required' => 'الرقم الأول للهاتف مطلوب.',
+            'address.required' => 'العنوان مطلوب.',
+            'opening_amount.numeric' => 'مبلغ الحساب القديم يجب أن يكون رقماً.',
+            'opening_paid.numeric' => 'المدفوع سابقاً يجب أن يكون رقماً.',
+            'opening_photo.image' => 'أرفق صورة فاتورة فقط.',
+            'opening_photo.max' => 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
+        ]);
 
+        $amount = round((float) $request->input('opening_amount', 0), 2);
+        $paid = round((float) $request->input('opening_paid', 0), 2);
+        if ($paid > $amount + 0.009) {
+            return back()->withInput()->withErrors([
+                'opening_paid' => 'المدفوع سابقاً لا يمكن أن يكون أكبر من إجمالي الحساب القديم.',
+            ]);
+        }
 
-        $request_data = $request->all();
-        $request_data['phone'] = array_filter($request->phone);
+        $client = Client::create([
+            'name' => $request->name,
+            'phone' => array_values(array_filter($request->phone)),
+            'address' => $request->address,
+        ]);
 
-        Client::create($request_data);
+        $message = 'تم إضافة العميل بنجاح';
+        if ($amount > 0.009) {
+            $opening = $openingBalances->create(
+                $client,
+                $amount,
+                $paid,
+                $request->input('opening_reference'),
+                $request->input('opening_details'),
+                $request->input('opening_date'),
+                $request->file('opening_photo')
+            );
+            $message .= '، وسُجّل حسابه القديم '.$opening->order_number.' بمبلغ '.number_format($amount, 2).' ج.س';
+            if ($opening->remaining > 0) {
+                $message .= ' والمتبقي '.number_format($opening->remaining, 2).' ج.س';
+            }
+        }
 
-        session()->flash('success', __('تم اضافة العميل بنجاح'));
+        session()->flash('success', $message);
+
         return redirect()->route('dashboard.clients.index');
-
-    }//end of store
+    }
 
     public function edit(Client $client)
     {

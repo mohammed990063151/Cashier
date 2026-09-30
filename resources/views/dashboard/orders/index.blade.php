@@ -89,7 +89,12 @@
                                         $status = $finService->paymentStatus($order);
                                     @endphp
                                     <tr class="orders-row" data-order-id="{{ $order->id }}">
-                                        <td class="col-order-no" data-label="رقم الطلب">{{ $order->order_number }}</td>
+                                        <td class="col-order-no" data-label="رقم الطلب">
+                                            {{ $order->order_number }}
+                                            @if($order->is_opening_balance)
+                                                <div><span class="label label-warning">حساب قديم</span></div>
+                                            @endif
+                                        </td>
                                         <td class="col-client" data-label="العميل">{{ $order->client->name }} <x-debt-rate :rate="$order->usd_rate" :remaining="$fin['remaining']" /></td>
                                         <td data-label="الإجمالي"><span class="money money-total">{{ number_format($fin['totalSale'], 2) }}</span> <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['totalSale']" /></td>
                                         <td class="phone-hide" data-label="الخصم"><span class="money money-discount">{{ number_format($fin['invoiceDiscount'], 2) }}</span></td>
@@ -100,6 +105,9 @@
                                                 {{ number_format($fin['remaining'], 2) }}
                                             </span>
                                             <x-usd :rate="$order->usd_rate ?? null" :amount="$fin['remaining']" />
+                                            @if($order->written_off_at)
+                                                <div class="text-muted">معدوم {{ number_format((float) $order->written_off_amount, 2) }}</div>
+                                            @endif
                                         </td>
                                         <td class="col-date" data-label="التاريخ">{{ $order->created_at->format('d/m/Y') }}</td>
                                         <td class="{{ ($order->total_return ?? 0) > 0 ? '' : 'phone-hide' }}" data-label="مرتجع">
@@ -131,11 +139,18 @@
                                                     <i class="fa fa-undo"></i> مرتجع
                                                 </button>
                                                 @endif
-                                                @if (auth()->user()->hasPermission('update_orders'))
+                                                @if (auth()->user()->hasPermission('update_orders') && ! $order->is_opening_balance)
                                                 <a href="{{ route('dashboard.clients.orders.edit', ['client' => $order->client->id, 'order' => $order->id]) }}"
                                                    class="btn btn-warning btn-sm" title="تعديل">
                                                     <i class="fa fa-pencil"></i> تعديل
                                                 </a>
+                                                @endif
+                                                @if (auth()->user()->hasPermission('update_orders') && ! $order->written_off_at && $fin['remaining'] > 0.009)
+                                                    @include('dashboard.partials._bad_debt_button', [
+                                                        'action' => route('dashboard.orders.bad-debt', $order),
+                                                        'label' => 'دين معدوم',
+                                                        'confirm' => 'نقل هذا الطلب إلى الديون المعدومة؟ سيخرج من التحصيل وتقارير الذمم.',
+                                                    ])
                                                 @endif
                                                 @if (auth()->user()->hasPermission('delete_orders'))
                                                 <form action="{{ route('dashboard.orders.destroy', $order->id) }}" method="post" class="delete-form">

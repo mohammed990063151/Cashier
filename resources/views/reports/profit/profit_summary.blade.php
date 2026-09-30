@@ -6,6 +6,7 @@
         <h1>تقرير الأرباح المجمل</h1>
     </section>
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-header">
                 <form method="get" class="form-inline">
@@ -18,6 +19,8 @@
                 الأرباح محسوبة من <strong>حقل ربح الطلب</strong> (بعد الخصم والمرتجعات).
                 صافي المبيعات: <x-report-money :amount="$snapshot['net_sales'] ?? 0" :entries="$snapshot['fx']['net_sales'] ?? []" />
                 — مرتجعات: <x-report-money :amount="$snapshot['returns_merchandise'] ?? 0" :entries="$snapshot['fx']['returns'] ?? []" />
+                — ديون معدومة: <x-report-money :amount="$snapshot['bad_debt'] ?? 0" :entries="$snapshot['fx']['bad_debt'] ?? []" />
+                — ربح بعد الهالك: <x-report-money :amount="$snapshot['profit_after_bad_debt'] ?? 0" />
             </div>
             <div class="box-body table-responsive">
                 <table class="table table-hover text-center">

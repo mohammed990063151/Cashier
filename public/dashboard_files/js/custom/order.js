@@ -170,7 +170,6 @@ function calculateRowTotal($row) {
     let totalPieces = 0;
     const measure = $row.data('measure-unit') || 'piece';
     const saleMode = $row.data('sale-mode') || 'flexible';
-    const bulkSize = Math.max(1, parseInt($row.data('bulk-size'), 10) || 12);
     const available = round3($row.data('stock'));
 
     $row.find('.order-unit-block').each(function () {
@@ -189,18 +188,23 @@ function calculateRowTotal($row) {
     }
 
     $row.find('.product-price').text(formatMoney(lineTotal, showDecimals));
-    let qtyHint = '0';
-    if (totalPieces > 0) {
-        if (measure === 'kilo') {
-            qtyHint = displayQty(totalPieces) + ' كيلو';
-        } else if ((saleMode === 'bulk_only' || measure === 'carton') && bulkSize > 1) {
-            qtyHint = displayQty(totalPieces / bulkSize) + ' كرتونة';
-        } else {
-            qtyHint = displayQty(totalPieces) + ' حبة'
-                + (bulkSize > 1 ? ' ≈ ' + displayQty(totalPieces / bulkSize) + ' كرتونة' : '');
+    const enteredParts = [];
+    $row.find('.order-unit-block').each(function () {
+        const enteredQty = round3($(this).find('.unit-qty').val());
+        if (enteredQty <= 0) {
+            return;
         }
+        const unitKey = $(this).data('unit');
+        const unitLabel = unitKey === 'kilo' ? 'كيلو' : (unitKey === 'bulk' ? 'كرتونة' : 'حبة');
+        enteredParts.push(displayQty(enteredQty) + ' ' + unitLabel);
+    });
+    let zeroHint = '0 حبة';
+    if (measure === 'kilo') {
+        zeroHint = '0 كيلو';
+    } else if (saleMode === 'bulk_only') {
+        zeroHint = '0 كرتونة';
     }
-    $row.find('.total-pieces-hint').text(qtyHint);
+    $row.find('.total-pieces-hint').text(enteredParts.length ? enteredParts.join(' + ') : zeroHint);
     $row.find('input[name$="[total_price]"]').val(showDecimals ? round3(lineTotal) : Math.round(lineTotal));
 
     const $warn = $row.find('.stock-warning');

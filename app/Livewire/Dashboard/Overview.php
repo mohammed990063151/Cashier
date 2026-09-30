@@ -124,14 +124,25 @@ class Overview extends Component
         $this->purchasesOverview = ['total_purchases' => DB::table('purchase_invoices')->sum('total')];
 
         // العملاء والموردين
-        $this->clientsOverview = ['total_due' => Order::sum('remaining')];
+        $hasWriteOff = \Illuminate\Support\Facades\Schema::hasColumn('orders', 'written_off_at');
+        $badDebt = $hasWriteOff
+            ? (float) Order::whereNotNull('written_off_at')->sum('written_off_amount')
+            : 0.0;
+        $dueQuery = Order::query();
+        if ($hasWriteOff) {
+            $dueQuery->whereNull('written_off_at');
+        }
+        $this->clientsOverview = [
+            'total_due' => $dueQuery->sum('remaining'),
+            'bad_debt' => $badDebt,
+        ];
         $this->suppliersOverview = ['total_due' => DB::table('suppliers')->sum('balance')];
 
         // عملاء عليهم مبالغ — من أقدم طلب لأحدث
         $this->clientsWithDues = Client::query()
-            ->whereHas('orders', fn ($q) => $q->where('remaining', '>', 0))
+            ->whereHas('orders', fn ($q) => $q->whereNull('written_off_at')->where('remaining', '>', 0))
             ->with(['orders' => function ($q) {
-                $q->where('remaining', '>', 0)
+                $q->whereNull('written_off_at')->where('remaining', '>', 0)
                     ->with(['payments', 'products', 'returns'])
                     ->orderBy('created_at');
             }])

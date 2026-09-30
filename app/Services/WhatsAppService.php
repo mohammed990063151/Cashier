@@ -101,17 +101,17 @@ class WhatsAppService
         }
 
         $connection = $this->connection($setting);
-        $url = rtrim((string) $connection['base_url'], '/').'/send/message';
 
         try {
-            $response = Http::timeout(20)
-                ->withBasicAuth((string) $connection['username'], (string) $connection['password'])
-                ->withHeaders(['X-Device-Id' => (string) $connection['device_id']])
-                ->acceptJson()
-                ->post($url, [
-                    'phone' => $normalized,
-                    'message' => $message,
-                ]);
+            $response = $this->postMessage($connection, $normalized, $message);
+            $body = $response->json();
+            if ($this->deviceMissing($body)) {
+                $liveDeviceId = $this->loggedInDeviceId($connection);
+                if (filled($liveDeviceId) && $liveDeviceId !== $connection['device_id']) {
+                    $connection['device_id'] = $liveDeviceId;
+                    $response = $this->postMessage($connection, $normalized, $message);
+                }
+            }
         } catch (\Throwable $e) {
             Log::warning('WhatsApp send failed', ['phone' => $normalized, 'error' => $e->getMessage()]);
             $this->record($orderId, $recipient, $phone, $normalized, $message, 'failed', $e->getMessage());
@@ -182,6 +182,9 @@ class WhatsAppService
 
         $text = (string) ($body['message'] ?? $fallback);
         $lower = strtolower($text);
+        if (str_contains($lower, 'device not found') || str_contains($lower, 'x-device-id')) {
+            return 'معرّف الجهاز غير صحيح. انسخ معرّف الجهاز المتصل من صفحة الأجهزة والصقه في إعدادات واتساب.';
+        }
         if (str_contains($lower, 'phone') || str_contains($lower, 'jid') || str_contains($lower, 'not registered') || str_contains($text, 'رقم')) {
             return 'الرقم غير صالح أو غير مسجّل في واتساب: '.$text;
         }
@@ -233,6 +236,58 @@ class WhatsAppService
         $digits = $this->normalizePhone($phone);
 
         return $digits !== '' ? $digits : trim($phone);
+    }
+
+    /** @param  array{base_url: ?string, username: ?string, password: ?string, device_id: ?string}  $connection */
+    private function postMessage(array $connection, string $phone, string $message): \Illuminate\Http\Client\Response
+    {
+        $url = rtrim((string) $connection['base_url'], '/').'/send/message';
+
+        return Http::timeout(20)
+            ->withBasicAuth((string) $connection['username'], (string) $connection['password'])
+            ->withHeaders(['X-Device-Id' => (string) $connection['device_id']])
+            ->acceptJson()
+            ->post($url, [
+                'phone' => $phone,
+                'message' => $message,
+            ]);
+    }
+
+    /** @param  array{base_url: ?string, username: ?string, password: ?string}  $connection */
+    private function loggedInDeviceId(array $connection): ?string
+    {
+        $url = rtrim((string) $connection['base_url'], '/').'/devices';
+        $response = Http::timeout(15)
+            ->withBasicAuth((string) $connection['username'], (string) $connection['password'])
+            ->acceptJson()
+            ->get($url);
+
+        $results = $response->json('results');
+        if (! is_array($results)) {
+            return null;
+        }
+
+        foreach ($results as $device) {
+            if (! is_array($device) || ! filled($device['id'] ?? null)) {
+                continue;
+            }
+            if (($device['state'] ?? '') === 'logged_in') {
+                return (string) $device['id'];
+            }
+        }
+
+        return null;
+    }
+
+    private function deviceMissing(mixed $body): bool
+    {
+        if (! is_array($body)) {
+            return false;
+        }
+
+        $text = strtolower((string) ($body['message'] ?? ''));
+
+        return str_contains($text, 'device not found') || str_contains($text, 'x-device-id');
     }
 
     private function prefer(mixed $saved, mixed $fallback): ?string

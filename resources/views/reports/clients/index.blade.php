@@ -6,6 +6,7 @@
         <h1>قائمة العملاء</h1>
     </section>
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-header">
                 <form class="form-inline" method="get">
@@ -25,6 +26,7 @@
                             <th>هاتف</th>
                             <th>عدد الفواتير</th>
                             <th>إجمالي المتبقي</th>
+                            <th>ديون معدومة</th>
                             <th>إجراءات</th>
                         </tr>
                     </thead>
@@ -36,6 +38,7 @@
                             <td>{{ is_array($client->phone) ? implode(' - ', $client->phone) : $client->phone }}</td>
                             <td>{{ $client->orders->count() }}</td>
                             <td><x-report-money :amount="$client->remaining_balance" :entries="$debtEntries[$client->id] ?? []" /></td>
+                            <td><x-report-money :amount="$client->written_off_total ?? 0" /></td>
                             <td>
                                 <a href="{{ route('dashboard.reports.reports.show', $client->id) }}" class="btn btn-sm btn-info">تفاصيل</a>
                             </td>

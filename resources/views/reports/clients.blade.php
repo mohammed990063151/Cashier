@@ -14,6 +14,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="row">
 
             {{-- العمود الرئيسي: جدول العملاء --}}

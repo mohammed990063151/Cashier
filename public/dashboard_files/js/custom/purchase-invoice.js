@@ -125,12 +125,18 @@
     }
 
     function updatePiecesHint($row) {
-        var product = findProduct($row.find('.product-select').val());
-        var mult = parseFloat($row.find('.unit-select option:selected').data('multiplier')) || 1;
         var qty = parseFloat($row.find('.entered-qty').val()) || 0;
-        var pieces = Math.round(qty * mult * 1000) / 1000;
-        var measure = product && product.measure_unit === 'kilo' ? 'كيلو' : 'حبة';
-        $row.find('.unit-pieces-hint').text(pieces > 0 ? '= ' + pieces + ' ' + measure + ' في المخزون' : '');
+        var unitKey = $row.find('.unit-select').val() || 'piece';
+        var label = 'حبة';
+        if (unitKey === 'kilo') {
+            label = 'كيلو';
+        } else if (unitKey === 'bulk') {
+            label = 'كرتونة';
+        } else if (unitKey === 'half_carton') {
+            label = 'نصف كرتونة';
+        }
+        var shown = Math.round(qty * 1000) / 1000;
+        $row.find('.unit-pieces-hint').text(shown > 0 ? shown + ' ' + label + ' في المخزون' : '');
     }
 
     function refreshTotals() {

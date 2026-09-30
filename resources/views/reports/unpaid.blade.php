@@ -11,10 +11,12 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="alert alert-warning text-center">
             <strong>إجمالي الذمم المستحقة على العملاء:</strong>
             <x-report-money :amount="$totalRemaining" :entries="$unpaidOrders->map(fn ($order) => ['amount' => $order->remaining, 'rate' => $order->usd_rate])->all()" />
             — عدد الطلبات: {{ $unpaidOrders->count() }}
+            <div>الديون المعدومة لا تظهر في هذه القائمة، وتظهر في شريط الهوالك أعلى الصفحة وفي صفحة الديون المعدومة.</div>
         </div>
 
         <div class="box box-primary">
@@ -35,7 +37,10 @@
                         @foreach($unpaidOrders as $order)
                             @php $paid = (float) $order->paid_at_sale + (float) $order->payments->sum('amount'); @endphp
                             <tr>
-                                <td>{{ $order->order_number }}</td>
+                                <td>
+                                    {{ $order->order_number }}
+                                    @if($order->is_opening_balance)<div><span class="label label-warning">حساب قديم</span></div>@endif
+                                </td>
                                 <td>{{ $order->client->name ?? '-' }} <x-debt-rate :rate="$order->usd_rate" :remaining="$order->remaining" /></td>
                                 <td class="text-success"><x-report-money :amount="$order->total_price" :rate="$order->usd_rate" /></td>
                                 <td><x-report-money :amount="$order->invoice_discount" :rate="$order->usd_rate" /></td>

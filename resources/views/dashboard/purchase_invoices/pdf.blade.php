@@ -158,7 +158,7 @@
             <th width="28%">الصنف</th>
             <th width="14%">الوحدة</th>
             <th width="8%">الكمية</th>
-            <th width="12%">حبات</th>
+            <th width="12%">المخزون</th>
             <th width="12%">السعر</th>
             <th width="14%">الإجمالي</th>
         </tr>
@@ -174,7 +174,7 @@
             <td class="name">{{ $item->product->name ?? '—' }}</td>
             <td>{{ $unitLabel }}</td>
             <td>{{ $entered }}</td>
-            <td>{{ number_format($item->quantity) }}</td>
+            <td>{{ $item->receivedStockLabel() }}</td>
             <td>{{ number_format($item->price, 2) }}</td>
             <td class="num">{{ number_format($item->subtotal, 2) }}</td>
         </tr>

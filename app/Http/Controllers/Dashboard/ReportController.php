@@ -25,7 +25,7 @@ class ReportController extends Controller
         $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
         $search = $request->search;
 
-        $ordersQuery = Order::with(['client', 'returns'])
+        $ordersQuery = Order::with(['client', 'returns'])->withoutOpening()
             ->when($from && $to, fn ($q) => $q->whereBetween('created_at', [$from, $to]))
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($qq) use ($search) {
@@ -38,7 +38,7 @@ class ReportController extends Controller
         $orders = $ordersQuery->paginate(50)->withQueryString();
         $snapshot = OrderReportsService::snapshot($from, $to);
 
-        $salesByClient = Order::with('client')
+        $salesByClient = Order::with('client')->withoutOpening()
             ->when($from && $to, fn ($q) => $q->whereBetween('created_at', [$from, $to]))
             ->selectRaw('client_id, SUM(total_price) as net_total, SUM(total_return) as returned')
             ->groupBy('client_id')
@@ -62,7 +62,7 @@ class ReportController extends Controller
         $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
         $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        $salesQuery = Order::query()
+        $salesQuery = Order::query()->withoutOpening()
             ->selectRaw('DATE(created_at) as date')
             ->selectRaw('SUM(total_price) as net_sales')
             ->selectRaw('SUM(total_price + total_return) as gross_sales')
@@ -92,7 +92,7 @@ class ReportController extends Controller
         $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
         $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        $orders = Order::with(['client', 'products', 'payments', 'returns'])
+        $orders = Order::with(['client', 'products', 'payments', 'returns'])->withoutOpening()
             ->when($from && $to, fn ($q) => $q->whereBetween('created_at', [$from, $to]))
             ->latest()
             ->paginate(50)
@@ -127,6 +127,7 @@ class ReportController extends Controller
     public function unpaid()
     {
         $unpaidOrders = Order::with(['client', 'payments'])
+            ->whereNull('written_off_at')
             ->where('remaining', '>', 0)
             ->orderByDesc('remaining')
             ->get();

@@ -17,6 +17,8 @@ use App\Models\OrderReturn;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Services\AiAssistant\AssistantEngine;
+use App\Services\BadDebtService;
+use App\Services\CollectionScheduleService;
 use App\Services\CurrencyService;
 use App\Services\OrderFinancialService;
 use App\Services\OrderLineNormalizer;
@@ -90,6 +92,18 @@ try {
     assert_true($line['quantity'] === 26.0, 'toPieceLine qty=26 without half carton');
     assert_true(abs($line['line_total'] - 390) < 0.01, 'toPieceLine line_total=390');
     assert_true(abs($line['sale_price'] - (390 / 26)) < 0.0001, 'toPieceLine unit avg');
+    assert_true(($line['unit_lines']['bulk']['qty'] ?? 0) === 1.0, 'carton qty stays 1');
+    assert_true(($line['unit_lines']['piece']['qty'] ?? 0) === 2.0, 'piece qty stays 2');
+    assert_true(! isset($line['unit_lines']['half_carton']), 'half carton is not stored');
+
+    $mixed = SaleUnits::toPieceLine([
+        'bulk' => ['qty' => 1, 'price' => 240],
+        'piece' => ['qty' => 2, 'price' => 15],
+    ], 12, 'flexible', 'carton');
+    assert_true($mixed['line_total'] === 270.0, 'carton 240 + pieces 30 = 270, not blended');
+    assert_true($mixed['quantity'] === 14.0, 'stock is 12+2 pieces');
+    assert_true(SaleUnits::formatUnitLines($mixed['unit_lines']) === '1 كرتونة + 2 حبة', 'mixed label keeps both units');
+    assert_true(SaleUnits::formatUnitPrices($mixed['unit_lines']) === '240 ج.س / كرتونة + 15 ج.س / حبة', 'each unit keeps its price');
 
     // 4b) 5 كراتين × 7 = 35 بالضبط (بدون 34.98)
     $cartonMoney = SaleUnits::toPieceLine([
@@ -261,6 +275,43 @@ try {
     assert_true(abs($finCalc['totalAfterDiscount'] - 50) < 0.01, 'net total after return = 50');
     assert_true(abs($finCalc['remaining']) < 0.01, 'remaining 0 after refund');
     assert_true(abs(($finCalc['netPaid'] + $finCalc['remaining']) - $finCalc['totalAfterDiscount']) < 0.02, 'netPaid+remaining≈total');
+
+    $openingClient = Client::create([
+        'name' => 'TEST-OPENING-'.uniqid(),
+        'phone' => ['0900000000'],
+        'address' => 'test',
+    ]);
+    $opening = app(\App\Services\OpeningBalanceService::class)->create(
+        $openingClient,
+        800,
+        100,
+        'OLD-INV',
+        'دين قديم',
+        '2026-01-01'
+    );
+    $openingCalc = app(OrderFinancialService::class)->calculate($opening->fresh(['products', 'payments', 'returns']));
+    assert_true(abs($openingCalc['totalSale'] - 800) < 0.01, 'opening total is 800');
+    assert_true(abs($openingCalc['remaining'] - 700) < 0.01, 'opening remaining is 700');
+    assert_true(abs($openingCalc['profitAfterDiscount']) < 0.01, 'opening is not sales profit');
+    assert_true(abs($openingClient->fresh()->remaining_balance - 700) < 0.01, 'client balance includes opening debt');
+
+    $badService = app(BadDebtService::class);
+    $badBefore = $badService->summary()['bad_amount'];
+    $written = $badService->writeOff($opening->fresh(['products', 'payments', 'returns']), 'لن يسدد');
+    $writtenFresh = $written->fresh(['products', 'payments', 'returns']);
+    $writtenCalc = app(OrderFinancialService::class)->calculate($writtenFresh);
+    assert_true(abs($writtenCalc['remaining']) < 0.01, 'written off remaining is 0');
+    assert_true(abs((float) $writtenFresh->written_off_amount - 700) < 0.01, 'written off amount keeps 700');
+    assert_true(abs((float) $writtenFresh->total_price - 800) < 0.01, 'write off does not delete the sale');
+    assert_true(app(OrderFinancialService::class)->paymentStatus($writtenFresh) === 'written_off', 'status is written off not paid');
+    assert_true(abs($openingClient->fresh()->remaining_balance) < 0.01, 'client balance drops the bad debt');
+    assert_true(! app(CollectionScheduleService::class)->baseQuery()->where('id', $writtenFresh->id)->exists(), 'written off leaves collection');
+    $badAfter = $badService->summary()['bad_amount'];
+    assert_true(abs($badAfter - $badBefore - 700) < 0.01, 'bad debt total grows by 700');
+    $restored = $badService->restore($writtenFresh);
+    $restoredCalc = app(OrderFinancialService::class)->calculate($restored->fresh(['products', 'payments', 'returns']));
+    assert_true(abs($restoredCalc['remaining'] - 700) < 0.01, 'restore brings the debt back');
+    assert_true(abs($openingClient->fresh()->remaining_balance - 700) < 0.01, 'client balance returns after restore');
 
     // 12) AI assistant replies with real data
     $ai = app(AssistantEngine::class);

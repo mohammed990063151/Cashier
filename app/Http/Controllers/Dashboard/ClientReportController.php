@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ClientReportController extends Controller
 {
@@ -35,7 +36,10 @@ class ClientReportController extends Controller
             'clients.name',
             'clients.phone',
             DB::raw('COUNT(orders.id) as orders_count'),
-            DB::raw('SUM(orders.remaining) as remaining_balance')
+            DB::raw('SUM(orders.remaining) as remaining_balance'),
+            DB::raw(Schema::hasColumn('orders', 'written_off_amount')
+                ? 'SUM(CASE WHEN orders.written_off_at IS NOT NULL THEN orders.written_off_amount ELSE 0 END) as written_off_total'
+                : '0 as written_off_total')
         )
         ->groupBy('clients.id', 'clients.name', 'clients.phone');
 
@@ -80,7 +84,12 @@ class ClientReportController extends Controller
                 'remaining' => $calc['remaining'],
                 'usd_rate' => $order->usd_rate,
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
+                'written_off_amount' => (float) ($order->written_off_amount ?? 0),
+                'written_off_note' => $order->written_off_note,
                 'created_at' => $order->created_at,
+                'is_opening' => (bool) $order->is_opening_balance,
+                'opening_details' => $order->opening_details,
+                'opening_photo' => $order->opening_photo,
             ];
         })->values();
 
@@ -125,18 +134,22 @@ class ClientReportController extends Controller
                 'remaining' => $calc['remaining'],
                 'usd_rate' => $order->usd_rate,
                 'status' => $finance->paymentStatusLabel($finance->paymentStatus($order)),
+                'written_off_amount' => (float) ($order->written_off_amount ?? 0),
+                'written_off_note' => $order->written_off_note,
                 'payments' => $paidItems,
             ];
         })->values();
 
         $remainingBalance = (float) $invoices->sum('remaining');
+        $writtenOffTotal = (float) $invoices->sum('written_off_amount');
 
         return view('reports.clients.show', compact(
             'client',
             'invoices',
             'productsSold',
             'statement',
-            'remainingBalance'
+            'remainingBalance',
+            'writtenOffTotal'
         ));
     }
 

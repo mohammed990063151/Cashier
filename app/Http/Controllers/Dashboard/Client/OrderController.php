@@ -128,6 +128,10 @@ class OrderController extends Controller
 
 public function update(Request $request, Client $client, Order $order, CashService $cashService, OrderLineNormalizer $normalizer)
 {
+    if ($order->is_opening_balance) {
+        return back()->withErrors(['order' => 'الحساب القديم يُسدد من المدفوعات ولا يُعدّل كطلب بيع.']);
+    }
+
     $request->validate([
         'products' => 'required|array|min:1',
         'paid_at_sale' => 'nullable|numeric|min:0',
@@ -198,6 +202,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
             'sale_price' => $unitPrice,
             'cost_price' => $product->purchase_price,
             'line_total' => $lineTotal,
+            'unit_lines' => $this->encodeUnitLines($data['unit_lines'] ?? null),
         ];
 
         $total_price  += $lineTotal;
@@ -350,6 +355,7 @@ public function update(Request $request, Client $client, Order $order, CashServi
                 'sale_price' => $unitPrice,
                 'cost_price' => (float) $product->purchase_price,
                 'line_total' => $lineTotal,
+                'unit_lines' => $this->encodeUnitLines($data['unit_lines'] ?? null),
             ];
 
             $total_price += $lineTotal;
@@ -414,6 +420,15 @@ public function update(Request $request, Client $client, Order $order, CashServi
         }
 
         return $order;
+    }
+
+    private function encodeUnitLines(mixed $lines): ?string
+    {
+        if (! is_array($lines) || $lines === []) {
+            return null;
+        }
+
+        return json_encode($lines, JSON_UNESCAPED_UNICODE);
     }
 
     private function categoriesWithStock()

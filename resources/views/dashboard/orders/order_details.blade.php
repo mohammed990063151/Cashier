@@ -57,6 +57,8 @@
         </div>
     </div>
 
+    @include('dashboard.orders._opening_balance', ['order' => $order])
+
     <h5 class="od-section-title"><i class="fa fa-boxes"></i> المنتجات</h5>
 
     @foreach($order->products as $product)

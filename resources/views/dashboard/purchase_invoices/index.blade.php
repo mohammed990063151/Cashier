@@ -76,8 +76,7 @@
 
                                 <td data-label="الكمية">
                                     @foreach ($invoice->items as $item)
-                                    {{ $item->purchase_unit_label ?? 'حبة' }} × {{ $item->entered_qty ?? $item->quantity }}
-                                    <small class="text-muted">({{ $item->quantity }} حبة)</small><br>
+                                    {{ $item->receivedStockLabel() }}<br>
                                     @endforeach
                                 </td>
                                 <td data-label="الإجمالي">{{ number_format($invoice->total, 2) }} <x-usd :rate="$invoice->usd_rate" :amount="$invoice->total" /></td>

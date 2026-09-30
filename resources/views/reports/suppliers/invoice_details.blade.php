@@ -8,6 +8,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-body table-responsive">
                 <p><strong>المورد:</strong> {{ $invoice->supplier->name }}</p>

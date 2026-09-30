@@ -27,6 +27,7 @@ class CollectionScheduleService
     {
         return Order::query()
             ->with(['client', 'paymentInstallments'])
+            ->whereNull('written_off_at')
             ->where('remaining', '>', 0);
     }
 
@@ -37,7 +38,7 @@ class CollectionScheduleService
     {
         return OrderPaymentInstallment::query()
             ->whereNull('paid_at')
-            ->whereHas('order', fn ($q) => $q->where('remaining', '>', 0));
+            ->whereHas('order', fn ($q) => $q->whereNull('written_off_at')->where('remaining', '>', 0));
     }
 
     /**
@@ -280,7 +281,7 @@ class CollectionScheduleService
         $soonEnd = $today->copy()->addDays($this->dueSoonDays());
         $unpaid = $this->unpaidInstallmentQuery();
 
-        $ordersWithRemaining = Order::where('remaining', '>', 0);
+        $ordersWithRemaining = Order::whereNull('written_off_at')->where('remaining', '>', 0);
 
         return [
             'overdue' => (clone $unpaid)->whereDate('due_at', '<', $today)->count(),

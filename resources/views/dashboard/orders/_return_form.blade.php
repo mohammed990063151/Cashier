@@ -44,7 +44,10 @@
             $mode = $product->sale_mode ?? 'flexible';
             $measure = $product->measure_unit ?? 'piece';
             $units = \App\Support\SaleUnits::unitsForOrderForm($bulk, $mode, $measure);
-            $soldLabel = \App\Support\SaleUnits::formatQuantityLabel($soldPieces, $bulk, $mode, $measure);
+            $savedLines = \App\Support\SaleUnits::unitLinesFromPivot($product);
+            $soldLabel = $savedLines !== []
+                ? \App\Support\SaleUnits::formatUnitLines($savedLines)
+                : \App\Support\SaleUnits::formatQuantityLabel($soldPieces, $bulk, $mode, $measure);
             $breakdown = $fin->productUnitBreakdown($product);
         @endphp
         <div class="return-product-card" data-product-id="{{ $product->id }}" data-max-pieces="{{ $soldPieces }}">
@@ -63,18 +66,26 @@
             <div class="return-unit-grid">
                 @foreach($units as $unitKey => $unitMeta)
                     @php
-                        $unitPrice = \App\Support\SaleUnits::unitPriceFromLineMoney(
-                            $unitKey,
-                            $lineMoney,
-                            max($soldPieces, 0.0001),
-                            $bulk,
-                            $measure
-                        );
                         $multiplier = (float) $unitMeta['multiplier'];
-                        $maxUnit = $multiplier > 0
-                            ? \App\Support\DecimalMath::div($soldPieces, $multiplier)
-                            : 0;
+                        if ($savedLines !== []) {
+                            $unitPrice = (float) ($savedLines[$unitKey]['price'] ?? 0);
+                            $maxUnit = (float) ($savedLines[$unitKey]['qty'] ?? 0);
+                        } else {
+                            $unitPrice = \App\Support\SaleUnits::unitPriceFromLineMoney(
+                                $unitKey,
+                                $lineMoney,
+                                max($soldPieces, 0.0001),
+                                $bulk,
+                                $measure
+                            );
+                            $maxUnit = $multiplier > 0
+                                ? \App\Support\DecimalMath::div($soldPieces, $multiplier)
+                                : 0;
+                        }
                     @endphp
+                    @if($savedLines !== [] && $maxUnit <= 0.0005)
+                        @continue
+                    @endif
                     <div class="return-unit-block">
                         <label>{{ $unitMeta['label'] }}</label>
                         <small class="text-muted">{{ \App\Support\DecimalMath::display($unitPrice) }} ج.س / {{ $unitMeta['label'] }}</small>

@@ -71,7 +71,7 @@
             @endif
 
             @if (auth()->user()->hasPermission('read_orders'))
-            <li class="treeview {{ request()->routeIs('dashboard.orders.*', 'dashboard.payments.*', 'dashboard.collection-schedules.*', 'dashboard.purchase-invoices.*', 'dashboard.sale-invoices.*', 'dashboard.direct-sale*') ? 'active menu-open' : '' }}">
+            <li class="treeview {{ request()->routeIs('dashboard.orders.*', 'dashboard.payments.*', 'dashboard.collection-schedules.*', 'dashboard.bad-debts.*', 'dashboard.purchase-invoices.*', 'dashboard.sale-invoices.*', 'dashboard.direct-sale*') ? 'active menu-open' : '' }}">
                 <a href="#">
                     <i class="fa fa-shopping-cart"></i> <span>الطلبات</span>
                     <span class="pull-right-container"><i class="fa fa-angle-left pull-right"></i></span>
@@ -81,6 +81,7 @@
                     <li><a href="{{ route('dashboard.direct-sale') }}"><i class="fa fa-bolt"></i> بيع مباشر</a></li>
                     <li><a href="{{ route('dashboard.payments.index') }}"><i class="fa fa-circle-o"></i> المدفوعات</a></li>
                     <li><a href="{{ route('dashboard.collection-schedules.index') }}"><i class="fa fa-calendar-check-o"></i> جدولة السداد</a></li>
+                    <li><a href="{{ route('dashboard.bad-debts.index') }}"><i class="fa fa-ban"></i> الديون المعدومة</a></li>
                     @if (auth()->user()->hasPermission('read_purchases') || auth()->user()->hasPermission('read_orders'))
                     <li><a href="{{ route('dashboard.purchase-invoices.index') }}"><i class="fa fa-file-text"></i> فواتير الشراء</a></li>
                     @endif
@@ -145,6 +146,7 @@
                     <li><a href="{{ route('dashboard.reports.detailed') }}"><i class="fa fa-circle-o"></i> تقرير مفصل</a></li>
                     <li><a href="{{ route('dashboard.reports.byCategory') }}"><i class="fa fa-circle-o"></i> تقرير حسب التصنيف</a></li>
                     <li><a href="{{ route('dashboard.reports.slas.unpaid') }}"><i class="fa fa-circle-o"></i> الفواتير غير المسددة</a></li>
+                    <li><a href="{{ route('dashboard.bad-debts.index') }}"><i class="fa fa-ban"></i> الديون المعدومة</a></li>
                     <li><a href="{{ route('dashboard.reports.profit') }}"><i class="fa fa-circle-o"></i> تقرير الأرباح والخسائر</a></li>
                     <li><a href="{{ route('dashboard.reports.profit_detailed') }}"><i class="fa fa-line-chart"></i> أرباح مفصل</a></li>
                     <li><a href="{{ route('dashboard.reports.profit_summary') }}"><i class="fa fa-pie-chart"></i> أرباح مجمل</a></li>

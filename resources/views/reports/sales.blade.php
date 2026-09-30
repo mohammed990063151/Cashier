@@ -11,6 +11,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="row">
             <div class="col-md-12">
                 <div class="box box-primary">
@@ -109,7 +110,9 @@
                     <div class="box-body">
                         <p><strong>عدد الطلبات:</strong> {{ $snapshot['orders_count'] }}</p>
                         <p><strong>ذمم متبقية:</strong> <x-report-money :amount="$snapshot['total_remaining']" :entries="$snapshot['fx']['remaining']" /></p>
+                        <p><strong>ديون معدومة:</strong> <x-report-money :amount="$snapshot['bad_debt'] ?? 0" :entries="$snapshot['fx']['bad_debt'] ?? []" /></p>
                         <p><strong>ربح المبيعات:</strong> <x-report-money :amount="$snapshot['orders_profit']" :entries="$snapshot['fx']['profit']" /></p>
+                        <p><strong>ربح المبيعات بعد الهالك:</strong> <x-report-money :amount="$snapshot['profit_after_bad_debt'] ?? 0" /></p>
                     </div>
                 </div>
             </div>

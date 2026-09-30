@@ -51,6 +51,7 @@
                     <span class="text-danger" style="font-weight:800;">{{ number_format($summary['total_remaining'], 2) }} ج.س</span>
                 </h3>
                 <div class="box-tools">
+                    <a href="{{ route('dashboard.bad-debts.index') }}" class="btn btn-default"><i class="fa fa-ban"></i> الديون المعدومة</a>
                     <a href="{{ route('dashboard.payments.index') }}" class="btn btn-success"><i class="fa fa-money"></i> صفحة المدفوعات</a>
                 </div>
             </div>

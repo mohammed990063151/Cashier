@@ -9,6 +9,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-body">
 
@@ -47,7 +48,7 @@
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $item->product->name ?? '—' }}</td>
                             <td>{{ ($item->purchase_unit_label ?? 'حبة').' × '.($item->entered_qty ?? $item->quantity) }}</td>
-                            <td>{{ $item->quantity }}</td>
+                            <td>{{ $item->receivedStockLabel() }}</td>
                             <td>{{ number_format($item->price, 2) }}</td>
                             <td>{{ number_format($item->subtotal,2) }}</td>
                         </tr>

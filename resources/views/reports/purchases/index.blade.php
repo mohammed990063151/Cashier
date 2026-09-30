@@ -8,6 +8,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-body">
 
@@ -100,7 +101,7 @@
                                     @foreach($invoice->items as $item)
                                         @php
                                             $qtyLabel = $item->entered_qty
-                                                ? (($item->purchase_unit_label ?? 'وحدة').' × '.$item->entered_qty.' (= '. \App\Support\DecimalMath::display($item->quantity).' أساس)')
+                                                ? $item->receivedStockLabel()
                                                 : \App\Support\DecimalMath::display($item->quantity);
                                         @endphp
                                         <tr>

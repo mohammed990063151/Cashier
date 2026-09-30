@@ -36,6 +36,7 @@ use App\Http\Controllers\Dashboard\Client\OrderController as ClientOrderControll
 use App\Http\Controllers\Dashboard\AiAssistantController;
 use App\Http\Controllers\Dashboard\StockAlertController;
 use App\Http\Controllers\Dashboard\CollectionAlertController;
+use App\Http\Controllers\Dashboard\BadDebtController;
 
 // Home route (optional)
 Route::get('/home', function () {
@@ -101,6 +102,11 @@ Route::get('/expenses/restore/{id}', [ExpenseReportController::class, 'restoreEx
     Route::get('/trashed', [OrderController::class, 'softdelet'])->name('orders.trashed');
     Route::post('orders/{order}/restore', [OrderController::class, 'restore'])->name('orders.restore');
 
+
+    Route::get('bad-debts', [BadDebtController::class, 'index'])->name('bad-debts.index');
+    Route::post('orders/{order}/bad-debt', [BadDebtController::class, 'store'])->name('orders.bad-debt');
+    Route::post('clients/{client}/bad-debt', [BadDebtController::class, 'storeClient'])->name('clients.bad-debt');
+    Route::post('bad-debts/{order}/restore', [BadDebtController::class, 'restore'])->name('bad-debts.restore');
 
     Route::get('collection-schedules', [CollectionScheduleController::class, 'index'])->name('collection-schedules.index');
     Route::put('collection-schedules/{order}', [CollectionScheduleController::class, 'update'])->name('collection-schedules.update');

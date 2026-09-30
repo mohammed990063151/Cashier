@@ -122,22 +122,39 @@
                 $mode = \App\Support\SaleUnits::normalizeSaleMode($product->sale_mode);
                 $measure = \App\Support\SaleUnits::normalizeMeasureUnit($product->measure_unit);
                 $lineTotal = \App\Support\SaleUnits::lineMoney($product);
+                $savedLines = \App\Support\SaleUnits::unitLinesFromPivot($product);
                 $salePrice = (float) $product->pivot->sale_price;
                 $costPrice = (float) $product->pivot->cost_price;
-                if (
-                    $measure !== \App\Support\SaleUnits::UNIT_KILO
-                    && ($mode === \App\Support\SaleUnits::MODE_BULK_ONLY || $measure === \App\Support\SaleUnits::UNIT_CARTON)
-                    && $bulk > 1
-                ) {
-                    $cartons = $qty / $bulk;
-                    $salePrice = $cartons > 0 ? round($lineTotal / $cartons, 2) : round($salePrice * $bulk, 2);
-                    $costPrice = round($costPrice * $bulk, 2);
+                $filledUnits = 0;
+                foreach ($savedLines as $savedLine) {
+                    if ((float) ($savedLine['qty'] ?? 0) > 0.0005) {
+                        $filledUnits++;
+                    }
+                }
+                if ($savedLines !== []) {
+                    $qtyLabel = \App\Support\SaleUnits::formatUnitLines($savedLines);
+                    $salePriceLabel = \App\Support\SaleUnits::formatUnitPrices($savedLines);
+                    if ($filledUnits === 1 && isset($savedLines['bulk']) && $bulk > 1) {
+                        $costPrice = round($costPrice * $bulk, 2);
+                    }
+                } else {
+                    $qtyLabel = \App\Support\SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure);
+                    if (
+                        $measure !== \App\Support\SaleUnits::UNIT_KILO
+                        && ($mode === \App\Support\SaleUnits::MODE_BULK_ONLY || $measure === \App\Support\SaleUnits::UNIT_CARTON)
+                        && $bulk > 1
+                    ) {
+                        $cartons = $qty / $bulk;
+                        $salePrice = $cartons > 0 ? round($lineTotal / $cartons, 2) : round($salePrice * $bulk, 2);
+                        $costPrice = round($costPrice * $bulk, 2);
+                    }
+                    $salePriceLabel = number_format($salePrice, 2, '.', '');
                 }
 
                 return [
                     'name' => $product->name,
-                    'qty_label' => \App\Support\SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure),
-                    'sale_price' => number_format($salePrice, 2, '.', ''),
+                    'qty_label' => $qtyLabel,
+                    'sale_price' => $salePriceLabel,
                     'cost_price' => number_format($costPrice, 2, '.', ''),
                     'line_total' => number_format($lineTotal, 2, '.', ''),
                 ];

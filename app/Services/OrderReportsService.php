@@ -9,6 +9,7 @@ use App\Models\OrderReturn;
 use App\Models\PurchaseInvoice;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class OrderReportsService
 {
@@ -19,17 +20,19 @@ class OrderReportsService
      */
     public static function snapshot(?Carbon $from = null, ?Carbon $to = null): array
     {
+        $salesQuery = Order::query()->withoutOpening();
         $orderQuery = Order::query();
         if ($from && $to) {
+            $salesQuery->whereBetween('created_at', [$from, $to]);
             $orderQuery->whereBetween('created_at', [$from, $to]);
         }
 
-        $netSales = (float) (clone $orderQuery)->sum('total_price');
-        $returnsMerchandise = (float) (clone $orderQuery)->sum('total_return');
+        $netSales = (float) (clone $salesQuery)->sum('total_price');
+        $returnsMerchandise = (float) (clone $salesQuery)->sum('total_return');
         $grossSales = round($netSales + $returnsMerchandise, 2);
         $totalRemaining = (float) (clone $orderQuery)->sum('remaining');
-        $ordersProfit = (float) (clone $orderQuery)->sum('profit');
-        $ordersCount = (int) (clone $orderQuery)->count();
+        $ordersProfit = (float) (clone $salesQuery)->sum('profit');
+        $ordersCount = (int) (clone $salesQuery)->count();
 
         $returnQuery = OrderReturn::query();
         if ($from && $to) {
@@ -68,6 +71,23 @@ class OrderReportsService
             ->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to]))
             ->sum('total');
 
+        $badDebt = 0.0;
+        $badDebtCount = 0;
+        $badDebtEntries = [];
+        if (Schema::hasColumn('orders', 'written_off_at')) {
+            $badQuery = Order::query()->whereNotNull('written_off_at');
+            $badDebt = (float) (clone $badQuery)->sum('written_off_amount');
+            $badDebtCount = (int) (clone $badQuery)->count();
+            $badDebtEntries = (clone $badQuery)
+                ->where('written_off_amount', '>', 0)
+                ->get(['written_off_amount', 'usd_rate'])
+                ->map(fn ($row) => [
+                    'amount' => (float) $row->written_off_amount,
+                    'rate' => (float) ($row->usd_rate ?? 0),
+                ])
+                ->all();
+        }
+
         $fxRows = function ($query, string $amount) {
             if (! $query->getModel()->getConnection()->getSchemaBuilder()->hasColumn($query->getModel()->getTable(), 'usd_rate')) {
                 return [];
@@ -91,6 +111,9 @@ class OrderReportsService
             'cash_refunded' => round($cashRefunded, 2),
             'returns_count' => $returnsCount,
             'total_remaining' => round($totalRemaining, 2),
+            'bad_debt' => round($badDebt, 2),
+            'bad_debt_count' => $badDebtCount,
+            'profit_after_bad_debt' => round($ordersProfit - $badDebt, 2),
             'orders_profit' => round($ordersProfit, 2),
             'cash_in_from_customers' => round($cashInFromCustomers, 2),
             'cash_out_returns' => round($cashOutReturns, 2),
@@ -101,8 +124,8 @@ class OrderReportsService
             'purchases_total' => round($totalPurchasesVolume, 2),
             'operating_profit' => round($ordersProfit - $totalExpenses, 2),
             'fx' => [
-                'net_sales' => $fxRows($orderQuery, 'total_price'),
-                'gross_sales' => (clone $orderQuery)->get(['total_price', 'total_return', 'usd_rate'])
+                'net_sales' => $fxRows($salesQuery, 'total_price'),
+                'gross_sales' => (clone $salesQuery)->get(['total_price', 'total_return', 'usd_rate'])
                     ->map(fn ($row) => [
                         'amount' => (float) $row->total_price + (float) $row->total_return,
                         'rate' => (float) ($row->usd_rate ?? 0),
@@ -110,9 +133,10 @@ class OrderReportsService
                     ->filter(fn ($row) => $row['amount'] > 0)
                     ->values()
                     ->all(),
-                'returns' => $fxRows($orderQuery, 'total_return'),
+                'returns' => $fxRows($salesQuery, 'total_return'),
                 'remaining' => $fxRows($orderQuery, 'remaining'),
-                'profit' => $fxRows($orderQuery, 'profit'),
+                'bad_debt' => $badDebtEntries,
+                'profit' => $fxRows($salesQuery, 'profit'),
                 'purchases_total' => $fxRows(PurchaseInvoice::query()->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to])), 'total'),
                 'purchases_paid' => $fxRows(PurchaseInvoice::query()->when($from && $to, fn ($q) => $q->whereBetween('invoice_date', [$from, $to])), 'paid'),
             ],
@@ -124,7 +148,7 @@ class OrderReportsService
      */
     public static function dailySalesSeries(?Carbon $from = null, ?Carbon $to = null): array
     {
-        $query = Order::query()
+        $query = Order::query()->withoutOpening()
             ->selectRaw('DATE(created_at) as date')
             ->selectRaw('SUM(total_price) as net_sales')
             ->selectRaw('SUM(total_price + total_return) as gross_sales')
@@ -157,6 +181,7 @@ class OrderReportsService
             'cash_balance' => $cashBalance,
             'total_outflows' => round($totalOutflows, 2),
             'net_result' => round($netResult, 2),
+            'result_after_bad_debt' => round($netResult - ($s['bad_debt'] ?? 0), 2),
         ]);
     }
 
@@ -192,6 +217,9 @@ class OrderReportsService
         $query = DB::table('product_order')
             ->join('products', 'product_order.product_id', '=', 'products.id')
             ->join('orders', 'product_order.order_id', '=', 'orders.id')
+            ->where(function ($q) {
+                $q->where('orders.is_opening_balance', false)->orWhereNull('orders.is_opening_balance');
+            })
             ->select(
                 'products.name as product_name',
                 DB::raw('SUM(COALESCE(product_order.line_total, product_order.quantity * product_order.sale_price)) as sales'),
@@ -228,7 +256,7 @@ class OrderReportsService
         $profit = $s['orders_profit'];
         $sales = $s['net_sales'];
 
-        $costQuery = Order::query();
+        $costQuery = Order::query()->withoutOpening();
         if ($from && $to) {
             $costQuery->whereBetween('created_at', [$from, $to]);
         }

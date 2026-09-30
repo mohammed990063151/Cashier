@@ -592,6 +592,25 @@ class SaleUnits
         $mode = self::normalizeSaleMode($product->sale_mode ?? null);
         $measure = self::normalizeMeasureUnit($product->measure_unit ?? null);
         $storedPieces = DecimalMath::round($product->pivot->quantity ?? 0);
+        $savedLines = self::unitLinesFromPivot($product);
+
+        if ($savedLines !== []) {
+            if (isset($savedLines[$unitKey]) && (float) ($savedLines[$unitKey]['qty'] ?? 0) > 0.0005) {
+                return [
+                    'qty' => DecimalMath::round((float) $savedLines[$unitKey]['qty']),
+                    'price' => DecimalMath::round((float) ($savedLines[$unitKey]['price'] ?? 0)),
+                ];
+            }
+
+            $catalog = (float) ($product->sale_price ?? $piecePrice);
+            $multiplier = self::multiplier($unitKey, $bulkSize);
+
+            return [
+                'qty' => 0,
+                'price' => DecimalMath::round($catalog * ($unitKey === 'kilo' ? 1 : $multiplier)),
+            ];
+        }
+
         $lineMoney = self::lineMoney($product);
         $unitPrice = self::unitPriceFromLineMoney($unitKey, $lineMoney, max($storedPieces, 0.0001), $bulkSize, $measure);
 
@@ -638,22 +657,17 @@ class SaleUnits
      */
     public static function toPieceLine(array $line, int $piecesPerBulk, ?string $saleMode = null, ?string $measureUnit = null): array
     {
-        $measure = self::normalizeMeasureUnit($measureUnit);
         $allowedUnits = array_keys(self::unitsForOrderForm($piecesPerBulk, $saleMode, $measureUnit));
         $totalPieces = 0.0;
         $lineTotal = 0.0;
+        $unitLines = [];
 
         foreach ($allowedUnits as $unit) {
             $qty = max(0, (float) ($line[$unit]['qty'] ?? 0));
             $price = max(0, (float) ($line[$unit]['price'] ?? 0));
 
-            if ($measure === self::UNIT_KILO) {
-                $qty = DecimalMath::round($qty);
-                $price = DecimalMath::round($price);
-            } else {
-                $qty = DecimalMath::round($qty);
-                $price = DecimalMath::round($price);
-            }
+            $qty = DecimalMath::round($qty);
+            $price = DecimalMath::round($price);
 
             if ($qty <= 0) {
                 continue;
@@ -661,24 +675,107 @@ class SaleUnits
 
             $multiplier = self::multiplier($unit, $piecesPerBulk);
             $totalPieces = DecimalMath::add($totalPieces, DecimalMath::mul($qty, $multiplier));
-            // الإجمالي = الكمية المدخلة × سعر الوحدة المدخل (كرتونة/حبة/كيلو) — بدون إعادة ضرب بحبة
+            // كل وحدة تُحسب وحدها: كرتونة × سعر الكرتونة، حبة × سعر الحبة. لا يُخلط السعر.
             $lineTotal += $qty * $price;
+            $unitLines[$unit] = ['qty' => $qty, 'price' => $price];
         }
 
         if ($totalPieces <= 0) {
-            return ['quantity' => 0, 'sale_price' => 0.0, 'line_total' => 0.0];
+            return ['quantity' => 0, 'sale_price' => 0.0, 'line_total' => 0.0, 'unit_lines' => []];
         }
 
         $lineTotal = DecimalMath::round($lineTotal);
-
-        // سعر الحبة/الكيلو المرجعي للمخزون والعرض — بدقة كافية لاسترجاع الإجمالي
         $salePrice = $totalPieces > 0 ? ($lineTotal / $totalPieces) : 0.0;
 
         return [
             'quantity' => $totalPieces,
             'sale_price' => $salePrice,
             'line_total' => $lineTotal,
+            'unit_lines' => $unitLines,
         ];
+    }
+
+    /**
+     * @return array<string, array{qty: float, price: float}>
+     */
+    public static function unitLinesFromPivot($product): array
+    {
+        $raw = $product->pivot->unit_lines ?? null;
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+
+            return is_array($decoded) ? $decoded : [];
+        }
+
+        return [];
+    }
+
+    /**
+     * @param  array<string, array{qty?: float, price?: float}>  $lines
+     */
+    public static function formatUnitLines(array $lines): string
+    {
+        $labels = ['bulk' => 'كرتونة', 'piece' => 'حبة', 'kilo' => 'كيلو'];
+        $parts = [];
+        foreach ($labels as $key => $label) {
+            $qty = (float) ($lines[$key]['qty'] ?? 0);
+            if ($qty > 0.0005) {
+                $parts[] = DecimalMath::display($qty).' '.$label;
+            }
+        }
+
+        return $parts !== [] ? implode(' + ', $parts) : '0';
+    }
+
+    /**
+     * @param  array<string, array{qty?: float, price?: float}>  $lines
+     */
+    public static function formatUnitPrices(array $lines): string
+    {
+        $labels = ['bulk' => 'كرتونة', 'piece' => 'حبة', 'kilo' => 'كيلو'];
+        $parts = [];
+        foreach ($labels as $key => $label) {
+            $qty = (float) ($lines[$key]['qty'] ?? 0);
+            if ($qty <= 0.0005) {
+                continue;
+            }
+            $parts[] = DecimalMath::display((float) ($lines[$key]['price'] ?? 0)).' ج.س / '.$label;
+        }
+
+        return implode(' + ', $parts);
+    }
+
+    /**
+     * أنقص الكميات المرتجعة من وحدات السطر المحفوظة دون دمج الكرتونة في الحبة.
+     *
+     * @param  array<string, array{qty?: float, price?: float}>  $lines
+     * @param  list<array{unit?: string, qty?: float}>  $entries
+     * @return array<string, array{qty: float, price: float}>|null
+     */
+    public static function subtractUnitLines(array $lines, array $entries): ?array
+    {
+        if ($lines === []) {
+            return null;
+        }
+
+        foreach ($entries as $entry) {
+            $unit = (string) ($entry['unit'] ?? '');
+            $qty = (float) ($entry['qty'] ?? 0);
+            if ($qty <= 0 || $unit === '' || ! isset($lines[$unit])) {
+                continue;
+            }
+            $left = DecimalMath::round((float) ($lines[$unit]['qty'] ?? 0) - $qty);
+            if ($left <= 0.0005) {
+                unset($lines[$unit]);
+            } else {
+                $lines[$unit]['qty'] = $left;
+            }
+        }
+
+        return $lines;
     }
 
     /**
@@ -686,8 +783,13 @@ class SaleUnits
      */
     public static function lineMoney($product): float
     {
-        $pieces = (float) ($product->pivot->quantity ?? 0);
-        $piecePrice = (float) ($product->pivot->sale_price ?? 0);
+        $pivot = $product->pivot ?? null;
+        if ($pivot && $pivot->line_total !== null && $pivot->line_total !== '') {
+            return round((float) $pivot->line_total, 2);
+        }
+
+        $pieces = (float) ($pivot->quantity ?? 0);
+        $piecePrice = (float) ($pivot->sale_price ?? 0);
         $measure = self::normalizeMeasureUnit($product->measure_unit ?? null);
         $bulk = max(1, (int) ($product->pieces_per_carton ?? 12));
         $mode = self::normalizeSaleMode($product->sale_mode ?? null);

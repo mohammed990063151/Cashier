@@ -5,9 +5,11 @@
     <section class="content-header">
         <h1>تفاصيل العميل: {{ $client->name }} <x-debt-rate :rates="$invoices->pluck('usd_rate')" :remaining="$remainingBalance" /></h1>
         <small>الرصيد المتبقي: <x-report-money :amount="$remainingBalance" :entries="$invoices->map(fn ($inv) => ['amount' => $inv->remaining, 'rate' => $inv->usd_rate])->all()" /></small>
+        <small> — ديون معدومة: <x-report-money :amount="$writtenOffTotal" :entries="$invoices->map(fn ($inv) => ['amount' => $inv->written_off_amount, 'rate' => $inv->usd_rate])->all()" /></small>
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
 
             <div class="box-header">
@@ -39,10 +41,23 @@
                                 @foreach($invoices as $inv)
                                 <tr>
                                     <td>{{ $inv->id }}</td>
-                                    <td>{{ $inv->order_number }}</td>
+                                    <td>
+                                        {{ $inv->order_number }}
+                                        @if($inv->is_opening ?? false)
+                                            <div><span class="label label-warning">حساب قديم</span></div>
+                                            @if($inv->opening_details)<div class="text-muted" style="font-size:11px;">{{ $inv->opening_details }}</div>@endif
+                                            @if($inv->opening_photo)<div><a href="{{ asset($inv->opening_photo) }}" target="_blank">صورة الفاتورة</a></div>@endif
+                                        @endif
+                                    </td>
                                     <td><x-report-money :amount="$inv->total" :rate="$inv->usd_rate" /></td>
                                     <td><x-report-money :amount="$inv->paid" :rate="$inv->usd_rate" /></td>
-                                    <td><x-report-money :amount="$inv->remaining" :rate="$inv->usd_rate" /></td>
+                                    <td>
+                                        <x-report-money :amount="$inv->remaining" :rate="$inv->usd_rate" />
+                                        @if(($inv->written_off_amount ?? 0) > 0)
+                                            <div><span class="label label-default">دين معدوم</span> {{ number_format($inv->written_off_amount, 2) }}</div>
+                                            @if($inv->written_off_note)<div class="text-muted" style="font-size:11px;">{{ $inv->written_off_note }}</div>@endif
+                                        @endif
+                                    </td>
                                     <td>{{ $inv->created_at->format('Y-m-d') }}</td>
                                 </tr>
                                 @endforeach
@@ -93,7 +108,12 @@
                                     <td>{{ $s->date->format('Y-m-d') }}</td>
                                     <td><x-report-money :amount="$s->total" :rate="$s->usd_rate" /></td>
                                     <td><x-report-money :amount="$s->paid" :rate="$s->usd_rate" /></td>
-                                    <td><x-report-money :amount="$s->remaining" :rate="$s->usd_rate" /></td>
+                                    <td>
+                                        <x-report-money :amount="$s->remaining" :rate="$s->usd_rate" />
+                                        @if(($s->written_off_amount ?? 0) > 0)
+                                            <div><span class="label label-default">دين معدوم {{ number_format($s->written_off_amount, 2) }}</span></div>
+                                        @endif
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>

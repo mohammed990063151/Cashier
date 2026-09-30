@@ -11,6 +11,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="alert alert-info">
             <strong>صافي المبلغ</strong> = قيمة الطلب بعد الخصم والمرتجعات.
             <strong>المدفوع</strong> = دفعات العميل + المدفوع عند البيع.

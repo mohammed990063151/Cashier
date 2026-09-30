@@ -12,6 +12,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
 
         <div class="row">
             <div class="col-md-12">

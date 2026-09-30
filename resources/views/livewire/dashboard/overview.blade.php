@@ -108,6 +108,7 @@
                     <div class="inner">
                         <h3>{{ number_format($clientsOverview['total_due'] ?? 0, 2) }} ج.س</h3>
                         <p>المبالغ المتبقية للعملاء</p>
+                        <p style="margin:0;"><a href="{{ route('dashboard.bad-debts.index') }}" style="color:#fff;">معدوم: {{ number_format($clientsOverview['bad_debt'] ?? 0, 2) }} ج.س</a></p>
                     </div>
                     <div class="icon"><i class="fa fa-users"></i></div>
                 </div>

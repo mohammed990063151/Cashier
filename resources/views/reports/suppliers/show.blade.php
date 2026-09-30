@@ -2,6 +2,9 @@
 @section('title', 'تقرير المورد - ' . $supplier->name)
 
 @section('content')
+<div class="content-wrapper">
+<section class="content">
+@include('reports._debt_status')
 <div class="container">
     <h2 class="mb-4">📊 تقرير المورد: {{ $supplier->name }}</h2>
 
@@ -89,6 +92,8 @@
         </div>
 
     </div>
+</div>
+</section>
 </div>
 @endsection
 

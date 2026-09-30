@@ -16,7 +16,7 @@ class ProfitReportController extends Controller
         $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : null;
         $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : null;
 
-        $orders = Order::with(['client', 'products', 'returns'])
+        $orders = Order::with(['client', 'products', 'returns'])->withoutOpening()
             ->when($from && $to, fn ($q) => $q->whereBetween('created_at', [$from, $to]))
             ->latest()
             ->get();

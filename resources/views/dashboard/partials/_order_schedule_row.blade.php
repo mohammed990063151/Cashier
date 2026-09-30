@@ -83,5 +83,12 @@
         <a href="{{ route('dashboard.payments.index', ['client_id' => $order->client_id, 'order_id' => $order->id]) }}" class="btn btn-success">
             <i class="fa fa-money"></i> مدفوعات
         </a>
+        @if(auth()->user()->hasPermission('update_orders') && ! $order->written_off_at && (float) $order->remaining > 0.009)
+            @include('dashboard.partials._bad_debt_button', [
+                'action' => route('dashboard.orders.bad-debt', $order),
+                'label' => 'دين معدوم',
+                'confirm' => 'نقل هذا الطلب إلى الديون المعدومة؟ سيخرج من جدولة التحصيل.',
+            ])
+        @endif
     </div>
 </div>

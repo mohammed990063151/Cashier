@@ -90,7 +90,7 @@
                             <th>#</th>
                             <th>المنتج</th>
                             <th>الشراء</th>
-                            <th>في المخزون (حبات)</th>
+                            <th>في المخزون</th>
                             <th>سعر الوحدة</th>
                             <th>الإجمالي</th>
                         </tr>
@@ -101,7 +101,7 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $item->product->name ?? '—' }}</td>
                             <td>{{ $purchaseInvoice->quantityLabelForItem($item) }}</td>
-                            <td>{{ $item->quantity }} حبة</td>
+                            <td>{{ $item->receivedStockLabel() }}</td>
                             <td>{{ number_format($item->price, 2) }}</td>
                             <td>{{ number_format($item->subtotal, 2) }}</td>
                         </tr>

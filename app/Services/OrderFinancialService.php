@@ -16,11 +16,16 @@ class OrderFinancialService
     {
         $order->loadMissing(['products', 'payments', 'returns']);
 
+        $isOpening = (bool) ($order->is_opening_balance ?? false);
         $totalSale = 0.0;
-        foreach ($order->products as $product) {
-            $totalSale += SaleUnits::lineMoney($product);
+        if ($isOpening) {
+            $totalSale = round((float) ($order->total_price ?? 0), 2);
+        } else {
+            foreach ($order->products as $product) {
+                $totalSale += SaleUnits::lineMoney($product);
+            }
+            $totalSale = round($totalSale, 2);
         }
-        $totalSale = round($totalSale, 2);
 
         $paidAtSale = round((float) ($order->paid_at_sale ?? 0), 2);
         $invoiceDiscount = round((float) ($order->invoice_discount ?? 0), 2);
@@ -49,14 +54,16 @@ class OrderFinancialService
         $totalRefundedToCustomer = round((float) $order->returns->sum('refund_amount'), 2);
         $totalPaid = round($totalPaid, 2);
         $netPaid = round(max(0, $totalPaid - $totalRefundedToCustomer), 2);
-        $remaining = round(max($totalAfterDiscount - $netPaid, 0), 2);
+        $remaining = $order->written_off_at
+            ? 0.0
+            : round(max($totalAfterDiscount - $netPaid, 0), 2);
 
-        $totalPurchase = $order->products->sum(
+        $totalPurchase = $isOpening ? 0.0 : $order->products->sum(
             fn ($product) => $product->pivot->quantity * $product->pivot->cost_price
         );
-        $profitBeforeDiscount = $totalSale - $totalPurchase;
-        $profitAfterDiscount = $totalAfterDiscount - $totalPurchase;
-        $profitPercentage = $totalPurchase > 0
+        $profitBeforeDiscount = $isOpening ? 0.0 : ($totalSale - $totalPurchase);
+        $profitAfterDiscount = $isOpening ? 0.0 : ($totalAfterDiscount - $totalPurchase);
+        $profitPercentage = (! $isOpening && $totalPurchase > 0)
             ? ($profitAfterDiscount / $totalPurchase) * 100
             : 0;
 
@@ -206,6 +213,15 @@ class OrderFinancialService
         $mode = SaleUnits::normalizeSaleMode($product->sale_mode ?? null);
         $measure = SaleUnits::normalizeMeasureUnit($product->measure_unit ?? null);
         $lineTotal = SaleUnits::lineMoney($product);
+        $savedLines = SaleUnits::unitLinesFromPivot($product);
+
+        if ($savedLines !== []) {
+            return [
+                'quantity' => SaleUnits::formatUnitLines($savedLines),
+                'price' => SaleUnits::formatUnitPrices($savedLines),
+                'line_total' => $lineTotal,
+            ];
+        }
 
         $quantityText = SaleUnits::formatQuantityLabel($pieces, $bulkSize, $mode, $measure);
 
@@ -241,6 +257,30 @@ class OrderFinancialService
     {
         $pieces = (float) $product->pivot->quantity;
         $bulkSize = max(1, (int) ($product->pieces_per_carton ?? 12));
+        $savedLines = SaleUnits::unitLinesFromPivot($product);
+        if ($savedLines !== []) {
+            $labels = ['bulk' => 'كرتونة', 'piece' => 'حبة', 'kilo' => 'كيلو'];
+            $out = [];
+            foreach ($labels as $key => $label) {
+                $qty = (float) ($savedLines[$key]['qty'] ?? 0);
+                $price = (float) ($savedLines[$key]['price'] ?? 0);
+                if ($qty <= 0.0005) {
+                    continue;
+                }
+                $multiplier = SaleUnits::multiplier($key, $bulkSize);
+                $out[] = [
+                    'label' => $label,
+                    'count' => $qty,
+                    'pieces' => $qty * $multiplier,
+                    'piece_price' => $multiplier > 0 ? ($price / $multiplier) : $price,
+                    'unit_price' => $price,
+                    'line_total' => round($qty * $price, 2),
+                ];
+            }
+
+            return $out;
+        }
+
         $lineMoney = SaleUnits::lineMoney($product);
         $lines = SaleUnits::breakdownLines(
             $pieces,
@@ -265,6 +305,10 @@ class OrderFinancialService
 
     public function paymentStatus(Order $order): string
     {
+        if ($order->written_off_at) {
+            return 'written_off';
+        }
+
         $data = $this->calculate($order);
 
         if ($data['hasReturns']) {
@@ -294,6 +338,7 @@ class OrderFinancialService
             'paid' => 'مدفوع بالكامل',
             'partial' => 'دفع جزئي',
             'unpaid' => 'متبقي',
+            'written_off' => 'دين معدوم',
             default => 'غير محدد',
         };
     }
@@ -306,6 +351,7 @@ class OrderFinancialService
             'paid' => 'label-success',
             'partial' => 'label-warning',
             'unpaid' => 'label-danger',
+            'written_off' => 'label-default',
             default => 'label-default',
         };
     }
@@ -328,7 +374,8 @@ class OrderFinancialService
             'partial_return' => $query->where('total_return', '>', 0)
                 ->where('total_price', '>', 0)
                 ->whereHas('products'),
-            'paid' => $query->where('total_return', '<=', 0)
+            'paid' => $query->whereNull('written_off_at')
+                ->where('total_return', '<=', 0)
                 ->where('remaining', '<=', 0),
             'partial' => $query->where('total_return', '<=', 0)
                 ->where('remaining', '>', 0)

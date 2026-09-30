@@ -16,12 +16,14 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="alert alert-info">
             <strong>كيف يُحسب التقرير:</strong>
             صافي المبيعات = قيمة الطلبات بعد المرتجعات.
             ربح المبيعات = مجموع حقل الربح في الطلبات.
             المصروفات = مصروفات التشغيل + المشتريات المدفوعة من الخزينة.
             النتيجة = ربح المبيعات − المصروفات (لا تشمل إضافة نقد مباشر للخزينة كإيراد).
+            الديون المعدومة تبقى ظاهرة وحدها، وتُخصم في «النتيجة بعد الهالك» دون حذف المبيعات.
         </div>
 
         <div class="row">
@@ -73,6 +75,29 @@
             <div class="col-md-3">
                 <div class="alert alert-secondary text-center" style="margin:0;height:100%;">
                     <strong>ذمم عملاء (متبقي):</strong><br><x-report-money :amount="$r['total_remaining']" :entries="$r['fx']['remaining']" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+            <div class="col-md-4">
+                <div class="alert alert-danger text-center" style="margin:0;">
+                    <strong>ديون معدومة (هوالك)</strong><br>
+                    <x-report-money :amount="$r['bad_debt'] ?? 0" :entries="$r['fx']['bad_debt'] ?? []" />
+                    <div><small>{{ $r['bad_debt_count'] ?? 0 }} طلب خرج من التحصيل</small></div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="alert alert-warning text-center" style="margin:0;">
+                    <strong>ربح المبيعات بعد الهالك</strong><br>
+                    <x-report-money :amount="$r['profit_after_bad_debt'] ?? 0" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="alert {{ ($r['result_after_bad_debt'] ?? 0) >= 0 ? 'alert-success' : 'alert-danger' }} text-center" style="margin:0;">
+                    <strong>النتيجة بعد الهالك</strong><br>
+                    <x-report-money :amount="$r['result_after_bad_debt'] ?? 0" />
+                    <div><small>صافي النتيجة ناقص الديون المعدومة</small></div>
                 </div>
             </div>
         </div>

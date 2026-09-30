@@ -11,6 +11,7 @@
     </section>
 
     <section class="content">
+        @include('reports._debt_status')
         <div class="box box-primary">
             <div class="box-header">
                 <form method="get" class="form-inline">
@@ -38,6 +39,20 @@
                     <div class="col-md-3">
                         <h4>عدد الطلبات</h4>
                         <strong>{{ $snapshot['orders_count'] }}</strong>
+                    </div>
+                </div>
+                <div class="row text-center" style="margin-top:12px;">
+                    <div class="col-md-4">
+                        <h4>ذمم ما زالت مستحقة</h4>
+                        <strong class="text-warning"><x-report-money :amount="$snapshot['total_remaining']" :entries="$snapshot['fx']['remaining']" /></strong>
+                    </div>
+                    <div class="col-md-4">
+                        <h4>ديون معدومة</h4>
+                        <strong class="text-danger"><x-report-money :amount="$snapshot['bad_debt'] ?? 0" :entries="$snapshot['fx']['bad_debt'] ?? []" /></strong>
+                    </div>
+                    <div class="col-md-4">
+                        <h4>ربح المبيعات بعد الهالك</h4>
+                        <strong><x-report-money :amount="$snapshot['profit_after_bad_debt'] ?? 0" /></strong>
                     </div>
                 </div>
             </div>

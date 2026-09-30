@@ -69,11 +69,21 @@ class OrderReturnService
                 }
 
                 if ($newQty > 0.0005) {
-                    $order->products()->updateExistingPivot($product->id, [
+                    $pivotUpdate = [
                         'quantity' => $newQty,
                         'line_total' => $newLineTotal,
                         'sale_price' => $newQty > 0 ? ($newLineTotal / $newQty) : 0,
-                    ]);
+                    ];
+                    $remainingUnits = SaleUnits::subtractUnitLines(
+                        SaleUnits::unitLinesFromPivot($pivotProduct),
+                        $item['unit_entries'] ?? []
+                    );
+                    if ($remainingUnits !== null) {
+                        $pivotUpdate['unit_lines'] = $remainingUnits === []
+                            ? null
+                            : json_encode($remainingUnits, JSON_UNESCAPED_UNICODE);
+                    }
+                    $order->products()->updateExistingPivot($product->id, $pivotUpdate);
                 } else {
                     $order->products()->detach($product->id);
                 }
@@ -188,7 +198,28 @@ class OrderReturnService
             }
 
             $unitPrice = $qty > 0 ? ($subtotal / $qty) : 0;
-            $qtyLabel = SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure);
+            $unitEntries = [];
+            if (is_array($line)) {
+                foreach ($line as $unitKey => $unitData) {
+                    if (! is_array($unitData)) {
+                        continue;
+                    }
+                    $enteredQty = (float) ($unitData['qty'] ?? 0);
+                    if ($enteredQty <= 0) {
+                        continue;
+                    }
+                    $unitEntries[] = [
+                        'unit' => (string) $unitKey,
+                        'qty' => $enteredQty,
+                        'price' => (float) ($unitData['price'] ?? 0),
+                    ];
+                }
+            }
+            $qtyLabel = $unitEntries !== []
+                ? SaleUnits::formatUnitLines(collect($unitEntries)->mapWithKeys(fn ($entry) => [
+                    $entry['unit'] => ['qty' => $entry['qty'], 'price' => $entry['price']],
+                ])->all())
+                : SaleUnits::formatQuantityLabel($qty, $bulk, $mode, $measure);
             $total += $subtotal;
             $names[] = $product->name.' × '.$qtyLabel;
 
@@ -198,6 +229,7 @@ class OrderReturnService
                 'unit_price' => $unitPrice,
                 'subtotal' => $subtotal,
                 'quantity_label' => $qtyLabel,
+                'unit_entries' => $unitEntries,
             ];
         }
 

@@ -184,4 +184,39 @@ class WhatsAppOrderNotificationTest extends TestCase
         $this->assertFalse($result['ok']);
         $this->assertStringContainsString('فعّل', $result['message']);
     }
+
+    public function test_wrong_device_id_retries_with_the_logged_in_device(): void
+    {
+        $setting = Setting::query()->create([
+            'whatsapp_enabled' => true,
+            'whatsapp_base_url' => 'http://whatsapp.test',
+            'whatsapp_username' => 'admin',
+            'whatsapp_password' => 'secret',
+            'whatsapp_device_id' => 'stale-device',
+            'whatsapp_staff_phone' => '249990063151',
+        ]);
+
+        Http::fake(function ($request) {
+            if (str_ends_with($request->url(), '/devices')) {
+                return Http::response([
+                    'results' => [['id' => 'live-device', 'state' => 'logged_in']],
+                ]);
+            }
+
+            if ($request->hasHeader('X-Device-Id', 'stale-device')) {
+                return Http::response([
+                    'code' => 'ERROR',
+                    'message' => 'device not found: create a device first from /api/devices or provide a valid X-Device-Id',
+                ], 404);
+            }
+
+            return Http::response(['code' => 'SUCCESS'], 200);
+        });
+
+        $result = app(WhatsAppService::class)->sendTest($setting);
+
+        $this->assertTrue($result['ok']);
+        Http::assertSent(fn ($request) => str_ends_with($request->url(), '/send/message')
+            && $request->hasHeader('X-Device-Id', 'live-device'));
+    }
 }

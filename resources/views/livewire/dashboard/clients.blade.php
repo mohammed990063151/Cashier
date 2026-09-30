@@ -65,6 +65,14 @@
                                                 <a href="#" class="btn btn-info disabled"><i class="fa fa-edit"></i> تعديل</a>
                                             @endif
 
+                                            @if(auth()->user()->hasPermission('update_orders') && $client->orders->sum('remaining') > 0.009)
+                                                @include('dashboard.partials._bad_debt_button', [
+                                                    'action' => route('dashboard.clients.bad-debt', $client),
+                                                    'label' => 'نقل المتبقي للهالك',
+                                                    'confirm' => 'نقل كل المتبقي على هذا العميل إلى الديون المعدومة؟',
+                                                ])
+                                            @endif
+
                                             @if(auth()->user()->hasPermission('delete_clients'))
                                                 <button type="button" class="btn btn-danger" onclick="confirmDelete({{ $client->id }})"><i class="fa fa-trash"></i> حذف</button>
                                             @else

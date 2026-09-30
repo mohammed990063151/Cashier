@@ -48,6 +48,8 @@
         </div>
     </div>
 
+    @include('dashboard.orders._opening_balance', ['order' => $order])
+
     <div class="preview-section-title">الأصناف</div>
     <div class="preview-products">
         @foreach($order->products as $product)
